@@ -26,7 +26,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `Program.cs` mínimo con OpenAPI y Scalar, ProblemDetails, health check `/health` (incluye SQL Server), CORS por configuración y el registro de módulos.
   - `appsettings*.json` con la cadena de conexión local.
   - Sin autenticación todavía.
-- **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un único script, `0001__crear_esquemas.sql` (academico, usuarios, integracion, plazas).
+- **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un baseline, `Baseline/baseline.sql`: los cuatro esquemas y las 55 tablas de `DATABASE.md`, sin datos. `Scripts/` queda vacía para las migraciones.
 - **`src/BuildingBlocks`:**
   - `Sgpla.SharedKernel` vacío, con solo lo mínimo para compilar.
   - `Sgpla.BuildingBlocks.Infrastructure` con un `SgplaDbContext` sin entidades, que aplica las configuraciones de los módulos registrados.
@@ -40,7 +40,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `Sgpla.UnitTests`: vacío.
 - **En la raíz:** `.gitignore`, `.editorconfig`, `.gitattributes`, `docker-compose.yml`, `.github/workflows/backend-ci.yml`, `README.md` y `sgpla-web/README.md`.
 
-**Qué se pospone:** el slice `Region`, JWT, LDAP, Argon2, PLANEA, el almacenamiento de archivos y los scripts 0002 y siguientes. Lo descrito en las secciones de abajo sigue siendo el diseño objetivo.
+**Qué se pospone:** el slice `Region`, JWT, LDAP, Argon2, PLANEA, el almacenamiento de archivos y las migraciones de datos de catálogos. Lo descrito en las secciones de abajo sigue siendo el diseño objetivo.
 
 **Supuestos por defecto** (el usuario puede cambiarlos):
 - Identificadores de dominio en español sin acentos; términos técnicos en inglés.
@@ -155,14 +155,11 @@ sgpla-backend/
 - Proveedor: `Microsoft.EntityFrameworkCore.SqlServer`. No hay EF Migrations; el esquema pertenece a DbUp.
 
 ### Migraciones (DbUp)
-- `src/Sgpla.Database/Scripts/` con nombre `0001__crear_esquemas.sql`, `0002__...`, embebidos como recursos. La bitácora va en `dbo.schema_versions`.
+- `src/Sgpla.Database/Baseline/baseline.sql` construye la base completa y `src/Sgpla.Database/Scripts/####__descripcion.sql` contiene las migraciones posteriores; ambos son recursos embebidos. La bitácora va en `dbo.schema_versions`.
 - `DatabaseMigrator.Migrate(connectionString)` es reutilizable: la CLI (`dotnet run --project src/Sgpla.Database -- --connection "..."`) y el fixture de integración lo usan. `EnsureDatabase` solo se aplica en Development/tests.
 - La API **no** migra al arrancar.
-- Scripts incluidos en el esqueleto:
-  1. `0001__crear_esquemas.sql`: `academico`, `usuarios`, `integracion`, `plazas`.
-  2. `0002__academico_region.sql`: tabla de referencia con `pk_region`, `uq_region__clave` y los `ck_` del documento.
-  3. `0003__usuarios_rol.sql`: tabla `rol` + semilla fija (1/Superusuario, 2/DGAA, 3/Entidad Académica) + `ck_rol__catalogo_fijo`.
-- El resto del DDL se agrega después, un script por bloque de módulo.
+- `baseline.sql` no es una migración: crea los esquemas `academico`, `usuarios`, `integracion` y `plazas` y las 55 tablas de `DATABASE.md` con sus PK, FK, UNIQUE, CHECK e índices, sin datos. `DatabaseMigrator` solo lo ejecuta sobre una base vacía y lo registra como `baseline`; si la base ya tiene tablas sin ese registro, falla sin tocarla.
+- Los datos de los catálogos (incluida la semilla fija de `usuarios.rol`) y cualquier cambio posterior de esquema van en migraciones de `Scripts/`, a partir de `0001`.
 
 ### Seguridad y servicios externos (adaptadores + interfaces; los flujos completos quedan para fases posteriores)
 - **JWT**: `Microsoft.AspNetCore.Authentication.JwtBearer`. La API emite tokens de acceso de vida corta (refresh tokens fuera de alcance). Políticas `Superusuario`, `Dgaa`, `EntidadAcademica` y `CambioContrasenaPendiente`.
@@ -206,7 +203,7 @@ sgpla-backend/
 **En `sgpla-backend/`** (rutas relativas a esa carpeta):
 - `Directory.Build.props`, `Directory.Packages.props`, `global.json`, `Sgpla.slnx`
 - `src/Sgpla.Api/Program.cs`
-- `src/Sgpla.Database/DatabaseMigrator.cs`, `src/Sgpla.Database/Scripts/0001..0003*.sql`
+- `src/Sgpla.Database/DatabaseMigrator.cs`, `src/Sgpla.Database/Baseline/baseline.sql`
 - `src/BuildingBlocks/Sgpla.BuildingBlocks.Infrastructure/Persistence/SgplaDbContext.cs`
 - `src/Modules/Institucional/Sgpla.Modules.Institucional/{Domain/Region.cs, Application/Regiones/*, Infrastructure/RegionConfiguration.cs, Endpoints/RegionEndpoints.cs, InstitucionalModule.cs}`
 - `src/Modules/Usuarios/.../Infrastructure/Ldap/LdapAutenticador.cs`, `.../Security/Argon2PasswordHasher.cs`
@@ -218,7 +215,7 @@ sgpla-backend/
 Todos los comandos `dotnet` se ejecutan desde `sgpla-backend/`.
 1. `dotnet build Sgpla.slnx` sin warnings.
 2. `dotnet test tests/Sgpla.ArchitectureTests` y `tests/Sgpla.UnitTests` en verde.
-3. Con Docker Desktop activo: `dotnet test tests/Sgpla.IntegrationTests`. Levanta SQL Server, aplica 0001–0003 y pasa el CRUD de Region.
+3. Con Docker Desktop activo: `dotnet test tests/Sgpla.IntegrationTests`. Levanta SQL Server, aplica los scripts y pasa el CRUD de Region.
 4. Manual:
    - `docker compose up -d`, desde la raíz.
    - `dotnet run --project src/Sgpla.Database -- --connection "<local>"`.

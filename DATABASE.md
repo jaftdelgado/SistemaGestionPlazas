@@ -6,7 +6,7 @@ Este documento es la fuente de verdad del diseño de datos actual de SGPLa. Su o
 
 > El diagrama entidad-relación Mermaid completo se mantiene exclusivamente en `DATABASE_DIAGRAM.md`. Este archivo contiene la definición normativa de entidades, atributos y reglas; ambos documentos deben leerse conjuntamente.
 
-Estado del diseño: **definido, todavía no implementado en SQL**.
+Estado del diseño: **definido e implementado en SQL** en `sgpla-backend/src/Sgpla.Database/Baseline/baseline.sql` (esquemas, tablas, restricciones e índices; sin datos semilla).
 
 | Propiedad | Decisión |
 |---|---|
@@ -1793,7 +1793,7 @@ Las solicitudes RECHAZADAS y CANCELADAS no impiden la baja. Las operaciones de c
 
 No existen decisiones funcionales pendientes para implementar este modelo base. Aún deben realizarse como trabajo posterior:
 
-- creación del DDL, migración inicial y datos semilla de los esquemas `academico`, `usuarios`, `integracion` y `plazas`;
+- datos semilla de los catálogos, incluida la semilla fija de `usuarios.rol` (el DDL ya existe en `Baseline/baseline.sql`);
 - implementación transaccional de bajas, restauraciones e inmutabilidad;
 - implementación del adaptador y la sincronización atómica con PLANEA, incluidos Docentes y asignaciones iniciales;
 - implementación del bootstrap, autenticación LDAP y verificación local de Superusuarios;

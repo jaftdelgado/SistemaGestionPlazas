@@ -37,5 +37,36 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
         esquemas.ShouldBe(["academico", "integracion", "plazas", "usuarios"], ignoreOrder: true);
     }
 
+    [Fact]
+    public async Task Migraciones_CreanLasTablasDeLaBaseInicial()
+    {
+        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await conexion.OpenAsync(TestContext.Current.CancellationToken);
+        await using var comando = new SqlCommand(
+            """
+            SELECT s.name, COUNT(*)
+            FROM sys.tables AS t
+            JOIN sys.schemas AS s ON s.schema_id = t.schema_id
+            WHERE s.name IN (N'academico', N'plazas', N'usuarios', N'integracion')
+            GROUP BY s.name
+            """,
+            conexion);
+
+        var tablasPorEsquema = new Dictionary<string, int>();
+        await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        while (await lector.ReadAsync(TestContext.Current.CancellationToken))
+        {
+            tablasPorEsquema[lector.GetString(0)] = lector.GetInt32(1);
+        }
+
+        tablasPorEsquema.ShouldBe(new Dictionary<string, int>
+        {
+            ["academico"] = 24,
+            ["integracion"] = 1,
+            ["plazas"] = 25,
+            ["usuarios"] = 5,
+        }, ignoreOrder: true);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 }
