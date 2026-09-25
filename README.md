@@ -13,8 +13,11 @@ Monorepo del Sistema de Gestión de Plazas Académicas (SGPLa).
 ## Levantar el entorno
 
 ```bash
-docker compose up -d --build
+docker compose build --pull
+docker compose up -d
 ```
+
+`--pull` descarga la versión vigente de las imágenes base en lugar de usar la caché local; el detalle está en el README del backend.
 
 La API queda en `http://localhost:8180`: documentación en `/scalar/v1` y estado en `/health`.
 

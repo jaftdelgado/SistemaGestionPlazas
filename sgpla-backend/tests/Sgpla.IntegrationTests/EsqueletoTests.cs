@@ -1,5 +1,9 @@
 using System.Net;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests;
@@ -66,6 +70,18 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
             ["plazas"] = 25,
             ["usuarios"] = 5,
         }, ignoreOrder: true);
+    }
+
+    [Fact]
+    public void Persistencia_NoRegistraValoresDeParametros()
+    {
+        // ESTANDAR_MODULOS.md, sección 11: EnableSensitiveDataLogging nunca se activa.
+        using var alcance = _api.Services.CreateScope();
+        var opciones = alcance.ServiceProvider.GetRequiredService<DbContextOptions<SgplaDbContext>>();
+
+        var registraDatosSensibles = opciones.FindExtension<CoreOptionsExtension>()?.IsSensitiveDataLoggingEnabled ?? false;
+
+        registraDatosSensibles.ShouldBeFalse();
     }
 
     public ValueTask DisposeAsync() => _api.DisposeAsync();

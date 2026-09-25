@@ -3,7 +3,7 @@
 #   docker build -f src/Sgpla.Database/Dockerfile -t sgpla-migraciones .
 # La cadena de conexión se recibe en la variable SGPLA_DB_CONNECTION.
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.401 AS build
 WORKDIR /src
 COPY . .
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \

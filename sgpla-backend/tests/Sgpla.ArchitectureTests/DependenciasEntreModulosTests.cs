@@ -22,6 +22,33 @@ public class DependenciasEntreModulosTests
             $"{modulo} depende de módulos no permitidos: {string.Join(", ", resultado.FailingTypeNames ?? [])}");
     }
 
+    [Theory]
+    [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
+    public void Modulo_SoloUsaLosContratosDeOtrosModulos(string modulo)
+    {
+        // Tipos de los módulos permitidos que quedan fuera de su contrato público.
+        var internos = Modulos.DependenciasPermitidas[modulo]
+            .SelectMany(otro => Types.InAssembly(Modulos.Ensamblados[otro])
+                .That().DoNotResideInNamespace(Modulos.NamespaceContratos(otro))
+                .GetTypes())
+            .Where(tipo => !tipo.IsNested && tipo.FullName is not null && tipo.FullName.StartsWith("Sgpla.Modules.", StringComparison.Ordinal))
+            .Select(tipo => tipo.FullName!)
+            .ToArray();
+
+        if (internos.Length == 0)
+        {
+            return;
+        }
+
+        var resultado = Types.InAssembly(Modulos.Ensamblados[modulo])
+            .ShouldNot()
+            .HaveDependencyOnAny(internos)
+            .GetResult();
+
+        resultado.IsSuccessful.ShouldBeTrue(
+            $"{modulo} usa tipos de otros módulos fuera de Application.Contracts: {string.Join(", ", resultado.FailingTypeNames ?? [])}");
+    }
+
     [Fact]
     public void Grafo_NoTieneCiclos()
     {

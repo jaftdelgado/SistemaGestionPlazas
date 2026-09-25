@@ -16,11 +16,11 @@ Decisiones tomadas con el usuario:
 
 Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de lógica de negocio.
 
-**Entorno verificado:** .NET SDK 10.0.112, junto con una preview 10.0.200 que no se usará; Docker 29.7 y git 2.52. La carpeta no es un repositorio git.
+**Entorno verificado al iniciar:** .NET SDK 10.0.112, junto con una preview 10.0.200 que no se usará; Docker 29.7 y git 2.52. La carpeta no es un repositorio git. Después, el proyecto se fijó en el SDK 10.0.401, la banda que ya usaban la imagen `dotnet/sdk` y el CI (ver `global.json` abajo).
 
 **Qué se crea:**
 - **Configuración de .NET:**
-  - `sgpla-backend/global.json`: SDK `10.0.112` con `rollForward: latestPatch` y `allowPrerelease: false`, para no usar la preview.
+  - `sgpla-backend/global.json`: SDK `10.0.401` con `rollForward: latestPatch` y `allowPrerelease: false`: solo acepta parches de la banda 10.0.4xx y nunca una preview, para que local, CI y Docker compilen con el mismo SDK.
   - `Directory.Build.props`, `Directory.Packages.props` y `Sgpla.slnx`.
 - **`src/Sgpla.Api`:**
   - `Program.cs` mínimo con OpenAPI y Scalar, ProblemDetails, health check `/health` (incluye SQL Server), CORS por configuración y el registro de módulos.
@@ -40,7 +40,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `Sgpla.UnitTests`: vacío.
 - **En la raíz:** `.gitignore`, `.editorconfig`, `.gitattributes`, `docker-compose.yml`, `.github/workflows/backend-ci.yml`, `README.md` y `sgpla-web/README.md`.
 
-**Qué se pospone:** el slice `Region`, JWT, LDAP, Argon2, PLANEA, el almacenamiento de archivos y las migraciones de datos de catálogos. Lo descrito en las secciones de abajo sigue siendo el diseño objetivo.
+**Qué se pospone:** el slice `Region`, JWT, LDAP, Argon2, PLANEA, el almacenamiento de archivos y las migraciones de datos de catálogos. También la revisión de las etiquetas flotantes de imágenes Docker (`mssql/server:2022-latest`, `dotnet/aspnet:10.0` y `dotnet/runtime:10.0`), que se hará al preparar el primer despliegue real. Lo descrito en las secciones de abajo sigue siendo el diseño objetivo.
 
 **Supuestos por defecto** (el usuario puede cambiarlos):
 - Identificadores de dominio en español sin acentos; términos técnicos en inglés.
@@ -142,6 +142,9 @@ sgpla-backend/
 ```
 
 ### Convenciones por módulo
+
+El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este resumen.
+
 - `Domain/`: entidades, enums de estado y reglas invariantes. Sin EF ni ASP.NET.
 - `Application/`: un handler por caso de uso (`CrearRegion`, `DarDeBajaRegion`...), DTOs y validadores con FluentValidation. No se usa MediatR (ahora tiene licencia comercial): los handlers son clases que se registran en DI.
 - `Infrastructure/`: `IEntityTypeConfiguration<T>` con `ToTable("region", "academico")` y adaptadores externos del módulo.

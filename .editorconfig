@@ -34,6 +34,10 @@ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_style.underscore_camel.capitalization = camel_case
 
+# Logging solo con [LoggerMessage] y plantillas constantes (ESTANDAR_MODULOS.md, sección 11)
+dotnet_diagnostic.CA1848.severity = error
+dotnet_diagnostic.CA2254.severity = error
+
 [*.{csproj,props,targets,slnx}]
 indent_size = 2
 

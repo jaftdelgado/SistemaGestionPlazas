@@ -48,6 +48,11 @@ internal static class Modulos
 
     public static string Namespace(string modulo) => $"Sgpla.Modules.{modulo}";
 
+    /// <summary>Único namespace de un módulo que otros módulos pueden usar (ESTANDAR_MODULOS.md, sección 5).</summary>
+    public static string NamespaceContratos(string modulo) => $"{Namespace(modulo)}.Application.Contracts";
+
+    public static string NombreClaseModulo(string modulo) => $"{modulo}Module";
+
     public static TheoryData<string> Nombres()
     {
         var datos = new TheoryData<string>();

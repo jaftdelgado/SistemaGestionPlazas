@@ -1,0 +1,44 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Sgpla.IntegrationTests.Infraestructura;
+
+namespace Sgpla.IntegrationTests;
+
+/// <summary>
+/// El traceId de una respuesta de error permite encontrar los logs de esa misma petición.
+/// Ver ESTANDAR_MODULOS.md, sección 11.
+/// </summary>
+public sealed partial class CorrelacionTests(SqlServerFixture sqlServer) : IAsyncDisposable
+{
+    private readonly SgplaApiFactory _api = new(sqlServer);
+
+    [Fact]
+    public async Task RespuestaDeError_ConRecursoInexistente_TraceIdApareceEnLosLogsDeLaPeticion()
+    {
+        using var cliente = _api.CreateClient();
+
+        using var respuesta = await cliente.GetAsync(
+            new Uri("/api/v1/catalogos/grados-academicos/999", UriKind.Relative),
+            TestContext.Current.CancellationToken);
+        var problema = await respuesta.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+
+        // La respuesta usa el formato W3C (00-<TraceId>-<SpanId>-<flags>); los logs, solo el TraceId.
+        var traceIdW3C = problema.GetProperty("traceId").GetString() ?? string.Empty;
+        var formato = FormatoW3C().Match(traceIdW3C);
+        formato.Success.ShouldBeTrue($"El traceId '{traceIdW3C}' no tiene formato W3C.");
+        var traceId = formato.Groups["traceId"].Value;
+
+        _api.Logs.Entradas.ShouldContain(
+            entrada => entrada.Scopes.GetValueOrDefault("TraceId") == traceId,
+            $"Ningún log capturado lleva TraceId {traceId} en sus scopes.");
+    }
+
+    public ValueTask DisposeAsync() => _api.DisposeAsync();
+
+    [GeneratedRegex("^00-(?<traceId>[0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$")]
+    private static partial Regex FormatoW3C();
+}

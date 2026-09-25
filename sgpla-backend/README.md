@@ -4,6 +4,8 @@ API REST de SGPLa: .NET 10, ASP.NET Core Minimal APIs, EF Core 10 (solo como ORM
 
 El diseño completo está en `../PLAN_INICIAL.md` y el modelo de datos en `../DATABASE.md`.
 
+Cada módulo se implementa según `../ESTANDAR_MODULOS.md`: capas, nombres, contratos entre módulos, pruebas y lista de verificación.
+
 ## Estructura
 
 ```
@@ -21,11 +23,11 @@ tests/
   Sgpla.IntegrationTests/      SQL Server con Testcontainers + WebApplicationFactory
 ```
 
-Hay 10 módulos: Institucional, Catalogos, Usuarios, OfertaEducativa, Docentes, Integracion, SolicitudesApertura, Publicacion, Aspirantes y ConsejoTecnico. Las dependencias permitidas entre ellos se declaran en `tests/Sgpla.ArchitectureTests/Modulos.cs`.
+Hay 10 módulos: Institucional, Catalogos, Usuarios, OfertaEducativa, Docentes, Integracion, SolicitudesApertura, Publicacion, Aspirantes y ConsejoTecnico. Las dependencias permitidas entre ellos se declaran en `tests/Sgpla.ArchitectureTests/Modulos.cs`. Las pruebas de arquitectura también verifican las capas, la ubicación de los tipos según su sufijo, la visibilidad, que un módulo solo use el contrato público (`Application.Contracts`) de otro y que los logs no reciban datos personales.
 
 ## Requisitos
 
-- .NET SDK 10.0.112 o una versión 10.0 posterior estable (`global.json` usa `latestFeature` y excluye previews).
+- .NET SDK 10.0.401 o un parche posterior de la banda 10.0.4xx (`global.json` usa `latestPatch` y excluye previews).
 - Docker, para SQL Server local, el entorno completo con `docker compose` y las pruebas de integración.
 
 ## Uso con Docker (solo requiere Docker)
@@ -34,8 +36,11 @@ Desde la raíz del monorepo:
 
 ```bash
 cp .env.example .env         # opcional: ajustar contraseña y puertos
-docker compose up -d --build
+docker compose build --pull  # descarga la versión vigente de cada imagen base
+docker compose up -d
 ```
+
+`--pull` evita compilar con imágenes base viejas que hayan quedado en la caché local. La imagen del SDK de compilación está fijada a la versión exacta de `global.json` (`sdk:10.0.401`), porque un cambio de banda puede romper el build con analizadores nuevos (`TreatWarningsAsErrors`). Las imágenes de runtime (`aspnet:10.0`, `runtime:10.0`) quedan flotantes: solo ejecutan código ya compilado, y los parches dentro de 10.0 son compatibles por diseño.
 
 Se levantan tres servicios:
 
