@@ -7,12 +7,14 @@ namespace Sgpla.IntegrationTests;
 
 public sealed class MigracionesTests(SqlServerFixture sqlServer)
 {
-    [Fact]
-    public async Task Baseline_QuedaRegistradoUnaSolaVezEnLaBitacora()
+    [Theory]
+    [InlineData(DatabaseMigrator.NombreBaseline)]
+    [InlineData(DatabaseMigrator.NombreSeed)]
+    public async Task BaselineYSeed_QuedanRegistradosUnaSolaVezEnLaBitacora(string nombreScript)
     {
         var registros = await ContarAsync(
             sqlServer.CadenaConexion,
-            $"SELECT COUNT(*) FROM dbo.schema_versions WHERE ScriptName = N'{DatabaseMigrator.NombreBaseline}'");
+            $"SELECT COUNT(*) FROM dbo.schema_versions WHERE ScriptName = N'{nombreScript}'");
 
         registros.ShouldBe(1);
     }

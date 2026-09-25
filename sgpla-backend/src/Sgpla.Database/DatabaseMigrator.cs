@@ -9,10 +9,12 @@ namespace Sgpla.Database;
 /// <summary>
 /// Construye y actualiza la base de datos en dos pasos:
 /// <list type="number">
-///   <item><c>Baseline/baseline.sql</c> crea la base completa, solo si la base está vacía.</item>
+///   <item><c>Baseline/baseline.sql</c> y <c>Baseline/seed.sql</c> crean la base completa con sus datos
+///   iniciales, en una sola transacción y solo si la base está vacía.</item>
 ///   <item><c>Scripts/####__descripcion.sql</c> aplica, en orden, los cambios posteriores al baseline.</item>
 /// </list>
-/// Ambos pasos se registran en <c>dbo.schema_versions</c>; el baseline con el nombre <see cref="NombreBaseline"/>.
+/// Todo se registra en <c>dbo.schema_versions</c>; el baseline y el seed con los nombres
+/// <see cref="NombreBaseline"/> y <see cref="NombreSeed"/>.
 /// Lo usan la CLI de este proyecto y el fixture de las pruebas de integración.
 /// </summary>
 public static class DatabaseMigrator
@@ -20,8 +22,10 @@ public static class DatabaseMigrator
     public const string EsquemaBitacora = "dbo";
     public const string TablaBitacora = "schema_versions";
     public const string NombreBaseline = "baseline";
+    public const string NombreSeed = "baseline-seed";
 
     private const string RecursoBaseline = "Sgpla.Database.Baseline.baseline.sql";
+    private const string RecursoSeed = "Sgpla.Database.Baseline.seed.sql";
     private const string PrefijoRecursosMigraciones = "Sgpla.Database.Scripts.";
 
     /// <param name="cadenaConexion">Cadena de conexión a SQL Server.</param>
@@ -61,8 +65,12 @@ public static class DatabaseMigrator
 
         if (estado == EstadoBaseline.BaseVacia)
         {
+            // DbUp ordena por nombre: 'baseline' se ejecuta antes que 'baseline-seed'. Una sola transacción
+            // evita que un fallo del seed deje una base con estructura pero sin datos iniciales.
+            var seed = new SqlScript(NombreSeed, LeerRecurso(RecursoSeed));
             var resultadoBaseline = CrearMotor(cadenaConexion, log)
-                .WithScripts(baseline)
+                .WithScripts(baseline, seed)
+                .WithTransaction()
                 .Build()
                 .PerformUpgrade();
 
@@ -79,6 +87,7 @@ public static class DatabaseMigrator
                 typeof(DatabaseMigrator).Assembly,
                 nombre => nombre.StartsWith(PrefijoRecursosMigraciones, StringComparison.Ordinal)
                     && nombre.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
+            .WithTransactionPerScript()
             .Build()
             .PerformUpgrade();
 
@@ -95,7 +104,6 @@ public static class DatabaseMigrator
         DeployChanges.To
             .SqlDatabase(cadenaConexion)
             .JournalToSqlTable(EsquemaBitacora, TablaBitacora)
-            .WithTransactionPerScript()
             .LogTo(log);
 
     private static EstadoBaseline ConsultarEstadoBaseline(string cadenaConexion)

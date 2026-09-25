@@ -1,46 +1,19 @@
--- =============================================================================
--- SGPLa: baseline de la base de datos
--- =============================================================================
--- Crea los esquemas y las 55 tablas definidas en DATABASE.md, con sus llaves,
--- restricciones e índices. No inserta datos: el contenido de los catálogos
--- (incluido usuarios.rol) se carga con migraciones en Scripts/.
+-- SGPLa: baseline de la base de datos.
+-- Crea los esquemas y las 55 tablas de DATABASE.md, sin datos (los catálogos
+-- se cargan en seed.sql). Solo se ejecuta sobre una base vacía; los cambios de
+-- esquema posteriores van en Scripts/, no aquí.
 --
--- No es una migración: DatabaseMigrator solo lo ejecuta sobre una base vacía y
--- lo registra en dbo.schema_versions como 'baseline'. Las bases existentes no
--- vuelven a leerlo, así que todo cambio de esquema va en una migración nueva de
--- Scripts/, nunca editando este archivo (salvo al compactar; ver README).
---
--- Convenciones (DATABASE.md, sección 5):
---   pk_<tabla>, fk_<hija>__<padre>, uq_<tabla>__<columnas>, ck_<tabla>__<regla>,
---   ix_<tabla>__<columnas>; ux_<tabla>__<regla> para índices únicos filtrados.
---   Cuando una tabla referencia varias veces a usuarios.usuario, la FK agrega
---   el papel del actor: fk_<hija>__usuario__<papel>.
---   Todas las FK usan ON DELETE NO ACTION y ON UPDATE NO ACTION (valor por omisión).
---
--- Validaciones de formato usadas en los CHECK:
---   * Código alfanumérico: no vacío, sin espacios y solo A-Z / 0-9 (intercalación
---     binaria para distinguir mayúsculas).
---   * LEN() ignora los espacios finales y DATALENGTH() no; que coincidan en un
---     varchar garantiza que el valor no termina en espacios.
---   * Texto no vacío: LEN(TRIM(x)) > 0.
---
--- Las reglas entre tablas, de estado y transaccionales se aplican en la capa de
--- aplicación (DATABASE.md, secciones 9, 10 y 15.10).
--- =============================================================================
+-- Nombres (DATABASE.md §5): pk_, fk_<hija>__<padre>, uq_, ck_, ix_ y ux_ para
+-- índices únicos filtrados. Varias FK a usuarios.usuario: fk_<hija>__usuario__<papel>.
+-- En los CHECK, LEN(x) = DATALENGTH(x) impide espacios finales en un varchar.
+-- Las reglas entre tablas y de estado se validan en la aplicación.
 
--- Los índices filtrados exigen estas opciones; algunos clientes (sqlcmd) abren
--- la sesión con QUOTED_IDENTIFIER desactivado.
+-- Requeridas por los índices filtrados (sqlcmd las desactiva por omisión).
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
--- -----------------------------------------------------------------------------
 -- 1. Esquemas
--- -----------------------------------------------------------------------------
---   academico   : oferta académica
---   plazas      : ofertas vacantes, avisos y Consejo Técnico
---   usuarios    : identidad y acceso
---   integracion : servicios externos
 
 IF SCHEMA_ID(N'academico') IS NULL EXEC (N'CREATE SCHEMA academico AUTHORIZATION dbo;');
 IF SCHEMA_ID(N'plazas') IS NULL EXEC (N'CREATE SCHEMA plazas AUTHORIZATION dbo;');
@@ -48,11 +21,7 @@ IF SCHEMA_ID(N'usuarios') IS NULL EXEC (N'CREATE SCHEMA usuarios AUTHORIZATION d
 IF SCHEMA_ID(N'integracion') IS NULL EXEC (N'CREATE SCHEMA integracion AUTHORIZATION dbo;');
 GO
 
--- -----------------------------------------------------------------------------
--- 2. Usuarios: rol y cuenta (6.16, 6.17)
---    Se crean primero porque varias tablas académicas registran al usuario que
---    cargó un archivo.
--- -----------------------------------------------------------------------------
+-- 2. Usuarios: rol y cuenta (§6.16-6.17). Van primero porque otras tablas los referencian.
 
 CREATE TABLE usuarios.rol
 (
@@ -88,9 +57,7 @@ CREATE TABLE usuarios.usuario
 CREATE UNIQUE INDEX ux_usuario__correo_activo ON usuarios.usuario (correo) WHERE fecha_eliminacion IS NULL;
 CREATE INDEX ix_usuario__rol_id ON usuarios.usuario (rol_id);
 
--- -----------------------------------------------------------------------------
--- 3. Académico: estructura institucional (6.1 a 6.5)
--- -----------------------------------------------------------------------------
+-- 3. Académico: estructura institucional (§6.1-6.5)
 
 CREATE TABLE academico.region
 (
@@ -205,9 +172,7 @@ CREATE INDEX ix_entidad_academica__colonia ON academico.entidad_academica (colon
 CREATE INDEX ix_entidad_academica__codigo_postal ON academico.entidad_academica (codigo_postal);
 CREATE INDEX ix_entidad_academica__telefono ON academico.entidad_academica (telefono);
 
--- -----------------------------------------------------------------------------
--- 4. Académico: oferta educativa (6.6 a 6.13)
--- -----------------------------------------------------------------------------
+-- 4. Académico: oferta educativa (§6.6-6.13)
 
 CREATE TABLE academico.sistema_educativo
 (
@@ -282,12 +247,12 @@ CREATE TABLE academico.plan_estudios
     fecha_eliminacion        datetime2(0)      NULL,
     CONSTRAINT pk_plan_estudios PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_plan_estudios__programa_educativo_id_codigo UNIQUE (programa_educativo_id, codigo),
-    -- También cumple la función de ix_plan_estudios__archivo_plan_estudios_id (sección 8).
+    -- Sirve también como ix_plan_estudios__archivo_plan_estudios_id (§8).
     CONSTRAINT uq_plan_estudios__archivo_plan_estudios UNIQUE (archivo_plan_estudios_id),
     CONSTRAINT fk_plan_estudios__programa_educativo FOREIGN KEY (programa_educativo_id) REFERENCES academico.programa_educativo (id),
     CONSTRAINT fk_plan_estudios__archivo_plan_estudios FOREIGN KEY (archivo_plan_estudios_id) REFERENCES academico.archivo_plan_estudios (id),
     CONSTRAINT ck_plan_estudios__codigo_no_vacio CHECK (LEN(codigo) > 0 AND DATALENGTH(codigo) = LEN(codigo)),
-    -- Código opaco en mayúsculas; admite guiones, por ejemplo ISOF-18-ECR.
+    -- Admite guiones, p. ej. ISOF-18-ECR.
     CONSTRAINT ck_plan_estudios__codigo_formato CHECK (codigo COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^A-Z0-9-]%')
 );
 
@@ -378,9 +343,7 @@ CREATE TABLE academico.programacion_academica
 
 CREATE INDEX ix_programacion_academica__experiencia_educativa_id ON academico.programacion_academica (experiencia_educativa_id);
 
--- -----------------------------------------------------------------------------
--- 5. Integración con PLANEA y horarios (6.14, 6.15)
--- -----------------------------------------------------------------------------
+-- 5. Integración con PLANEA y horarios (§6.14-6.15)
 
 CREATE TABLE integracion.sincronizacion_planea
 (
@@ -439,9 +402,7 @@ CREATE TABLE academico.horario_programacion
 
 CREATE INDEX ix_horario_programacion__sincronizacion_planea_id ON academico.horario_programacion (sincronizacion_planea_id);
 
--- -----------------------------------------------------------------------------
--- 6. Usuarios: perfiles de ámbito y credencial local (6.18 a 6.20)
--- -----------------------------------------------------------------------------
+-- 6. Usuarios: perfiles de ámbito y credencial local (§6.18-6.20)
 
 CREATE TABLE usuarios.usuario_dgaa
 (
@@ -476,9 +437,7 @@ CREATE TABLE usuarios.credencial_superusuario
     CONSTRAINT ck_credencial_superusuario__contrasena_no_vacia CHECK (LEN(TRIM(contrasena)) > 0)
 );
 
--- -----------------------------------------------------------------------------
--- 7. Académico: solicitudes de apertura (16.2, 16.3)
--- -----------------------------------------------------------------------------
+-- 7. Académico: solicitudes de apertura (§16.2-16.3)
 
 CREATE TABLE academico.archivo_solicitud_apertura
 (
@@ -569,10 +528,7 @@ CREATE INDEX ix_solicitud_apertura__resuelta_por_usuario_id ON academico.solicit
 CREATE INDEX ix_solicitud_apertura__cancelada_por_usuario_id ON academico.solicitud_apertura (cancelada_por_usuario_id) WHERE cancelada_por_usuario_id IS NOT NULL;
 CREATE INDEX ix_solicitud_apertura__vinculada_por_usuario_id ON academico.solicitud_apertura (vinculada_por_usuario_id) WHERE vinculada_por_usuario_id IS NOT NULL;
 
--- -----------------------------------------------------------------------------
--- 8. Catálogos permanentes (6.21, 6.22, 15.2)
---    Sin baja lógica; los nombres se comparan sin distinguir mayúsculas ni acentos.
--- -----------------------------------------------------------------------------
+-- 8. Catálogos permanentes (§6.21, §6.22, §15.2). Sin baja lógica.
 
 CREATE TABLE academico.grado_academico
 (
@@ -612,7 +568,7 @@ CREATE TABLE plazas.articulo
     descripcion nvarchar(1000)    NULL,
     CONSTRAINT pk_articulo PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_articulo__numero UNIQUE (numero),
-    -- Referencia opaca, recortada y en mayúsculas; admite espacios internos (42 BIS).
+    -- Admite espacios internos, p. ej. 42 BIS.
     CONSTRAINT ck_articulo__numero_formato CHECK (
             LEN(numero) > 0
         AND DATALENGTH(numero) = LEN(numero)
@@ -649,10 +605,7 @@ CREATE TABLE plazas.tipo_contratacion
     CONSTRAINT ck_tipo_contratacion__nombre_no_vacio CHECK (LEN(TRIM(nombre)) > 0)
 );
 
--- -----------------------------------------------------------------------------
--- 9. Académico: docentes (15.4)
---    asignacion_docente se crea al final porque referencia a plazas.acta_oferta.
--- -----------------------------------------------------------------------------
+-- 9. Académico: docentes (§15.4). asignacion_docente va al final (referencia a plazas.acta_oferta).
 
 CREATE TABLE academico.docente
 (
@@ -671,7 +624,7 @@ CREATE TABLE academico.docente
             AND num_personal COLLATE Latin1_General_100_BIN2 = UPPER(num_personal)))
 );
 
--- Único cuando existe; también cumple la función de ix_docente__num_personal (sección 8).
+-- Sirve también como ix_docente__num_personal (§8).
 CREATE UNIQUE INDEX uq_docente__num_personal ON academico.docente (num_personal) WHERE num_personal IS NOT NULL;
 
 CREATE TABLE academico.formacion_docente
@@ -714,7 +667,7 @@ CREATE TABLE academico.version_documento_docente
     cargado_en             datetime2(0)      NOT NULL,
     cargado_por_usuario_id int               NOT NULL,
     CONSTRAINT pk_version_documento_docente PRIMARY KEY CLUSTERED (id),
-    -- También cumple la función de ix_version_documento_docente__documento_docente_id (sección 8).
+    -- Sirve también como ix_version_documento_docente__documento_docente_id (§8).
     CONSTRAINT uq_version_documento_docente__documento_version UNIQUE (documento_docente_id, numero_version),
     CONSTRAINT uq_version_documento_docente__clave_almacenamiento UNIQUE (clave_almacenamiento),
     CONSTRAINT fk_version_documento_docente__documento_docente FOREIGN KEY (documento_docente_id) REFERENCES academico.documento_docente (id),
@@ -728,9 +681,7 @@ CREATE TABLE academico.version_documento_docente
 
 CREATE UNIQUE INDEX ux_version_documento_docente__vigente ON academico.version_documento_docente (documento_docente_id) WHERE es_vigente = 1;
 
--- -----------------------------------------------------------------------------
--- 10. Plazas: Consejo Técnico, ofertas y avisos (15.3, 15.5, 15.6)
--- -----------------------------------------------------------------------------
+-- 10. Plazas: Consejo Técnico, ofertas y avisos (§15.3, §15.5, §15.6)
 
 CREATE TABLE plazas.integrante_consejo_tecnico
 (
@@ -866,7 +817,7 @@ CREATE TABLE plazas.horario_recepcion_requisito
     hora_inicio time(0)           NOT NULL,
     hora_fin    time(0)           NOT NULL,
     CONSTRAINT pk_horario_recepcion_requisito PRIMARY KEY CLUSTERED (id),
-    -- Evita duplicados y sirve como índice por Aviso y fecha; los traslapes se validan en la aplicación.
+    -- Índice por Aviso y fecha; los traslapes se validan en la aplicación.
     CONSTRAINT uq_horario_recepcion_requisito__aviso_fecha_hora_inicio UNIQUE (aviso_id, fecha, hora_inicio),
     CONSTRAINT fk_horario_recepcion_requisito__aviso FOREIGN KEY (aviso_id) REFERENCES plazas.aviso (id),
     CONSTRAINT ck_horario_recepcion_requisito__rango_horas CHECK (hora_inicio < hora_fin)
@@ -951,9 +902,7 @@ CREATE TABLE plazas.revision_aviso
 CREATE UNIQUE INDEX ux_revision_aviso__abierta ON plazas.revision_aviso (aviso_id) WHERE resultado IS NULL;
 CREATE INDEX ix_revision_aviso__documento_original_id ON plazas.revision_aviso (documento_original_id);
 
--- -----------------------------------------------------------------------------
--- 11. Plazas: Aspirantes y Solicitudes (15.7)
--- -----------------------------------------------------------------------------
+-- 11. Plazas: Aspirantes y Solicitudes (§15.7)
 
 CREATE TABLE plazas.aspirante
 (
@@ -989,7 +938,7 @@ CREATE TABLE plazas.perfil_aspirante
 );
 
 CREATE UNIQUE INDEX ux_perfil_aspirante__vigente ON plazas.perfil_aspirante (aspirante_id) WHERE es_vigente = 1;
--- La intercalación de la columna hace que la unicidad ignore mayúsculas.
+-- Ignora mayúsculas por la intercalación de la columna.
 CREATE UNIQUE INDEX ux_perfil_aspirante__correo_vigente ON plazas.perfil_aspirante (correo) WHERE es_vigente = 1;
 
 CREATE TABLE plazas.formacion_aspirante
@@ -1098,9 +1047,7 @@ CREATE TABLE plazas.solicitud_documento
 
 CREATE INDEX ix_solicitud_documento__version_documento_aspirante_id ON plazas.solicitud_documento (version_documento_aspirante_id);
 
--- -----------------------------------------------------------------------------
--- 12. Plazas: Actas del Consejo Técnico (15.8, 15.9)
--- -----------------------------------------------------------------------------
+-- 12. Plazas: Actas del Consejo Técnico (§15.8-15.9)
 
 CREATE TABLE plazas.acta_consejo_tecnico
 (
@@ -1123,7 +1070,7 @@ CREATE TABLE plazas.acta_consejo_tecnico
     CONSTRAINT fk_acta_consejo_tecnico__entidad_academica FOREIGN KEY (entidad_academica_id) REFERENCES academico.entidad_academica (id),
     CONSTRAINT fk_acta_consejo_tecnico__usuario__archivado_por FOREIGN KEY (archivado_por_usuario_id) REFERENCES usuarios.usuario (id),
     CONSTRAINT fk_acta_consejo_tecnico__usuario__eliminado_por FOREIGN KEY (eliminado_por_usuario_id) REFERENCES usuarios.usuario (id),
-    -- Folio opaco en mayúsculas: letras, números, guiones y diagonales.
+    -- Letras, números, guiones y diagonales.
     CONSTRAINT ck_acta_consejo_tecnico__folio_formato CHECK (
             LEN(folio) > 0
         AND DATALENGTH(folio) = LEN(folio)
@@ -1275,11 +1222,7 @@ CREATE TABLE plazas.revision_acta
 CREATE UNIQUE INDEX ux_revision_acta__abierta ON plazas.revision_acta (acta_consejo_tecnico_id) WHERE resultado IS NULL;
 CREATE INDEX ix_revision_acta__documento_original_id ON plazas.revision_acta (documento_original_id);
 
--- -----------------------------------------------------------------------------
--- 13. Académico: asignación docente (15.4)
---    Depende de la programación, del docente, de la sincronización PLANEA y del
---    ActaOferta que formaliza una designación.
--- -----------------------------------------------------------------------------
+-- 13. Académico: asignación docente (§15.4)
 
 CREATE TABLE academico.asignacion_docente
 (

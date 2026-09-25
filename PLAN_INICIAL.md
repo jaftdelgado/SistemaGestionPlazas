@@ -26,7 +26,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `Program.cs` mínimo con OpenAPI y Scalar, ProblemDetails, health check `/health` (incluye SQL Server), CORS por configuración y el registro de módulos.
   - `appsettings*.json` con la cadena de conexión local.
   - Sin autenticación todavía.
-- **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un baseline, `Baseline/baseline.sql`: los cuatro esquemas y las 55 tablas de `DATABASE.md`, sin datos. `Scripts/` queda vacía para las migraciones.
+- **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un baseline, `Baseline/baseline.sql` (los cuatro esquemas y las 55 tablas de `DATABASE.md`) y `Baseline/seed.sql` (datos iniciales de los catálogos). `Scripts/` queda vacía para las migraciones.
 - **`src/BuildingBlocks`:**
   - `Sgpla.SharedKernel` vacío, con solo lo mínimo para compilar.
   - `Sgpla.BuildingBlocks.Infrastructure` con un `SgplaDbContext` sin entidades, que aplica las configuraciones de los módulos registrados.
@@ -159,7 +159,8 @@ sgpla-backend/
 - `DatabaseMigrator.Migrate(connectionString)` es reutilizable: la CLI (`dotnet run --project src/Sgpla.Database -- --connection "..."`) y el fixture de integración lo usan. `EnsureDatabase` solo se aplica en Development/tests.
 - La API **no** migra al arrancar.
 - `baseline.sql` no es una migración: crea los esquemas `academico`, `usuarios`, `integracion` y `plazas` y las 55 tablas de `DATABASE.md` con sus PK, FK, UNIQUE, CHECK e índices, sin datos. `DatabaseMigrator` solo lo ejecuta sobre una base vacía y lo registra como `baseline`; si la base ya tiene tablas sin ese registro, falla sin tocarla.
-- Los datos de los catálogos (incluida la semilla fija de `usuarios.rol`) y cualquier cambio posterior de esquema van en migraciones de `Scripts/`, a partir de `0001`.
+- `seed.sql` se ejecuta junto con el baseline, en la misma transacción, y queda registrado como `baseline-seed`. Carga `usuarios.rol`, `municipio`, `sistema_educativo`, `nivel_formacion`, `area_formacion`, `region` y `campus`. `area_academica`, `entidad_academica` y `periodo_escolar` los registra el Superusuario.
+- Cualquier cambio posterior de esquema o de datos va en migraciones de `Scripts/`, a partir de `0001`.
 
 ### Seguridad y servicios externos (adaptadores + interfaces; los flujos completos quedan para fases posteriores)
 - **JWT**: `Microsoft.AspNetCore.Authentication.JwtBearer`. La API emite tokens de acceso de vida corta (refresh tokens fuera de alcance). Políticas `Superusuario`, `Dgaa`, `EntidadAcademica` y `CambioContrasenaPendiente`.
