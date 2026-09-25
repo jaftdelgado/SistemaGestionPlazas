@@ -1,4 +1,5 @@
 using Scalar.AspNetCore;
+using Sgpla.BuildingBlocks.Infrastructure.Http;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Aspirantes;
 using Sgpla.Modules.Catalogos;
@@ -20,6 +21,7 @@ builder.Logging.Configure(options =>
     options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId | ActivityTrackingOptions.SpanId);
 
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ViolacionUnicidadExceptionHandler>();
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options => options.AddPolicy(PoliticaCors, policy => policy
@@ -45,7 +47,14 @@ builder.Services
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
+// Un request mal formado (JSON inválido, parámetro no convertible) responde su 400 también en Development,
+// donde el enlace de parámetros lanza la excepción en lugar de responder directamente.
+app.UseExceptionHandler(new ExceptionHandlerOptions
+{
+    StatusCodeSelector = excepcion => excepcion is BadHttpRequestException solicitudInvalida
+        ? solicitudInvalida.StatusCode
+        : StatusCodes.Status500InternalServerError,
+});
 app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())

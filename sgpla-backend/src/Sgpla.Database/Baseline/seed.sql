@@ -336,3 +336,17 @@ SET IDENTITY_INSERT academico.campus OFF;
 
 -- 10. academico.entidad_academica
 -- Sin datos: requiere area_academica, que registra el Superusuario.
+
+-- 11. academico.grado_academico
+-- Catálogo fijo (DATABASE.md §6.21): sin altas, modificaciones ni bajas en la
+-- operación normal. Ids estables en orden de jerarquía académica.
+
+SET IDENTITY_INSERT academico.grado_academico ON;
+
+INSERT INTO academico.grado_academico (id, nombre)
+VALUES (1, N'Licenciatura'),
+       (2, N'Especialidad'),
+       (3, N'Maestría'),
+       (4, N'Doctorado');
+
+SET IDENTITY_INSERT academico.grado_academico OFF;

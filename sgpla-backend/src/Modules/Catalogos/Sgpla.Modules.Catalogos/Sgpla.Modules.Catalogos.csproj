@@ -10,7 +10,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.SharedKernel\Sgpla.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Application\Sgpla.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Infrastructure\Sgpla.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sgpla.UnitTests" />
   </ItemGroup>
 
 </Project>

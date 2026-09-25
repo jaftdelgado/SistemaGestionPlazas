@@ -8,6 +8,7 @@ namespace Sgpla.IntegrationTests;
 
 /// <summary>
 /// El traceId de una respuesta de error permite encontrar los logs de esa misma petición.
+/// El error lo produce <c>ToProblem</c>, el helper que usan todos los endpoints, así que la prueba cubre a todos los módulos.
 /// Ver ESTANDAR_MODULOS.md, sección 11.
 /// </summary>
 public sealed partial class CorrelacionTests(SqlServerFixture sqlServer) : IAsyncDisposable
@@ -20,11 +21,12 @@ public sealed partial class CorrelacionTests(SqlServerFixture sqlServer) : IAsyn
         using var cliente = _api.CreateClient();
 
         using var respuesta = await cliente.GetAsync(
-            new Uri("/api/v1/catalogos/grados-academicos/999", UriKind.Relative),
+            new Uri($"/api/v1/catalogos/grados-academicos/{int.MaxValue}", UriKind.Relative),
             TestContext.Current.CancellationToken);
         var problema = await respuesta.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        problema.GetProperty("codigo").GetString().ShouldBe("GradoAcademico.NoEncontrado");
 
         // La respuesta usa el formato W3C (00-<TraceId>-<SpanId>-<flags>); los logs, solo el TraceId.
         var traceIdW3C = problema.GetProperty("traceId").GetString() ?? string.Empty;

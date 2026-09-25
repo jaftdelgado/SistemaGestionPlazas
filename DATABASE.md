@@ -138,6 +138,7 @@ Excepciones deliberadas:
 - `integracion.sincronizacion_planea` es una bitácora append-only, usa marcas temporales propias y no tiene `fecha_eliminacion`.
 - `academico.municipio` es un catálogo fijo de los municipios de Veracruz, no administrable y sin baja lógica.
 - `usuarios.rol` es un catálogo fijo, no administrable y sin baja lógica.
+- `academico.grado_academico` es un catálogo fijo cargado por la semilla, no administrable y sin baja lógica.
 - Los perfiles `usuarios.usuario_dgaa` y `usuarios.usuario_entidad_academica` dependen del ciclo de vida de `usuarios.usuario` y no tienen `fecha_eliminacion` propia.
 - `usuarios.credencial_superusuario` tiene `fecha_eliminacion` propia para que la autenticación local exija que tanto la cuenta como la credencial estén activas; ambas fechas se coordinan transaccionalmente.
 - Los catálogos permanentes de `plazas` no usan baja lógica; sus valores se vuelven inmutables después de recibir su primera referencia.
@@ -612,12 +613,14 @@ Aunque la columna se llame `contrasena`, almacena exclusivamente una cadena PHC 
 
 ### 6.21 `academico.grado_academico`
 
+Catálogo fijo de grados académicos. Usa identificadores internos y no admite altas, modificaciones, bajas lógicas ni eliminaciones durante la operación normal.
+
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
-| `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK de catálogo permanente |
-| `nombre` | `nvarchar(150)` | `NOT NULL` | Nombre único e inmutable después de su primera referencia |
+| `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK interna asignada al cargar los datos semilla |
+| `nombre` | `nvarchar(150) COLLATE Modern_Spanish_100_CI_AI` | `NOT NULL` | Nombre único e inmutable |
 
-No usa baja lógica. Se relaciona con tratamientos académicos, formaciones de Aspirantes y formaciones de Docentes.
+Valores cargados por `Baseline/seed.sql`, en orden de jerarquía académica: `1` Licenciatura, `2` Especialidad, `3` Maestría y `4` Doctorado. Los identificadores deben permanecer estables. Se relaciona con tratamientos académicos, formaciones de Aspirantes y formaciones de Docentes.
 
 ### 6.22 `academico.tipo_documento_expediente`
 
@@ -741,7 +744,7 @@ La operación debe:
 - la baja de un área académica se bloquea mientras tenga entidades académicas activas;
 - la baja de un área de formación se bloquea mientras tenga EE activas;
 - la baja de un sistema educativo o nivel se bloquea mientras tenga programas activos;
-- `grado_academico` y `tipo_documento_expediente` son catálogos permanentes sin baja lógica; sus nombres quedan inmutables después de la primera referencia;
+- `grado_academico` es un catálogo fijo (§6.21) y `tipo_documento_expediente` un catálogo permanente; ninguno tiene baja lógica y el nombre de `tipo_documento_expediente` queda inmutable después de la primera referencia;
 - la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos;
 - la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos;
 - ninguna baja de estos catálogos se propaga a las entidades clasificadas.
@@ -783,7 +786,7 @@ Reglas adicionales:
 - Restaurar o crear un programa requiere que su sistema educativo y nivel de formación estén activos.
 - Antes de la primera programación de una EE pueden cambiar sus horas, créditos y área de formación.
 - Después de la primera programación solo pueden cambiar `experiencia_educativa.nombre`, `perfil_docente` y los cupos; cualquier cambio de cupo se valida con las reglas de no negatividad y orden.
-- Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio` y `rol` son catálogos fijos.
+- Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio`, `rol` y `grado_academico` son catálogos fijos.
 - `entidad_academica.calle`, `numero_exterior`, `colonia`, `codigo_postal` y `municipio_id` son editables y representan únicamente el domicilio vigente; los valores anteriores no se conservan.
 - `entidad_academica.telefono` y `extension` son editables y representan únicamente los datos de contacto vigentes; los valores anteriores no se conservan.
 - El domicilio es independiente de `campus_id`: no se valida que el municipio o código postal correspondan con el campus y una modificación de domicilio no cambia esa relación inmutable.
@@ -1092,6 +1095,7 @@ La ausencia de rate limiting es un riesgo aceptado: Argon2id mitiga ataques fuer
 - Permitir modificar teléfono y extensión sin cambiar la identidad ni conservar historial.
 - Permitir que el domicilio editado no corresponda con la ubicación del campus, sin modificar `campus_id`.
 - Impedir altas, modificaciones y bajas del catálogo fijo de municipios mediante los flujos normales.
+- Impedir altas, modificaciones y bajas del catálogo fijo de grados académicos mediante los flujos normales.
 - Impedir reasignar programas, planes o EE.
 - Permitir cambiar el área académica de una entidad sin programas.
 - Rechazar el cambio de área académica después de crear su primer programa.
@@ -1181,7 +1185,7 @@ Los siguientes catálogos usan `int IDENTITY(1,1)`, no tienen `fecha_eliminacion
 
 | Tabla | Columnas adicionales | Unicidad |
 |---|---|---|
-| `academico.grado_academico` | `nombre nvarchar(150)` | `nombre` |
+| `academico.grado_academico` | `nombre nvarchar(150)` | `nombre`. Catálogo fijo (§6.21): no admite correcciones |
 | `plazas.tratamiento_academico` | `nombre nvarchar(30)`, `grado_academico_id int` | `nombre` global |
 | `plazas.articulo` | `numero varchar(50)`, `descripcion nvarchar(1000) NULL` | `numero` normalizado |
 | `plazas.modalidad_recepcion` | `nombre nvarchar(100)`, `requiere_lugar bit` | `nombre` |

@@ -45,9 +45,21 @@ public sealed class ProveedorLogsEnMemoria : ILoggerProvider, ISupportExternalSc
                 },
                 scopes);
 
-            proveedor._entradas.Enqueue(new EntradaLog(categoria, logLevel, formatter(state, exception), scopes));
+            proveedor._entradas.Enqueue(new EntradaLog(categoria, logLevel, formatter(state, exception), exception?.ToString(), scopes));
         }
     }
 }
 
-public sealed record EntradaLog(string Categoria, LogLevel Nivel, string Mensaje, IReadOnlyDictionary<string, string?> Scopes);
+/// <param name="Excepcion">La excepción adjunta, completa: es lo que un sink escribe junto al mensaje.</param>
+public sealed record EntradaLog(
+    string Categoria,
+    LogLevel Nivel,
+    string Mensaje,
+    string? Excepcion,
+    IReadOnlyDictionary<string, string?> Scopes)
+{
+    /// <summary>Si el texto aparece en el mensaje o en la excepción adjunta, sin distinguir mayúsculas.</summary>
+    public bool Contiene(string texto) =>
+        Mensaje.Contains(texto, StringComparison.OrdinalIgnoreCase)
+        || (Excepcion?.Contains(texto, StringComparison.OrdinalIgnoreCase) ?? false);
+}

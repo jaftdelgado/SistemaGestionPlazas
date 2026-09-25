@@ -7,7 +7,7 @@ Documentos relacionados:
 - `DATABASE.md`: modelo de datos, reglas de negocio y casos de aceptación.
 - `sgpla-backend/README.md`: cómo compilar, probar y migrar.
 
-El ejemplo que recorre el documento es el catálogo `GradoAcademico` del módulo Catalogos.
+Los ejemplos salen del módulo Catalogos: `GradoAcademico` ilustra un catálogo fijo, de solo lectura, y `Articulo` un recurso administrable, con alta y corrección.
 
 ## Contenido
 
@@ -59,9 +59,9 @@ Viven en `src/BuildingBlocks` y se construyen junto con el primer módulo que la
 
 | Proyecto | Contenido |
 |---|---|
-| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `IEliminable` (baja lógica), `Result`, `Result<T>`, `Error`, `ErrorType`, `ValidationError` |
-| `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `ICurrentUser`, `Paginacion`, `Pagina<T>`, decorador de validación |
-| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`), manejador global de violaciones de unicidad (SQL 2601/2627 → 409), nombres de filtros de consulta |
+| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error`, `ErrorType`, `ValidationError`. Pendiente: `IEliminable` (baja lógica), con Institucional |
+| `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación. Pendiente: `ICurrentUser`, con Usuarios |
+| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409). Pendiente: nombres de filtros de consulta, con la primera entidad con baja lógica |
 
 Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime.UtcNow` directamente. Para los logs se usa `ILogger<T>` de .NET; no se crea una abstracción propia (sección 11).
 
@@ -70,10 +70,10 @@ Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime
 | Tipo | Uso |
 |---|---|
 | `Result` | Resultado sin valor: `Result.Success()` o un `Error` (conversión implícita) |
-| `Result<T>` | Resultado con valor: `T` o `Error` (conversiones implícitas). Expone `IsSuccess`, `IsFailure`, `Value` y `Error` |
-| `Error(Code, Message, Type)` | Código estable (`GradoAcademico.NombreDuplicado`), mensaje en español para el usuario y tipo |
+| `Result<T>` | Resultado con valor: `T` o `Error` (conversiones implícitas). Expone `IsSuccess`, `IsFailure`, `Value` y `Error`. Si `T` es una interfaz (`IReadOnlyList<T>`), se crea con `Result.Success(valor)` |
+| `Error(Code, Message, Type)` | Código estable (`Articulo.NumeroDuplicado`), mensaje en español para el usuario y tipo |
 | `ErrorType` | `Validation`, `NotFound` o `Conflict`. Decide el código HTTP (sección 9) |
-| `ValidationError` | `Error` de tipo `Validation` con los errores por campo que producen los validators |
+| `ValidationError` | `Error` de tipo `Validation` con código `Validacion.EntradaInvalida` y los errores por campo que producen los validators |
 
 ## 3. Estructura de carpetas
 
@@ -82,32 +82,46 @@ Primero por capa y, dentro de cada capa, por recurso. Dentro de Application, una
 ```
 src/Modules/Catalogos/Sgpla.Modules.Catalogos/
   Domain/
-    GradosAcademicos/
+    GradosAcademicos/                   catálogo fijo (solo lectura)
       GradoAcademico.cs
       GradoAcademicoErrors.cs
+    Articulos/                          recurso administrable
+      Articulo.cs
+      ArticuloErrors.cs
   Application/
     Contracts/                          API pública para otros módulos (sección 5)
-      IReferenciasGradoAcademico.cs
+      IReferenciasArticulo.cs
     GradosAcademicos/
-      IGradoAcademicoRepository.cs      puerto de escritura
       IGradoAcademicoQueries.cs         puerto de lectura
       GradoAcademicoResponse.cs
-      Crear/
-        CrearGradoAcademicoCommand.cs
-        CrearGradoAcademicoHandler.cs
-        CrearGradoAcademicoValidator.cs
-      CorregirNombre/
-      Obtener/
       Listar/
+      Obtener/
+    Articulos/
+      IArticuloRepository.cs            puerto de escritura
+      IArticuloQueries.cs               puerto de lectura
+      ArticuloResponse.cs
+      Crear/
+        CrearArticuloCommand.cs
+        CrearArticuloHandler.cs
+        CrearArticuloValidator.cs
+      Corregir/
+      Listar/
+      Obtener/
   Infrastructure/
     GradosAcademicos/
       GradoAcademicoConfiguration.cs
-      GradoAcademicoRepository.cs
       GradoAcademicoQueries.cs
+    Articulos/
+      ArticuloConfiguration.cs
+      ArticuloRepository.cs
+      ArticuloQueries.cs
   Endpoints/
     GradosAcademicos/
       GradoAcademicoEndpoints.cs
-      CrearGradoAcademicoRequest.cs
+    Articulos/
+      ArticuloEndpoints.cs
+      CrearArticuloRequest.cs
+      CorregirArticuloRequest.cs
   CatalogosModule.cs
 ```
 
@@ -116,30 +130,30 @@ Las pruebas replican la misma organización: `tests/Sgpla.UnitTests/<Modulo>/<Re
 ## 4. Convenciones de nombres
 
 **Idioma:**
-- Lo que nombra el negocio va en español y sin acentos: `GradoAcademico`, `CorregirNombre`, `ExisteNombreAsync`.
+- Lo que nombra el negocio va en español y sin acentos: `Articulo`, `Corregir`, `ExisteNumeroAsync`.
 - Los sufijos de patrón y las abstracciones compartidas de BuildingBlocks van en inglés: `Handler`, `HandleAsync`, `Result`, `IsSuccess`, `SaveChangesAsync`.
 - Las propiedades que mapean columnas conservan el nombre de la columna en PascalCase (`FechaEliminacion` ↔ `fecha_eliminacion`).
 - El contrato HTTP (rutas, parámetros y campos JSON) va en español, porque lo consume el frontend.
 
 | Elemento | Patrón | Ejemplo |
 |---|---|---|
-| Entidad | Sustantivo singular | `GradoAcademico` |
-| Errores de dominio | `<Entidad>Errors` | `GradoAcademicoErrors` |
-| Carpeta de recurso | Plural | `GradosAcademicos` |
-| Carpeta de caso de uso | Verbo o acción | `Crear`, `CorregirNombre`, `DarDeBaja`, `Restaurar`, `Obtener`, `Listar` |
-| Comando | `<Accion><Entidad>Command` | `CrearGradoAcademicoCommand` |
+| Entidad | Sustantivo singular | `Articulo` |
+| Errores de dominio | `<Entidad>Errors` | `ArticuloErrors` |
+| Carpeta de recurso | Plural | `Articulos` |
+| Carpeta de caso de uso | Verbo o acción | `Crear`, `Corregir`, `DarDeBaja`, `Restaurar`, `Obtener`, `Listar` |
+| Comando | `<Accion><Entidad>Command` | `CrearArticuloCommand` |
 | Consulta | `<Accion><Entidad>Query` | `ListarGradosAcademicosQuery` |
-| Handler | `<Accion><Entidad>Handler` | `CrearGradoAcademicoHandler` |
-| Validator | `<Accion><Entidad>Validator` | `CrearGradoAcademicoValidator` |
-| Puerto de escritura | `I<Entidad>Repository` | `IGradoAcademicoRepository` |
+| Handler | `<Accion><Entidad>Handler` | `CrearArticuloHandler` |
+| Validator | `<Accion><Entidad>Validator` | `CrearArticuloValidator` |
+| Puerto de escritura | `I<Entidad>Repository` | `IArticuloRepository` |
 | Puerto de lectura | `I<Entidad>Queries` | `IGradoAcademicoQueries` |
-| Respuesta | `<Entidad>Response` | `GradoAcademicoResponse` |
-| Configuración EF | `<Entidad>Configuration` | `GradoAcademicoConfiguration` |
-| Endpoints | `<Entidad>Endpoints` | `GradoAcademicoEndpoints` |
-| Request HTTP | `<Accion><Entidad>Request` | `CrearGradoAcademicoRequest` |
+| Respuesta | `<Entidad>Response` | `ArticuloResponse` |
+| Configuración EF | `<Entidad>Configuration` | `ArticuloConfiguration` |
+| Endpoints | `<Entidad>Endpoints` | `ArticuloEndpoints` |
+| Request HTTP | `<Accion><Entidad>Request` | `CrearArticuloRequest` |
 | Ruta | `/api/v1/<modulo>/<recurso-en-plural>` en kebab-case | `/api/v1/catalogos/grados-academicos` |
-| Código de error | `<Entidad>.<Motivo>` | `GradoAcademico.NombreDuplicado` |
-| Prueba | `Metodo_Escenario_Resultado` | `Crear_ConNombreRepetido_Responde409` |
+| Código de error | `<Entidad>.<Motivo>` | `Articulo.NumeroDuplicado` |
+| Prueba | `Metodo_Escenario_Resultado` | `Crear_ConNumeroRepetido_Responde409` |
 
 Las pruebas de arquitectura exigen que las clases terminadas en `Handler` y `Validator` estén en Application; las terminadas en `Configuration`, `Repository` y `Queries`, en Infrastructure, y las terminadas en `Endpoints`, en Endpoints.
 
@@ -157,9 +171,9 @@ Hay dos formas de colaborar entre módulos, siempre a través de `Contracts`:
 | Necesidad | Quién define la interfaz | Quién la implementa | Ejemplo |
 |---|---|---|---|
 | Un módulo consulta o invoca a otro del que depende | El módulo invocado, en su `Contracts` | El módulo invocado | Docentes pregunta a Catalogos si un grado académico existe |
-| Un módulo necesita saber algo de los módulos que dependen de él | El módulo que pregunta, en su `Contracts` | Cada módulo dependiente (inversión de dependencias) | Catalogos pregunta si un grado tiene referencias; responden el propio Catalogos (tratamientos), Docentes y Aspirantes |
+| Un módulo necesita saber algo de los módulos que dependen de él | El módulo que pregunta, en su `Contracts` | Cada módulo dependiente (inversión de dependencias) | Catalogos pregunta si un artículo tiene referencias; responde Publicacion, por sus Avisos |
 
-En el segundo caso, el consumidor recibe `IEnumerable<IReferenciasGradoAcademico>` y consulta todas las implementaciones registradas. Así puede aparecer un módulo nuevo que referencie grados sin modificar Catalogos.
+En el segundo caso, el consumidor recibe `IEnumerable<IReferenciasArticulo>` y consulta todas las implementaciones registradas. Así puede aparecer un módulo nuevo que referencie artículos sin modificar Catalogos.
 
 Las pruebas de arquitectura exigen estas reglas: ningún tipo público fuera de las dos excepciones y ninguna dependencia hacia otro módulo fuera de su `Contracts`.
 
@@ -169,87 +183,104 @@ Reglas:
 - Las entidades heredan de `Entity`. Si tienen baja lógica, implementan `IEliminable`.
 - Tienen un constructor privado sin parámetros (lo usa EF Core) y propiedades con `private set`.
 - Se crean solo con una fábrica estática `Crear(...)`, que normaliza (recorta los textos y pone en mayúsculas las claves y los códigos) y devuelve `Result<T>`.
-- El comportamiento se expresa con métodos que nombran la intención (`CorregirNombre`, `DarDeBaja`, `Restaurar`). Nadie asigna propiedades desde fuera.
+- El comportamiento se expresa con métodos que nombran la intención (`Corregir`, `DarDeBaja`, `Restaurar`). Nadie asigna propiedades desde fuera.
 - Las longitudes y los formatos de `DATABASE.md` son constantes públicas de la entidad. Los validators y las configuraciones de EF reutilizan esas constantes.
 - Los errores se declaran una sola vez en `<Entidad>Errors`.
 - Domain no consulta la base. Las reglas que dependen de otros registros, como la unicidad o las referencias, las orquesta el handler con puertos.
 - Las fechas llegan como parámetro (`DarDeBaja(DateTime utc)`); la entidad no lee el reloj.
+- Excepción: la entidad de un catálogo fijo no tiene fábrica ni comportamiento (sección 9, "Catálogos fijos").
+
+El ejemplo es ilustrativo: las reglas exactas de `Articulo` se fijan al implementarlo.
 
 ```csharp
-namespace Sgpla.Modules.Catalogos.Domain.GradosAcademicos;
+namespace Sgpla.Modules.Catalogos.Domain.Articulos;
 
-internal sealed class GradoAcademico : Entity
+internal sealed partial class Articulo : Entity
 {
-    public const int LongitudMaximaNombre = 150;
+    public const int LongitudMaximaNumero = 50;
+    public const int LongitudMaximaDescripcion = 1000;
 
-    private GradoAcademico()
+    private Articulo()
     {
     }
 
-    public string Nombre { get; private set; } = string.Empty;
+    public string Numero { get; private set; } = string.Empty;
 
-    public static Result<GradoAcademico> Crear(string nombre)
+    public string? Descripcion { get; private set; }
+
+    public static Result<Articulo> Crear(string numero, string? descripcion)
     {
-        var normalizado = NormalizarNombre(nombre);
-        if (normalizado.IsFailure)
-        {
-            return normalizado.Error;
-        }
+        var articulo = new Articulo();
+        var asignado = articulo.Corregir(numero, descripcion);
 
-        return new GradoAcademico { Nombre = normalizado.Value };
+        return asignado.IsFailure ? asignado.Error : articulo;
     }
 
-    public Result CorregirNombre(string nombre)
+    public Result Corregir(string numero, string? descripcion)
     {
-        var normalizado = NormalizarNombre(nombre);
-        if (normalizado.IsFailure)
+        var numeroNormalizado = NormalizarNumero(numero);
+        if (numeroNormalizado.IsFailure)
         {
-            return normalizado.Error;
+            return numeroNormalizado.Error;
         }
 
-        Nombre = normalizado.Value;
+        var descripcionNormalizada = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
+        if (descripcionNormalizada?.Length > LongitudMaximaDescripcion)
+        {
+            return ArticuloErrors.DescripcionDemasiadoLarga;
+        }
+
+        Numero = numeroNormalizado.Value;
+        Descripcion = descripcionNormalizada;
         return Result.Success();
     }
 
-    private static Result<string> NormalizarNombre(string? nombre)
+    // "42  bis " → "42 BIS": sin espacios exteriores, espacios internos simples y en mayúsculas.
+    private static Result<string> NormalizarNumero(string? numero)
     {
-        var recortado = nombre?.Trim() ?? string.Empty;
+        var normalizado = EspaciosRepetidos().Replace(numero?.Trim() ?? string.Empty, " ").ToUpperInvariant();
 
-        if (recortado.Length == 0)
+        if (normalizado.Length == 0)
         {
-            return GradoAcademicoErrors.NombreVacio;
+            return ArticuloErrors.NumeroVacio;
         }
 
-        if (recortado.Length > LongitudMaximaNombre)
+        if (normalizado.Length > LongitudMaximaNumero)
         {
-            return GradoAcademicoErrors.NombreDemasiadoLargo;
+            return ArticuloErrors.NumeroDemasiadoLargo;
         }
 
-        return recortado;
+        return normalizado;
     }
+
+    [GeneratedRegex(" {2,}")]
+    private static partial Regex EspaciosRepetidos();
 }
 ```
 
 ```csharp
-namespace Sgpla.Modules.Catalogos.Domain.GradosAcademicos;
+namespace Sgpla.Modules.Catalogos.Domain.Articulos;
 
-internal static class GradoAcademicoErrors
+internal static class ArticuloErrors
 {
-    public static readonly Error NombreVacio = Error.Validation(
-        "GradoAcademico.NombreVacio", "El nombre es obligatorio.");
+    public static readonly Error NumeroVacio = Error.Validation(
+        "Articulo.NumeroVacio", "El número es obligatorio.");
 
-    public static readonly Error NombreDemasiadoLargo = Error.Validation(
-        "GradoAcademico.NombreDemasiadoLargo",
-        $"El nombre admite hasta {GradoAcademico.LongitudMaximaNombre} caracteres.");
+    public static readonly Error NumeroDemasiadoLargo = Error.Validation(
+        "Articulo.NumeroDemasiadoLargo", $"El número admite hasta {Articulo.LongitudMaximaNumero} caracteres.");
 
-    public static readonly Error NombreDuplicado = Error.Conflict(
-        "GradoAcademico.NombreDuplicado", "Ya existe un grado académico con ese nombre.");
+    public static readonly Error DescripcionDemasiadoLarga = Error.Validation(
+        "Articulo.DescripcionDemasiadoLarga",
+        $"La descripción admite hasta {Articulo.LongitudMaximaDescripcion} caracteres.");
 
-    public static readonly Error NombreInmutable = Error.Conflict(
-        "GradoAcademico.NombreInmutable", "El nombre ya no puede corregirse porque el grado académico está en uso.");
+    public static readonly Error NumeroDuplicado = Error.Conflict(
+        "Articulo.NumeroDuplicado", "Ya existe un artículo con ese número.");
+
+    public static readonly Error EnUso = Error.Conflict(
+        "Articulo.EnUso", "El artículo ya no puede corregirse porque un Aviso lo usa.");
 
     public static Error NoEncontrado(int id) => Error.NotFound(
-        "GradoAcademico.NoEncontrado", $"No existe el grado académico {id}.");
+        "Articulo.NoEncontrado", $"No existe el artículo {id}.");
 }
 ```
 
@@ -267,7 +298,7 @@ Cada caso de uso tiene su carpeta con tres piezas:
 | Pieza | Forma | Responsabilidad |
 |---|---|---|
 | Command o Query | `internal sealed record` | Datos de entrada, sin lógica |
-| Validator | `AbstractValidator<T>` de FluentValidation | Forma de la entrada: obligatoriedad, longitudes, formatos y rangos |
+| Validator | `AbstractValidator<T>` de FluentValidation | Forma de la entrada: obligatoriedad, longitudes, formatos y rangos. Se omite si la entrada no tiene nada que validar (por ejemplo, un `id` de ruta) |
 | Handler | Implementa `ICommandHandler` o `IQueryHandler` | Orquesta: reglas que dependen de datos, llamada al dominio, persistencia y respuesta |
 
 Los comandos modifican el estado; las consultas no. Un handler nunca llama a otro handler; si dos casos de uso comparten lógica, esa lógica va en el dominio o en un servicio de Application con su propia interfaz.
@@ -280,38 +311,44 @@ Se separan la escritura y la lectura (ISP):
 
 | Puerto | Devuelve | Reglas |
 |---|---|---|
-| `I<Entidad>Repository` | Entidades de dominio | Métodos que el caso de uso necesita (`ObtenerPorIdAsync`, `ExisteNombreAsync`, `Agregar`). Nunca guarda: eso lo hace `IUnitOfWork` |
-| `I<Entidad>Queries` | `Response` y `Pagina<T>` | Solo lectura, proyectada y sin tracking |
+| `I<Entidad>Repository` | Entidades de dominio | Métodos que el caso de uso necesita (`ObtenerPorIdAsync`, `ExisteNumeroAsync`, `Agregar`). Nunca guarda: eso lo hace `IUnitOfWork` |
+| `I<Entidad>Queries` | `Response`, listas de `Response` o `Pagina<T>` | Solo lectura, proyectada y sin tracking |
 
-Un puerto se declara cuando un caso de uso lo necesita; no se crean repositorios genéricos ni métodos "por si acaso".
+Un puerto se declara cuando un caso de uso lo necesita; no se crean repositorios genéricos ni métodos "por si acaso". Un catálogo fijo solo tiene el puerto de lectura.
+
+```csharp
+namespace Sgpla.Modules.Catalogos.Application.Articulos;
+
+internal interface IArticuloRepository
+{
+    Task<Articulo?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>Compara con la intercalación de la columna.</summary>
+    Task<bool> ExisteNumeroAsync(string numero, int? excluirId, CancellationToken cancellationToken);
+
+    void Agregar(Articulo articulo);
+}
+```
 
 ```csharp
 namespace Sgpla.Modules.Catalogos.Application.GradosAcademicos;
-
-internal interface IGradoAcademicoRepository
-{
-    Task<GradoAcademico?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken);
-
-    Task<bool> ExisteNombreAsync(string nombre, int? excluirId, CancellationToken cancellationToken);
-
-    void Agregar(GradoAcademico gradoAcademico);
-}
 
 internal interface IGradoAcademicoQueries
 {
     Task<GradoAcademicoResponse?> ObtenerAsync(int id, CancellationToken cancellationToken);
 
-    Task<Pagina<GradoAcademicoResponse>> ListarAsync(Paginacion paginacion, CancellationToken cancellationToken);
+    /// <summary>Todos los grados, en orden de id (jerarquía académica).</summary>
+    Task<IReadOnlyList<GradoAcademicoResponse>> ListarAsync(CancellationToken cancellationToken);
 }
 ```
 
 ### Respuesta
 
 ```csharp
-internal sealed record GradoAcademicoResponse(int Id, string Nombre)
+internal sealed record ArticuloResponse(int Id, string Numero, string? Descripcion)
 {
-    public static GradoAcademicoResponse Desde(GradoAcademico gradoAcademico) =>
-        new(gradoAcademico.Id, gradoAcademico.Nombre);
+    public static ArticuloResponse Desde(Articulo articulo) =>
+        new(articulo.Id, articulo.Numero, articulo.Descripcion);
 }
 ```
 
@@ -320,92 +357,98 @@ Una entidad de dominio nunca sale de Application: los endpoints solo ven `Respon
 ### Ejemplo: crear
 
 ```csharp
-namespace Sgpla.Modules.Catalogos.Application.GradosAcademicos.Crear;
+namespace Sgpla.Modules.Catalogos.Application.Articulos.Crear;
 
-internal sealed record CrearGradoAcademicoCommand(string Nombre);
+internal sealed record CrearArticuloCommand(string Numero, string? Descripcion);
 
-internal sealed class CrearGradoAcademicoValidator : AbstractValidator<CrearGradoAcademicoCommand>
+internal sealed class CrearArticuloValidator : AbstractValidator<CrearArticuloCommand>
 {
-    public CrearGradoAcademicoValidator()
+    public CrearArticuloValidator()
     {
-        RuleFor(c => c.Nombre).NotEmpty().MaximumLength(GradoAcademico.LongitudMaximaNombre);
+        RuleFor(c => c.Numero).NotEmpty().MaximumLength(Articulo.LongitudMaximaNumero);
+        RuleFor(c => c.Descripcion).MaximumLength(Articulo.LongitudMaximaDescripcion);
     }
 }
 
-internal sealed class CrearGradoAcademicoHandler(
-    IGradoAcademicoRepository repositorio,
-    IUnitOfWork unidadDeTrabajo) : ICommandHandler<CrearGradoAcademicoCommand, GradoAcademicoResponse>
+internal sealed class CrearArticuloHandler(
+    IArticuloRepository repositorio,
+    IUnitOfWork unidadDeTrabajo) : ICommandHandler<CrearArticuloCommand, ArticuloResponse>
 {
-    public async Task<Result<GradoAcademicoResponse>> HandleAsync(
-        CrearGradoAcademicoCommand command,
+    public async Task<Result<ArticuloResponse>> HandleAsync(
+        CrearArticuloCommand command,
         CancellationToken cancellationToken)
     {
-        var creado = GradoAcademico.Crear(command.Nombre);
+        var creado = Articulo.Crear(command.Numero, command.Descripcion);
         if (creado.IsFailure)
         {
             return creado.Error;
         }
 
-        if (await repositorio.ExisteNombreAsync(creado.Value.Nombre, excluirId: null, cancellationToken))
+        if (await repositorio.ExisteNumeroAsync(creado.Value.Numero, excluirId: null, cancellationToken))
         {
-            return GradoAcademicoErrors.NombreDuplicado;
+            return ArticuloErrors.NumeroDuplicado;
         }
 
         repositorio.Agregar(creado.Value);
         await unidadDeTrabajo.SaveChangesAsync(cancellationToken);
 
-        return GradoAcademicoResponse.Desde(creado.Value);
+        return ArticuloResponse.Desde(creado.Value);
     }
 }
 ```
 
-### Ejemplo: corregir el nombre con referencias de otros módulos
+### Ejemplo: corregir con referencias de otros módulos
 
-`DATABASE.md` §15.2 permite corregir el nombre mientras el valor no tenga referencias. Las referencias pueden estar en otros módulos, así que el handler consulta el contrato `IReferenciasGradoAcademico` (sección 5).
+`DATABASE.md` §15.2 permite corregir un artículo mientras no tenga referencias. Las referencias están en otro módulo (los Avisos de Publicacion), así que el handler consulta el contrato `IReferenciasArticulo` (sección 5). Repetir los valores actuales no es una corrección: responde éxito sin consultar referencias, para que la operación sea idempotente.
 
 ```csharp
 namespace Sgpla.Modules.Catalogos.Application.Contracts;
 
-/// <summary>Lo implementa cada módulo que guarda referencias a un grado académico.</summary>
-public interface IReferenciasGradoAcademico
+/// <summary>Lo implementa cada módulo que guarda referencias a un artículo.</summary>
+public interface IReferenciasArticulo
 {
-    Task<bool> TieneReferenciasAsync(int gradoAcademicoId, CancellationToken cancellationToken);
+    Task<bool> TieneReferenciasAsync(int articuloId, CancellationToken cancellationToken);
 }
 ```
 
 ```csharp
-internal sealed class CorregirNombreGradoAcademicoHandler(
-    IGradoAcademicoRepository repositorio,
-    IEnumerable<IReferenciasGradoAcademico> referencias,
-    IUnitOfWork unidadDeTrabajo) : ICommandHandler<CorregirNombreGradoAcademicoCommand>
+internal sealed class CorregirArticuloHandler(
+    IArticuloRepository repositorio,
+    IEnumerable<IReferenciasArticulo> referencias,
+    IUnitOfWork unidadDeTrabajo) : ICommandHandler<CorregirArticuloCommand>
 {
-    public async Task<Result> HandleAsync(
-        CorregirNombreGradoAcademicoCommand command,
-        CancellationToken cancellationToken)
+    public async Task<Result> HandleAsync(CorregirArticuloCommand command, CancellationToken cancellationToken)
     {
-        var gradoAcademico = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
-        if (gradoAcademico is null)
+        var articulo = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
+        if (articulo is null)
         {
-            return GradoAcademicoErrors.NoEncontrado(command.Id);
+            return ArticuloErrors.NoEncontrado(command.Id);
         }
 
-        foreach (var referencia in referencias)
-        {
-            if (await referencia.TieneReferenciasAsync(gradoAcademico.Id, cancellationToken))
-            {
-                return GradoAcademicoErrors.NombreInmutable;
-            }
-        }
-
-        var corregido = gradoAcademico.CorregirNombre(command.Nombre);
+        var (numeroAnterior, descripcionAnterior) = (articulo.Numero, articulo.Descripcion);
+        var corregido = articulo.Corregir(command.Numero, command.Descripcion);
         if (corregido.IsFailure)
         {
             return corregido;
         }
 
-        if (await repositorio.ExisteNombreAsync(gradoAcademico.Nombre, gradoAcademico.Id, cancellationToken))
+        // Repetir los mismos valores no es una corrección: se acepta aunque el artículo ya esté en uso.
+        if (articulo.Numero == numeroAnterior && articulo.Descripcion == descripcionAnterior)
         {
-            return GradoAcademicoErrors.NombreDuplicado;
+            return Result.Success();
+        }
+
+        foreach (var referencia in referencias)
+        {
+            if (await referencia.TieneReferenciasAsync(articulo.Id, cancellationToken))
+            {
+                return ArticuloErrors.EnUso;
+            }
+        }
+
+        if (await repositorio.ExisteNumeroAsync(articulo.Numero, articulo.Id, cancellationToken))
+        {
+            return ArticuloErrors.NumeroDuplicado;
         }
 
         await unidadDeTrabajo.SaveChangesAsync(cancellationToken);
@@ -459,16 +502,16 @@ Reglas:
 ### Repositorios y consultas
 
 ```csharp
-internal sealed class GradoAcademicoRepository(SgplaDbContext contexto) : IGradoAcademicoRepository
+internal sealed class ArticuloRepository(SgplaDbContext contexto) : IArticuloRepository
 {
-    public Task<GradoAcademico?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
-        contexto.Set<GradoAcademico>().FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+    public Task<Articulo?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
+        contexto.Set<Articulo>().FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
-    public Task<bool> ExisteNombreAsync(string nombre, int? excluirId, CancellationToken cancellationToken) =>
-        contexto.Set<GradoAcademico>()
-            .AnyAsync(g => g.Nombre == nombre && (excluirId == null || g.Id != excluirId), cancellationToken);
+    public Task<bool> ExisteNumeroAsync(string numero, int? excluirId, CancellationToken cancellationToken) =>
+        contexto.Set<Articulo>()
+            .AnyAsync(a => a.Numero == numero && (excluirId == null || a.Id != excluirId), cancellationToken);
 
-    public void Agregar(GradoAcademico gradoAcademico) => contexto.Set<GradoAcademico>().Add(gradoAcademico);
+    public void Agregar(Articulo articulo) => contexto.Set<Articulo>().Add(articulo);
 }
 
 internal sealed class GradoAcademicoQueries(SgplaDbContext contexto) : IGradoAcademicoQueries
@@ -480,15 +523,16 @@ internal sealed class GradoAcademicoQueries(SgplaDbContext contexto) : IGradoAca
             .Select(g => new GradoAcademicoResponse(g.Id, g.Nombre))
             .FirstOrDefaultAsync(cancellationToken);
 
-    public Task<Pagina<GradoAcademicoResponse>> ListarAsync(Paginacion paginacion, CancellationToken cancellationToken) =>
-        contexto.Set<GradoAcademico>()
+    public async Task<IReadOnlyList<GradoAcademicoResponse>> ListarAsync(CancellationToken cancellationToken) =>
+        await contexto.Set<GradoAcademico>()
             .AsNoTracking()
-            .OrderBy(g => g.Nombre)
-            .ThenBy(g => g.Id)
+            .OrderBy(g => g.Id)
             .Select(g => new GradoAcademicoResponse(g.Id, g.Nombre))
-            .PaginarAsync(paginacion, cancellationToken);
+            .ToListAsync(cancellationToken);
 }
 ```
+
+Un listado paginado termina en `.PaginarAsync(paginacion, cancellationToken)` en lugar de `ToListAsync`.
 
 Reglas:
 - **Comparaciones de texto en la base, no en memoria.** Las columnas tienen su intercalación (por ejemplo, `Modern_Spanish_100_CI_AI`), así que `g.Nombre == nombre` ya ignora mayúsculas y acentos si se ejecuta en SQL Server.
@@ -507,56 +551,63 @@ Cada recurso tiene una clase estática `<Entidad>Endpoints` con un método de ex
 La lógica de negocio no vive aquí.
 
 ```csharp
-namespace Sgpla.Modules.Catalogos.Endpoints.GradosAcademicos;
+namespace Sgpla.Modules.Catalogos.Endpoints.Articulos;
 
-internal static class GradoAcademicoEndpoints
+internal static class ArticuloEndpoints
 {
-    private const string NombreRutaObtener = "ObtenerGradoAcademico";
+    private const string NombreRutaObtener = "ObtenerArticulo";
 
-    public static RouteGroupBuilder MapGradoAcademicoEndpoints(this RouteGroupBuilder modulo)
+    public static RouteGroupBuilder MapArticuloEndpoints(this RouteGroupBuilder modulo)
     {
-        var grupo = modulo.MapGroup("/grados-academicos").WithTags("Grados académicos");
+        var grupo = modulo.MapGroup("/articulos").WithTags("Artículos");
 
-        grupo.MapGet("/", Listar).WithName("ListarGradosAcademicos").WithSummary("Lista los grados académicos.");
-        grupo.MapGet("/{id:int}", Obtener).WithName(NombreRutaObtener).WithSummary("Obtiene un grado académico.");
-        grupo.MapPost("/", Crear).WithName("CrearGradoAcademico").WithSummary("Registra un grado académico.");
-        grupo.MapPut("/{id:int}", CorregirNombre).WithName("CorregirNombreGradoAcademico")
-            .WithSummary("Corrige el nombre mientras el grado no esté en uso.");
+        grupo.MapGet("/{id:int}", Obtener).WithName(NombreRutaObtener).WithSummary("Obtiene un artículo.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        grupo.MapPost("/", Crear).WithName("CrearArticulo").WithSummary("Registra un artículo.")
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        grupo.MapPut("/{id:int}", Corregir).WithName("CorregirArticulo")
+            .WithSummary("Corrige el artículo mientras ningún Aviso lo use.")
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         return modulo;
     }
 
-    private static async Task<Results<CreatedAtRoute<GradoAcademicoResponse>, ProblemHttpResult>> Crear(
-        CrearGradoAcademicoRequest request,
-        ICommandHandler<CrearGradoAcademicoCommand, GradoAcademicoResponse> handler,
+    private static async Task<Results<CreatedAtRoute<ArticuloResponse>, ProblemHttpResult>> Crear(
+        CrearArticuloRequest request,
+        ICommandHandler<CrearArticuloCommand, ArticuloResponse> handler,
         CancellationToken cancellationToken)
     {
-        var resultado = await handler.HandleAsync(new CrearGradoAcademicoCommand(request.Nombre), cancellationToken);
+        var resultado = await handler.HandleAsync(
+            new CrearArticuloCommand(request.Numero, request.Descripcion), cancellationToken);
 
         return resultado.IsSuccess
             ? TypedResults.CreatedAtRoute(resultado.Value, NombreRutaObtener, new { id = resultado.Value.Id })
             : resultado.Error.ToProblem();
     }
 
-    private static async Task<Results<NoContent, ProblemHttpResult>> CorregirNombre(
+    private static async Task<Results<NoContent, ProblemHttpResult>> Corregir(
         int id,
-        CorregirNombreGradoAcademicoRequest request,
-        ICommandHandler<CorregirNombreGradoAcademicoCommand> handler,
+        CorregirArticuloRequest request,
+        ICommandHandler<CorregirArticuloCommand> handler,
         CancellationToken cancellationToken)
     {
         var resultado = await handler.HandleAsync(
-            new CorregirNombreGradoAcademicoCommand(id, request.Nombre), cancellationToken);
+            new CorregirArticuloCommand(id, request.Numero, request.Descripcion), cancellationToken);
 
         return resultado.IsSuccess ? TypedResults.NoContent() : resultado.Error.ToProblem();
     }
 
-    // Listar y Obtener siguen la misma forma con IQueryHandler.
+    // Obtener sigue la misma forma con IQueryHandler; el listado de artículos se define al implementarlo.
 }
 ```
 
 Reglas:
-- **Un request por operación** (`CrearGradoAcademicoRequest`), aunque se parezca al Command. El request es el contrato HTTP; el Command es el del caso de uso, y pueden evolucionar por separado (por ejemplo, el `id` viene de la ruta).
+- **Un request por operación** (`CrearArticuloRequest`), aunque se parezca al Command. El request es el contrato HTTP; el Command es el del caso de uso, y pueden evolucionar por separado (por ejemplo, el `id` viene de la ruta).
 - **Siempre `TypedResults` y tipos de retorno `Results<...>`,** para que OpenAPI documente cada respuesta. Todo endpoint lleva `WithName` y `WithSummary`.
+- **Cada error de la tabla de operaciones se declara** con `ProducesValidationProblem()` (400) y `ProducesProblem(<código>)` (404, 409). `ProblemHttpResult` no publica sus códigos, así que sin esas llamadas OpenAPI no los muestra.
 - **Rutas con restricción de tipo:** `{id:int}`.
 - **Autorización:** se declara en el grupo del módulo, o del recurso si difiere, con `RequireAuthorization(<política>)`. Las políticas (`Superusuario`, `Dgaa`, `EntidadAcademica`) llegan con el módulo Usuarios. Hasta entonces, el grupo lleva un comentario en ese punto, sin otra solución provisional.
 
@@ -565,6 +616,7 @@ Reglas:
 | Operación | Método y ruta | Éxito | Errores |
 |---|---|---|---|
 | Listar | `GET /` con `pagina` (desde 1), `tamanoPagina` (1 a 100, 20 por omisión) e `incluirEliminados` si hay baja lógica | 200 con `Pagina<T>` | 400 |
+| Listar un catálogo fijo | `GET /`, sin parámetros | 200 con un arreglo ordenado por `id` | — |
 | Obtener | `GET /{id}` | 200 | 404 |
 | Crear | `POST /` | 201 con `Location` y el recurso | 400, 409 |
 | Editar | `PUT /{id}` con los campos editables | 204 | 400, 404, 409 |
@@ -572,12 +624,32 @@ Reglas:
 | Restaurar | `POST /{id}/restaurar` | 204 | 404, 409 |
 | Acción de estado | `POST /{id}/<accion>` (`enviar`, `avalar`, `cancelar`...) | 204 o 200 | 404, 409 |
 
-Un recurso expone solo las operaciones que `PLAN_INICIAL.md` y `DATABASE.md` le permiten. Por ejemplo, los catálogos permanentes no tienen baja y `municipio` es de solo lectura.
+Un recurso expone solo las operaciones que `PLAN_INICIAL.md` y `DATABASE.md` le permiten. Por ejemplo, los catálogos no tienen baja, y los catálogos fijos (`municipio`, `grado_academico`...) solo se listan y se obtienen.
 
 `Pagina<T>` se serializa como:
 
 ```json
 { "elementos": [], "pagina": 1, "tamanoPagina": 20, "total": 0 }
+```
+
+Los parámetros de un listado paginado llegan en un request propio enlazado con `[AsParameters]`, que los convierte en `Paginacion`. Cada parámetro declara su nombre en camelCase con `[FromQuery(Name = ...)]`, para que OpenAPI lo documente igual que se envía. El validator del listado incluye las reglas compartidas, que reportan los errores con el nombre del parámetro HTTP (`pagina`, `tamanoPagina`). Con un recurso genérico `Recurso`:
+
+```csharp
+internal sealed record ListarRecursosRequest(
+    [FromQuery(Name = "pagina")] int? Pagina,
+    [FromQuery(Name = "tamanoPagina")] int? TamanoPagina)
+{
+    public Paginacion ComoPaginacion() =>
+        new(Pagina ?? 1, TamanoPagina ?? Paginacion.TamanoPorOmision);
+}
+
+internal sealed class ListarRecursosValidator : AbstractValidator<ListarRecursosQuery>
+{
+    public ListarRecursosValidator()
+    {
+        Include(new PaginacionValidator<ListarRecursosQuery>(q => q.Paginacion));
+    }
+}
 ```
 
 ### Errores
@@ -586,8 +658,8 @@ Todos los errores se responden como ProblemDetails, con la extensión `codigo` i
 
 | `ErrorType` | HTTP | Cuándo |
 |---|---|---|
-| `Validation` | 400 | Entrada mal formada; incluye `errors` por campo |
-| `NotFound` | 404 | El recurso no existe (o está dado de baja y la operación no admite bajas) |
+| `Validation` | 400 | Entrada mal formada; incluye `errors` por campo. También un `id` del cuerpo que referencia a un registro inexistente (por ejemplo, el grado de un tratamiento) |
+| `NotFound` | 404 | El recurso de la ruta no existe (o está dado de baja y la operación no admite bajas) |
 | `Conflict` | 409 | Duplicados, valores inmutables, transiciones de estado inválidas, padres inactivos |
 
 ```json
@@ -595,10 +667,52 @@ Todos los errores se responden como ProblemDetails, con la extensión `codigo` i
   "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
   "title": "Conflicto",
   "status": 409,
-  "detail": "Ya existe un grado académico con ese nombre.",
-  "codigo": "GradoAcademico.NombreDuplicado"
+  "detail": "Ya existe un artículo con ese número.",
+  "codigo": "Articulo.NumeroDuplicado"
 }
 ```
+
+### Catálogos fijos
+
+Un catálogo fijo tiene valores definidos por el negocio que ningún usuario agrega, modifica ni elimina (`DATABASE.md` §5; por ejemplo, `grado_academico`). Se implementa así:
+
+| Pieza | Regla |
+|---|---|
+| Datos | Se cargan en `Baseline/seed.sql` con ids fijos (`SET IDENTITY_INSERT ... ON`) y quedan documentados en `DATABASE.md` |
+| Domain | La entidad no tiene fábrica ni comportamiento: constructor privado, propiedades con `private set` y las constantes de longitud para EF. `<Entidad>Errors` solo declara `NoEncontrado` |
+| Application | Solo el puerto `I<Entidad>Queries` y los casos de uso `Listar` y `Obtener`; sin repositorio, comandos ni validators |
+| Endpoints | `GET /` devuelve un arreglo JSON con todos los valores, ordenado por `id`; `GET /{id}` responde 200 o 404 con `codigo`. No hay rutas de escritura: un `POST`, `PUT` o `DELETE` responde 405 |
+| Pruebas | Sin pruebas unitarias. Una prueba de semilla con los ids y nombres exactos, y pruebas de integración del listado exacto, de obtener (200 y 404) y del 405 de escritura |
+
+```csharp
+internal static class GradoAcademicoEndpoints
+{
+    public static RouteGroupBuilder MapGradoAcademicoEndpoints(this RouteGroupBuilder modulo)
+    {
+        var grupo = modulo.MapGroup("/grados-academicos").WithTags("Grados académicos");
+
+        grupo.MapGet("/", Listar).WithName("ListarGradosAcademicos")
+            .WithSummary("Lista todos los grados académicos, en orden de jerarquía.");
+        grupo.MapGet("/{id:int}", Obtener).WithName("ObtenerGradoAcademico").WithSummary("Obtiene un grado académico.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        return modulo;
+    }
+
+    private static async Task<Results<Ok<IReadOnlyList<GradoAcademicoResponse>>, ProblemHttpResult>> Listar(
+        IQueryHandler<ListarGradosAcademicosQuery, IReadOnlyList<GradoAcademicoResponse>> handler,
+        CancellationToken cancellationToken)
+    {
+        var resultado = await handler.HandleAsync(new ListarGradosAcademicosQuery(), cancellationToken);
+
+        return resultado.IsSuccess ? TypedResults.Ok(resultado.Value) : resultado.Error.ToProblem();
+    }
+
+    // Obtener sigue la misma forma.
+}
+```
+
+El handler del listado devuelve `Result.Success(lista)`, porque C# no convierte implícitamente desde una interfaz como `IReadOnlyList<T>`.
 
 ## 10. Composición del módulo
 
@@ -620,9 +734,9 @@ public static class CatalogosModule
         services.AddPersistenciaModulo(ensamblado);
         services.AddHandlersModulo(ensamblado);   // handlers, validators y decorador de validación
 
-        services.AddScoped<IGradoAcademicoRepository, GradoAcademicoRepository>();
         services.AddScoped<IGradoAcademicoQueries, GradoAcademicoQueries>();
-        services.AddScoped<IReferenciasGradoAcademico, ReferenciasGradoAcademicoEnTratamientos>();
+        services.AddScoped<IArticuloRepository, ArticuloRepository>();
+        services.AddScoped<IArticuloQueries, ArticuloQueries>();
 
         return services;
     }
@@ -633,14 +747,17 @@ public static class CatalogosModule
         // Autorización: grupo.RequireAuthorization(...) cuando exista JWT (módulo Usuarios).
 
         grupo.MapGradoAcademicoEndpoints();
+        grupo.MapArticuloEndpoints();
 
         return endpoints;
     }
 }
 ```
 
+El contrato `IReferenciasArticulo` no se registra aquí: lo registra cada módulo que lo implementa, en su propio `<Modulo>Module` (por ejemplo, `services.AddScoped<IReferenciasArticulo, ReferenciasArticuloEnAvisos>()` en Publicacion).
+
 Reglas:
-- Los handlers y validators se registran por escaneo con `AddHandlersModulo`.
+- Los handlers y validators se registran por escaneo con `AddHandlersModulo`. Cada handler se resuelve por su interfaz envuelto en el decorador de validación; la decoración es propia (`ActivatorUtilities`), sin bibliotecas de terceros.
 - Los puertos se registran uno por uno, con ciclo de vida `Scoped`, para que la composición sea visible y revisable.
 - La configuración del módulo, cuando exista, se enlaza a una clase `<Nombre>Options` validada al arrancar (`ValidateOnStart`).
 - Una dependencia nueva entre módulos requiere tres cambios en el mismo PR:
@@ -679,39 +796,40 @@ internal static partial class SincronizarPlaneaLog
 - Toda respuesta de error (ProblemDetails) incluye `traceId`. El helper `ToProblem` lo conserva.
 - Los logs incluyen el `TraceId` en sus scopes. `Program.cs` lo fija con `ActivityTrackingOptions = TraceId | SpanId`, en lugar de depender del valor por omisión del host.
 - El `traceId` de la respuesta tiene formato W3C (`00-<TraceId>-<SpanId>-00`), y su segmento central es el que aparece en los logs; así, un error reportado desde el frontend se localiza en los logs por ese valor.
-- La prueba de integración `CorrelacionTests` verifica que el `traceId` de una respuesta de error aparece en los logs de esa misma petición. Hoy provoca un 404 de ruta inexistente (lo responde `UseStatusCodePages`); cuando exista el primer endpoint que use `ToProblem`, la prueba debe provocar el error en ese endpoint, y con eso queda cubierto para todos los módulos, porque el helper es compartido.
+- La prueba de integración `CorrelacionTests` verifica que el `traceId` de una respuesta de error aparece en los logs de esa misma petición. Provoca el 404 de un grado académico inexistente, que responde `ToProblem`; como el helper es compartido, queda cubierto para todos los módulos.
 - `EnableSensitiveDataLogging` de EF Core no se activa en ningún entorno. Una prueba de integración lo verifica.
+- EF Core no registra el evento `SaveChangesFailed`, porque su mensaje incluye la excepción completa, y la de una violación de unicidad trae el valor duplicado. La excepción no se pierde: la traduce el manejador global o la registra `UseExceptionHandler`. `ViolacionUnicidadTests` verifica esa configuración, que el manejador global solo registra el nombre de la restricción y que ningún log de EF Core lleva el valor duplicado.
 
 ## 12. Pruebas
 
 | Proyecto | Qué se prueba | Obligatorio |
 |---|---|---|
-| `Sgpla.UnitTests` | Fábricas, normalización e invariantes de cada entidad. Ramas de reglas de un handler con puertos falsos, cuando el handler tiene lógica propia | Sí, para toda entidad |
-| `Sgpla.IntegrationTests` | Cada endpoint de punta a punta contra SQL Server en contenedor: éxito y cada error que documenta (400, 404, 409) | Sí, para todo endpoint |
+| `Sgpla.UnitTests` | Fábricas, normalización e invariantes de cada entidad. Ramas de reglas de un handler con puertos falsos, cuando el handler tiene lógica propia | Sí, para toda entidad con comportamiento (los catálogos fijos no tienen) |
+| `Sgpla.IntegrationTests` | Cada endpoint de punta a punta contra SQL Server en contenedor: éxito y cada error que documenta (400, 404, 409). La semilla de cada catálogo fijo | Sí, para todo endpoint |
 | `Sgpla.ArchitectureTests` | Las reglas de este documento | Automático; no se edita salvo para agregar módulos o reglas |
 
 ### Unitarias
 
 ```csharp
-namespace Sgpla.UnitTests.Catalogos.GradosAcademicos;
+namespace Sgpla.UnitTests.Catalogos.Articulos;
 
-public sealed class GradoAcademicoTests
+public sealed class ArticuloTests
 {
     [Fact]
-    public void Crear_ConEspaciosExteriores_RecortaElNombre()
+    public void Crear_ConEspaciosYMinusculas_NormalizaElNumero()
     {
-        var resultado = GradoAcademico.Crear("  Doctorado  ");
+        var resultado = Articulo.Crear("  42  bis ", descripcion: null);
 
         resultado.IsSuccess.ShouldBeTrue();
-        resultado.Value.Nombre.ShouldBe("Doctorado");
+        resultado.Value.Numero.ShouldBe("42 BIS");
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void Crear_SinNombre_FallaConNombreVacio(string nombre)
+    public void Crear_SinNumero_FallaConNumeroVacio(string numero)
     {
-        GradoAcademico.Crear(nombre).Error.ShouldBe(GradoAcademicoErrors.NombreVacio);
+        Articulo.Crear(numero, descripcion: null).Error.ShouldBe(ArticuloErrors.NumeroVacio);
     }
 }
 ```
@@ -721,27 +839,28 @@ Los puertos falsos se escriben a mano dentro de las pruebas (clases pequeñas en
 ### Integración
 
 - Una clase por recurso: `tests/Sgpla.IntegrationTests/<Modulo>/<Entidad>EndpointsTests.cs`, con `SgplaApiFactory`.
-- **Cada prueba crea sus propios datos con valores únicos** (sufijo aleatorio) y no afirma conteos globales. Las pruebas comparten la base y corren en paralelo, así que no dependen de que una tabla esté vacía ni se limpian entre sí. Esto reemplaza el uso de Respawn previsto en `PLAN_INICIAL.md`.
+- **Cada prueba crea sus propios datos con valores únicos** (`DatosUnicos`) y no afirma conteos globales. Las pruebas comparten la base y corren en paralelo, así que no dependen de que una tabla esté vacía ni se limpian entre sí. Esto reemplaza el uso de Respawn previsto en `PLAN_INICIAL.md`.
+- Excepción: un catálogo fijo sí se afirma completo, porque sus valores los define la semilla y ninguna prueba los modifica.
 - Se verifican las reglas de `DATABASE.md` §14 que tocan al recurso, en especial la equivalencia por mayúsculas y acentos y la inmutabilidad.
 
 ```csharp
 namespace Sgpla.IntegrationTests.Catalogos;
 
-public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
 {
-    private static readonly Uri Ruta = new("/api/v1/catalogos/grados-academicos", UriKind.Relative);
+    private static readonly Uri Ruta = new("/api/v1/catalogos/articulos", UriKind.Relative);
 
     private readonly SgplaApiFactory _api = new(sqlServer);
 
     [Fact]
-    public async Task Crear_ConNombreEquivalenteEnMayusculas_Responde409()
+    public async Task Crear_ConNumeroEquivalenteEnMinusculas_Responde409()
     {
         using var cliente = _api.CreateClient();
-        var nombre = DatosUnicos.Nombre("Maestría");
-        using var primera = await cliente.PostAsJsonAsync(Ruta, new { nombre }, TestContext.Current.CancellationToken);
+        var numero = $"{Random.Shared.Next(1, 100_000)} BIS";
+        using var primera = await cliente.PostAsJsonAsync(Ruta, new { numero }, TestContext.Current.CancellationToken);
 
         using var respuesta = await cliente.PostAsJsonAsync(
-            Ruta, new { nombre = nombre.ToUpperInvariant() }, TestContext.Current.CancellationToken);
+            Ruta, new { numero = numero.ToLowerInvariant() }, TestContext.Current.CancellationToken);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
@@ -755,7 +874,7 @@ public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : I
 | Principio | Cómo lo cumple el estándar |
 |---|---|
 | **Responsabilidad única** | Un handler por caso de uso, un validator por entrada, una configuración por entidad y un archivo de endpoints por recurso. Cada capa tiene una sola razón para cambiar: el negocio (Domain), el flujo (Application), la tecnología (Infrastructure) o el protocolo (Endpoints) |
-| **Abierto/cerrado** | Un caso de uso nuevo es una carpeta nueva, sin tocar las existentes. Los comportamientos transversales (validación) son decoradores. Un módulo nuevo que referencie un catálogo implementa su contrato sin modificar al dueño |
+| **Abierto/cerrado** | Un caso de uso nuevo es una carpeta nueva, sin tocar las existentes. Los comportamientos transversales (validación) son decoradores. Un módulo nuevo que referencie un artículo implementa su contrato sin modificar al dueño |
 | **Sustitución de Liskov** | Toda implementación de un puerto cumple el contrato completo: sin `NotImplementedException`, sin efectos ocultos (un repositorio no guarda) y con las mismas garantías que las implementaciones falsas de las pruebas |
 | **Segregación de interfaces** | Puertos por recurso y separados en escritura (`Repository`) y lectura (`Queries`). Los contratos entre módulos exponen solo lo que el consumidor necesita |
 | **Inversión de dependencias** | Application declara los puertos que necesita e Infrastructure los implementa. Los módulos dependientes implementan los contratos del módulo del que dependen. `<Modulo>Module` compone todo en un solo lugar |
@@ -763,7 +882,7 @@ public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : I
 ## 14. Receta para un recurso nuevo
 
 1. **Leer la especificación.** Revisar la tabla en `DATABASE.md` (columnas, restricciones, baja lógica, inmutabilidad, casos de aceptación) y las operaciones permitidas en `PLAN_INICIAL.md`.
-2. **Domain.** Crear la entidad con sus constantes, la fábrica `Crear`, los métodos de comportamiento y `<Entidad>Errors`. Escribir sus pruebas unitarias.
+2. **Domain.** Crear la entidad con sus constantes, la fábrica `Crear`, los métodos de comportamiento y `<Entidad>Errors`. Escribir sus pruebas unitarias. Si es un catálogo fijo, seguir la subsección "Catálogos fijos" de la sección 9.
 3. **Application.** Crear los puertos, el `Response` y, por cada operación, la carpeta con Command o Query, Validator y Handler. Si otro módulo participa, declarar o usar el contrato en `Contracts`.
 4. **Infrastructure.** Crear la configuración de EF, el repositorio y las consultas. Si el recurso necesita un cambio de esquema, crear la migración en `Scripts/`.
 5. **Endpoints.** Crear los requests y `<Entidad>Endpoints` con la tabla de operaciones estándar.
@@ -778,12 +897,12 @@ Un módulo o recurso está terminado cuando:
 - [ ] `dotnet build -c Release` compila sin advertencias.
 - [ ] `dotnet format --verify-no-changes` no reporta cambios.
 - [ ] `dotnet test --solution Sgpla.slnx` pasa completo, incluidas las pruebas de arquitectura.
-- [ ] Toda entidad tiene pruebas unitarias de su fábrica y sus invariantes.
+- [ ] Toda entidad con comportamiento tiene pruebas unitarias de su fábrica y sus invariantes; todo catálogo fijo, su prueba de semilla.
 - [ ] Todo endpoint tiene pruebas de integración de éxito y de cada error que documenta.
 - [ ] No hay tipos públicos fuera de `<Modulo>Module` y `Application/Contracts`.
 - [ ] Los endpoints aparecen documentados en `/scalar/v1` con nombre, resumen y respuestas.
 - [ ] Los logs siguen la sección 11: solo `[LoggerMessage]` y sin datos personales ni secretos. La correlación por `traceId` la verifica `CorrelacionTests` y no requiere revisión manual.
-- [ ] Los cambios de esquema están en una migración nueva; no se editaron `baseline.sql` ni `seed.sql`.
+- [ ] Los cambios de esquema están en una migración nueva y `baseline.sql` no se editó. `seed.sql` solo cambia para cargar un catálogo fijo.
 - [ ] Si cambió una regla del estándar, este documento se actualizó en el mismo PR.
 - [ ] Los commits y el PR siguen la convención del repositorio.
 

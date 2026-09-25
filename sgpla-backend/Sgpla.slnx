@@ -4,6 +4,7 @@
     <Project Path="src/Sgpla.Database/Sgpla.Database.csproj" />
   </Folder>
   <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/Sgpla.BuildingBlocks.Application/Sgpla.BuildingBlocks.Application.csproj" />
     <Project Path="src/BuildingBlocks/Sgpla.BuildingBlocks.Infrastructure/Sgpla.BuildingBlocks.Infrastructure.csproj" />
     <Project Path="src/BuildingBlocks/Sgpla.SharedKernel/Sgpla.SharedKernel.csproj" />
   </Folder>

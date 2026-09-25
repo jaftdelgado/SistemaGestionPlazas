@@ -2,13 +2,11 @@
 
   <PropertyGroup>
     <RootNamespace>Sgpla.UnitTests</RootNamespace>
-    <!-- Proyecto aún sin pruebas: el código 8 ("no se ejecutaron pruebas") no se trata como fallo.
-         Quitar esta línea al agregar la primera prueba de dominio. -->
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\Sgpla.SharedKernel\Sgpla.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\Sgpla.BuildingBlocks.Application\Sgpla.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 
 </Project>

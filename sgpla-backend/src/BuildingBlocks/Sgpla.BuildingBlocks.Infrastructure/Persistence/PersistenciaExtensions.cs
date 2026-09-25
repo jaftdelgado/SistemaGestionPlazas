@@ -1,7 +1,9 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sgpla.BuildingBlocks.Application;
 
 namespace Sgpla.BuildingBlocks.Infrastructure.Persistence;
 
@@ -22,7 +24,13 @@ public static class PersistenciaExtensions
 
         services.AddDbContext<SgplaDbContext>(options => options
             .UseSqlServer(cadenaConexion)
-            .UseSnakeCaseNamingConvention());
+            .UseSnakeCaseNamingConvention()
+            // SaveChangesFailed incluye en su mensaje la excepción completa, y la de una violación de unicidad
+            // (2601/2627) trae el valor duplicado (ESTANDAR_MODULOS.md, sección 11). La excepción no se pierde:
+            // la traduce el manejador global de unicidad o la registra UseExceptionHandler.
+            .ConfigureWarnings(advertencias => advertencias.Ignore(CoreEventId.SaveChangesFailed)));
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
