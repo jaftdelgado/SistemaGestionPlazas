@@ -7,7 +7,7 @@ Documentos relacionados:
 - `DATABASE.md`: modelo de datos, reglas de negocio y casos de aceptación.
 - `sgpla-backend/README.md`: cómo compilar, probar y migrar.
 
-Los ejemplos salen del módulo Catalogos: `GradoAcademico` ilustra un catálogo fijo, de solo lectura, y `Articulo` un recurso administrable, con alta y corrección.
+Los ejemplos salen del módulo Catalogos: `GradoAcademico` ilustra un catálogo fijo, de solo lectura, y `Articulo` un recurso administrable, con alta y modificación.
 
 ## Contenido
 
@@ -32,7 +32,9 @@ Los ejemplos salen del módulo Catalogos: `GradoAcademico` ilustra un catálogo 
 
 - **Clean Architecture por módulo.** Cada módulo es un proyecto (`Sgpla.Modules.<Modulo>`) con cuatro capas en carpetas: `Domain`, `Application`, `Infrastructure` y `Endpoints`. Las dependencias apuntan hacia el dominio.
 - **El dominio protege sus invariantes.** Una entidad nunca queda en un estado inválido, sin importar quién la use.
-- **Application no conoce la tecnología.** Define lo que necesita mediante interfaces (puertos) y Infrastructure las implementa.
+- **Application no conoce la tecnología.** Los comandos declaran lo que necesitan mediante interfaces (puertos) y Infrastructure las implementa.
+- **Las consultas no pasan por puertos.** Una consulta solo proyecta datos y no tiene reglas que aislar, así que su handler es un adaptador de Infrastructure que consulta EF Core directamente.
+- **La ceremonia es proporcional a la lógica.** Un recurso sin reglas, como un catálogo fijo, no lleva comandos, validators ni handlers propios, y una regla se declara en un solo lugar.
 - **DbUp es dueño del esquema.** EF Core solo mapea; nunca crea ni modifica tablas.
 - **Los errores de negocio son valores, no excepciones.** Los casos de uso devuelven `Result`; las excepciones quedan para fallos técnicos.
 - **Las reglas se verifican solas.** Lo que se puede comprobar automáticamente está en `tests/Sgpla.ArchitectureTests` y falla en el CI.
@@ -42,15 +44,15 @@ Los ejemplos salen del módulo Catalogos: `GradoAcademico` ilustra un catálogo 
 | Capa | Responsabilidad | Puede depender de | Nunca depende de |
 |---|---|---|---|
 | **Domain** | Entidades, invariantes, normalización y errores de dominio | SharedKernel | Las otras tres capas, EF Core, ASP.NET Core, FluentValidation, BuildingBlocks |
-| **Application** | Casos de uso, puertos, validación de entrada y DTOs de respuesta | Domain, SharedKernel, BuildingBlocks.Application, FluentValidation, contratos de módulos permitidos | Infrastructure, Endpoints, EF Core, ASP.NET Core, BuildingBlocks.Infrastructure |
-| **Infrastructure** | Implementación de puertos con EF Core, configuraciones de entidades y adaptadores externos | Application, Domain, BuildingBlocks.Infrastructure, EF Core | Endpoints |
+| **Application** | Comandos y sus handlers, puertos de escritura, contratos de consulta (Query y Response) y validators de lo que el dominio no cubre | Domain, SharedKernel, BuildingBlocks.Application, FluentValidation, contratos de módulos permitidos | Infrastructure, Endpoints, EF Core, ASP.NET Core, BuildingBlocks.Infrastructure |
+| **Infrastructure** | Configuraciones de EF Core, repositorios (implementan los puertos), handlers de consulta y adaptadores externos | Application, Domain, BuildingBlocks.Infrastructure, EF Core | Endpoints |
 | **Endpoints** | Rutas HTTP, modelos de request y traducción de `Result` a respuestas HTTP | Application, helpers HTTP de BuildingBlocks.Infrastructure, ASP.NET Core | Domain, Infrastructure, EF Core |
 | **`<Modulo>Module.cs`** | Raíz de composición: registra dependencias y rutas | Todas las capas | — |
 
 ```
 Endpoints ──► Application ──► Domain ──► SharedKernel
                   ▲
-Infrastructure ───┘  (implementa los puertos de Application)
+Infrastructure ───┘  (implementa los repositorios y resuelve las consultas de Application)
 ```
 
 ### Piezas compartidas
@@ -59,9 +61,9 @@ Viven en `src/BuildingBlocks` y se construyen junto con el primer módulo que la
 
 | Proyecto | Contenido |
 |---|---|
-| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error`, `ErrorType`, `ValidationError`. Pendiente: `IEliminable` (baja lógica), con Institucional |
+| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`. Pendiente: `IEliminable` (baja lógica), con Institucional |
 | `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación. Pendiente: `ICurrentUser`, con Usuarios |
-| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409). Pendiente: nombres de filtros de consulta, con la primera entidad con baja lógica |
+| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409). Pendiente: nombres de filtros de consulta, con la primera entidad con baja lógica |
 
 Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime.UtcNow` directamente. Para los logs se usa `ILogger<T>` de .NET; no se crea una abstracción propia (sección 11).
 
@@ -71,57 +73,51 @@ Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime
 |---|---|
 | `Result` | Resultado sin valor: `Result.Success()` o un `Error` (conversión implícita) |
 | `Result<T>` | Resultado con valor: `T` o `Error` (conversiones implícitas). Expone `IsSuccess`, `IsFailure`, `Value` y `Error`. Si `T` es una interfaz (`IReadOnlyList<T>`), se crea con `Result.Success(valor)` |
-| `Error(Code, Message, Type)` | Código estable (`Articulo.NumeroDuplicado`), mensaje en español para el usuario y tipo |
+| `Error(Code, Message, Type)` | Código estable (`Articulo.NumeroDuplicado`), mensaje en español para el usuario y tipo. Un error de validación del dominio declara además `Campo`, la propiedad de la entrada (`nameof(Articulo.Numero)`), y la respuesta lo reporta en `errors` como uno de un validator |
 | `ErrorType` | `Validation`, `NotFound` o `Conflict`. Decide el código HTTP (sección 9) |
 | `ValidationError` | `Error` de tipo `Validation` con código `Validacion.EntradaInvalida` y los errores por campo que producen los validators |
 
 ## 3. Estructura de carpetas
 
-Primero por capa y, dentro de cada capa, por recurso. Dentro de Application, una carpeta por caso de uso.
+Primero por capa y, dentro de cada capa, por recurso. Un archivo agrupa lo que cambia junto: un comando con su validator y su handler; las consultas de un recurso con su `Response`.
 
 ```
 src/Modules/Catalogos/Sgpla.Modules.Catalogos/
   Domain/
-    GradosAcademicos/                   catálogo fijo (solo lectura)
+    CatalogosFijos/                     catálogos fijos (solo lectura)
+      CatalogoFijo.cs                   clase base: Id y Nombre
+      CatalogoFijoErrors.cs
       GradoAcademico.cs
-      GradoAcademicoErrors.cs
+      ModalidadRecepcion.cs             con una columna adicional
     Articulos/                          recurso administrable
       Articulo.cs
       ArticuloErrors.cs
   Application/
     Contracts/                          API pública para otros módulos (sección 5)
       IReferenciasArticulo.cs
-    GradosAcademicos/
-      IGradoAcademicoQueries.cs         puerto de lectura
-      GradoAcademicoResponse.cs
-      Listar/
-      Obtener/
+    CatalogosFijos/
+      CatalogoFijoConsultas.cs          Response y Queries genéricas
+      ModalidadRecepcionConsultas.cs
     Articulos/
       IArticuloRepository.cs            puerto de escritura
-      IArticuloQueries.cs               puerto de lectura
-      ArticuloResponse.cs
-      Crear/
-        CrearArticuloCommand.cs
-        CrearArticuloHandler.cs
-        CrearArticuloValidator.cs
-      Corregir/
-      Listar/
-      Obtener/
+      ArticuloConsultas.cs              Response y Queries (con sus validators, si los hay)
+      CrearArticulo.cs                  Command, Validator (si hace falta) y Handler
+      ModificarArticulo.cs
   Infrastructure/
-    GradosAcademicos/
-      GradoAcademicoConfiguration.cs
-      GradoAcademicoQueries.cs
+    CatalogosFijos/
+      CatalogoFijoConfiguration.cs      configuración base y una clase de una línea por catálogo
+      CatalogoFijoConsultas.cs          handlers genéricos de Listar y Obtener
+      ModalidadRecepcionConsultas.cs
     Articulos/
       ArticuloConfiguration.cs
       ArticuloRepository.cs
-      ArticuloQueries.cs
+      ArticuloConsultas.cs              handlers de las consultas
   Endpoints/
-    GradosAcademicos/
-      GradoAcademicoEndpoints.cs
+    CatalogosFijos/
+      CatalogoFijoEndpoints.cs          MapCatalogoFijo<T>
+      ModalidadRecepcionEndpoints.cs
     Articulos/
-      ArticuloEndpoints.cs
-      CrearArticuloRequest.cs
-      CorregirArticuloRequest.cs
+      ArticuloEndpoints.cs              rutas y requests del recurso
   CatalogosModule.cs
 ```
 
@@ -130,7 +126,7 @@ Las pruebas replican la misma organización: `tests/Sgpla.UnitTests/<Modulo>/<Re
 ## 4. Convenciones de nombres
 
 **Idioma:**
-- Lo que nombra el negocio va en español y sin acentos: `Articulo`, `Corregir`, `ExisteNumeroAsync`.
+- Lo que nombra el negocio va en español y sin acentos: `Articulo`, `Modificar`, `ExisteNumeroAsync`.
 - Los sufijos de patrón y las abstracciones compartidas de BuildingBlocks van en inglés: `Handler`, `HandleAsync`, `Result`, `IsSuccess`, `SaveChangesAsync`.
 - Las propiedades que mapean columnas conservan el nombre de la columna en PascalCase (`FechaEliminacion` ↔ `fecha_eliminacion`).
 - El contrato HTTP (rutas, parámetros y campos JSON) va en español, porque lo consume el frontend.
@@ -140,22 +136,22 @@ Las pruebas replican la misma organización: `tests/Sgpla.UnitTests/<Modulo>/<Re
 | Entidad | Sustantivo singular | `Articulo` |
 | Errores de dominio | `<Entidad>Errors` | `ArticuloErrors` |
 | Carpeta de recurso | Plural | `Articulos` |
-| Carpeta de caso de uso | Verbo o acción | `Crear`, `Corregir`, `DarDeBaja`, `Restaurar`, `Obtener`, `Listar` |
+| Archivo de un comando | `<Accion><Entidad>.cs`, con acciones como `Crear`, `Modificar`, `DarDeBaja`, `Restaurar` | `CrearArticulo.cs` |
+| Archivo de consultas | `<Entidad>Consultas.cs`, en Application (Queries y Response) y en Infrastructure (handlers) | `ArticuloConsultas.cs` |
 | Comando | `<Accion><Entidad>Command` | `CrearArticuloCommand` |
-| Consulta | `<Accion><Entidad>Query` | `ListarGradosAcademicosQuery` |
-| Handler | `<Accion><Entidad>Handler` | `CrearArticuloHandler` |
-| Validator | `<Accion><Entidad>Validator` | `CrearArticuloValidator` |
+| Consulta | `<Accion><Entidad>Query` | `ListarArticulosQuery` |
+| Handler | `<Accion><Entidad>Handler` | `CrearArticuloHandler`, `ObtenerArticuloHandler` |
+| Validator | `<Accion><Entidad>Validator` | `ListarTratamientosAcademicosValidator` |
 | Puerto de escritura | `I<Entidad>Repository` | `IArticuloRepository` |
-| Puerto de lectura | `I<Entidad>Queries` | `IGradoAcademicoQueries` |
 | Respuesta | `<Entidad>Response` | `ArticuloResponse` |
 | Configuración EF | `<Entidad>Configuration` | `ArticuloConfiguration` |
 | Endpoints | `<Entidad>Endpoints` | `ArticuloEndpoints` |
-| Request HTTP | `<Accion><Entidad>Request` | `CrearArticuloRequest` |
+| Request HTTP | `<Accion><Entidad>Request`, solo si difiere del Command (sección 9) | `ModificarArticuloRequest` |
 | Ruta | `/api/v1/<modulo>/<recurso-en-plural>` en kebab-case | `/api/v1/catalogos/grados-academicos` |
 | Código de error | `<Entidad>.<Motivo>` | `Articulo.NumeroDuplicado` |
 | Prueba | `Metodo_Escenario_Resultado` | `Crear_ConNumeroRepetido_Responde409` |
 
-Las pruebas de arquitectura exigen que las clases terminadas en `Handler` y `Validator` estén en Application; las terminadas en `Configuration`, `Repository` y `Queries`, en Infrastructure, y las terminadas en `Endpoints`, en Endpoints.
+Las pruebas de arquitectura exigen que los handlers de comandos estén en Application y los de consultas en Infrastructure, sellados; lo comprueban por la interfaz que implementan, así que también cubren los genéricos. Además, las clases terminadas en `Validator` van en Application; las terminadas en `Configuration` y `Repository`, en Infrastructure, y las terminadas en `Endpoints`, en Endpoints.
 
 ## 5. Visibilidad y contratos entre módulos
 
@@ -183,18 +179,21 @@ Reglas:
 - Las entidades heredan de `Entity`. Si tienen baja lógica, implementan `IEliminable`.
 - Tienen un constructor privado sin parámetros (lo usa EF Core) y propiedades con `private set`.
 - Se crean solo con una fábrica estática `Crear(...)`, que normaliza (recorta los textos y pone en mayúsculas las claves y los códigos) y devuelve `Result<T>`.
-- El comportamiento se expresa con métodos que nombran la intención (`Corregir`, `DarDeBaja`, `Restaurar`). Nadie asigna propiedades desde fuera.
-- Las longitudes y los formatos de `DATABASE.md` son constantes públicas de la entidad. Los validators y las configuraciones de EF reutilizan esas constantes.
+- El comportamiento se expresa con métodos que nombran la intención (`Modificar`, `DarDeBaja`, `Restaurar`). Nadie asigna propiedades desde fuera.
+- Las longitudes y los formatos de `DATABASE.md` son constantes públicas de la entidad. Las configuraciones de EF reutilizan esas constantes.
+- **El dominio es la única fuente de las reglas de forma de sus datos:** obligatoriedad, longitudes, formatos y normalización. Cada uno de esos errores declara su campo con `nameof`, así la respuesta HTTP los reporta en `errors` sin que un validator repita la regla (sección 7).
 - Los errores se declaran una sola vez en `<Entidad>Errors`.
 - Domain no consulta la base. Las reglas que dependen de otros registros, como la unicidad o las referencias, las orquesta el handler con puertos.
 - Las fechas llegan como parámetro (`DarDeBaja(DateTime utc)`); la entidad no lee el reloj.
-- Excepción: la entidad de un catálogo fijo no tiene fábrica ni comportamiento (sección 9, "Catálogos fijos").
-
-El ejemplo es ilustrativo: las reglas exactas de `Articulo` se fijan al implementarlo.
+- Excepción: un catálogo fijo hereda de `CatalogoFijo` y no tiene fábrica ni comportamiento (sección 9, "Catálogos fijos").
 
 ```csharp
 namespace Sgpla.Modules.Catalogos.Domain.Articulos;
 
+/// <summary>
+/// Artículo que fundamenta un Aviso (DATABASE.md §15.2). El número es una referencia opaca (<c>42</c>, <c>42 BIS</c>)
+/// que queda inmutable cuando un Aviso usa el artículo; la descripción es obligatoria y siempre editable.
+/// </summary>
 internal sealed partial class Articulo : Entity
 {
     public const int LongitudMaximaNumero = 50;
@@ -206,17 +205,9 @@ internal sealed partial class Articulo : Entity
 
     public string Numero { get; private set; } = string.Empty;
 
-    public string? Descripcion { get; private set; }
+    public string Descripcion { get; private set; } = string.Empty;
 
-    public static Result<Articulo> Crear(string numero, string? descripcion)
-    {
-        var articulo = new Articulo();
-        var asignado = articulo.Corregir(numero, descripcion);
-
-        return asignado.IsFailure ? asignado.Error : articulo;
-    }
-
-    public Result Corregir(string numero, string? descripcion)
+    public static Result<Articulo> Crear(string numero, string descripcion)
     {
         var numeroNormalizado = NormalizarNumero(numero);
         if (numeroNormalizado.IsFailure)
@@ -224,36 +215,79 @@ internal sealed partial class Articulo : Entity
             return numeroNormalizado.Error;
         }
 
-        var descripcionNormalizada = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
-        if (descripcionNormalizada?.Length > LongitudMaximaDescripcion)
+        var descripcionNormalizada = NormalizarDescripcion(descripcion);
+        if (descripcionNormalizada.IsFailure)
         {
-            return ArticuloErrors.DescripcionDemasiadoLarga;
+            return descripcionNormalizada.Error;
+        }
+
+        return new Articulo { Numero = numeroNormalizado.Value, Descripcion = descripcionNormalizada.Value };
+    }
+
+    /// <summary>
+    /// Modifica el número y, si llega, la descripción; una descripción <c>null</c> conserva la actual. Si el número
+    /// puede cambiar lo decide el handler, porque depende de si algún Aviso usa el artículo.
+    /// </summary>
+    public Result Modificar(string numero, string? descripcion)
+    {
+        var numeroNormalizado = NormalizarNumero(numero);
+        if (numeroNormalizado.IsFailure)
+        {
+            return numeroNormalizado.Error;
+        }
+
+        Result<string> descripcionNormalizada = descripcion is null ? Descripcion : NormalizarDescripcion(descripcion);
+        if (descripcionNormalizada.IsFailure)
+        {
+            return descripcionNormalizada.Error;
         }
 
         Numero = numeroNormalizado.Value;
-        Descripcion = descripcionNormalizada;
+        Descripcion = descripcionNormalizada.Value;
         return Result.Success();
     }
 
-    // "42  bis " → "42 BIS": sin espacios exteriores, espacios internos simples y en mayúsculas.
+    /// <summary>"  42  bis " → "42 BIS": sin espacios exteriores, espacios internos simples, ASCII imprimible y en mayúsculas.</summary>
     private static Result<string> NormalizarNumero(string? numero)
     {
-        var normalizado = EspaciosRepetidos().Replace(numero?.Trim() ?? string.Empty, " ").ToUpperInvariant();
+        var colapsado = EspaciosRepetidos().Replace(numero?.Trim() ?? string.Empty, " ");
 
-        if (normalizado.Length == 0)
+        if (colapsado.Length == 0)
         {
             return ArticuloErrors.NumeroVacio;
         }
 
-        if (normalizado.Length > LongitudMaximaNumero)
+        if (colapsado.Length > LongitudMaximaNumero)
         {
             return ArticuloErrors.NumeroDemasiadoLargo;
         }
 
-        return normalizado;
+        if (!colapsado.All(caracter => caracter is >= ' ' and <= '~'))
+        {
+            return ArticuloErrors.NumeroNoAscii;
+        }
+
+        return colapsado.ToUpperInvariant();
     }
 
-    [GeneratedRegex(" {2,}")]
+    private static Result<string> NormalizarDescripcion(string? descripcion)
+    {
+        var recortada = descripcion?.Trim() ?? string.Empty;
+
+        if (recortada.Length == 0)
+        {
+            return ArticuloErrors.DescripcionVacia;
+        }
+
+        if (recortada.Length > LongitudMaximaDescripcion)
+        {
+            return ArticuloErrors.DescripcionDemasiadoLarga;
+        }
+
+        return recortada;
+    }
+
+    [GeneratedRegex(@"\s+")]
     private static partial Regex EspaciosRepetidos();
 }
 ```
@@ -264,25 +298,38 @@ namespace Sgpla.Modules.Catalogos.Domain.Articulos;
 internal static class ArticuloErrors
 {
     public static readonly Error NumeroVacio = Error.Validation(
-        "Articulo.NumeroVacio", "El número es obligatorio.");
+        "Articulo.NumeroVacio", "El número es obligatorio.", nameof(Articulo.Numero));
 
     public static readonly Error NumeroDemasiadoLargo = Error.Validation(
-        "Articulo.NumeroDemasiadoLargo", $"El número admite hasta {Articulo.LongitudMaximaNumero} caracteres.");
+        "Articulo.NumeroDemasiadoLargo",
+        $"El número admite hasta {Articulo.LongitudMaximaNumero} caracteres.",
+        nameof(Articulo.Numero));
+
+    public static readonly Error NumeroNoAscii = Error.Validation(
+        "Articulo.NumeroNoAscii",
+        "El número solo admite letras sin acentos, dígitos, espacios y signos ASCII.",
+        nameof(Articulo.Numero));
+
+    public static readonly Error DescripcionVacia = Error.Validation(
+        "Articulo.DescripcionVacia", "La descripción es obligatoria.", nameof(Articulo.Descripcion));
 
     public static readonly Error DescripcionDemasiadoLarga = Error.Validation(
         "Articulo.DescripcionDemasiadoLarga",
-        $"La descripción admite hasta {Articulo.LongitudMaximaDescripcion} caracteres.");
+        $"La descripción admite hasta {Articulo.LongitudMaximaDescripcion} caracteres.",
+        nameof(Articulo.Descripcion));
 
     public static readonly Error NumeroDuplicado = Error.Conflict(
         "Articulo.NumeroDuplicado", "Ya existe un artículo con ese número.");
 
-    public static readonly Error EnUso = Error.Conflict(
-        "Articulo.EnUso", "El artículo ya no puede corregirse porque un Aviso lo usa.");
+    public static readonly Error NumeroInmutable = Error.Conflict(
+        "Articulo.NumeroInmutable", "El número ya no puede modificarse porque un Aviso usa el artículo.");
 
     public static Error NoEncontrado(int id) => Error.NotFound(
         "Articulo.NoEncontrado", $"No existe el artículo {id}.");
 }
 ```
+
+El dominio devuelve el primer error que encuentra, no todos los campos a la vez. Basta para un formulario que ya valida en el cliente, y evita mantener la misma regla en dos lugares.
 
 **Baja lógica.** Una entidad `IEliminable`:
 - `DarDeBaja(DateTime utc)` es idempotente: si ya tiene fecha, no la reemplaza.
@@ -291,85 +338,93 @@ internal static class ArticuloErrors
 
 ## 7. Application
 
-### Casos de uso
+Application distingue dos tipos de caso de uso:
 
-Cada caso de uso tiene su carpeta con tres piezas:
+| Tipo | Qué hace | Dónde vive su handler | Pasa por el dominio |
+|---|---|---|---|
+| **Comando** | Modifica el estado: crea, modifica, da de baja, cambia un estado | Application, junto al Command | Sí, mediante puertos |
+| **Consulta** | Lee y proyecta a un `Response` | Infrastructure (sección 8) | No |
+
+### Comandos
+
+Cada comando vive en un archivo `<Accion><Entidad>.cs` con sus piezas:
 
 | Pieza | Forma | Responsabilidad |
 |---|---|---|
-| Command o Query | `internal sealed record` | Datos de entrada, sin lógica |
-| Validator | `AbstractValidator<T>` de FluentValidation | Forma de la entrada: obligatoriedad, longitudes, formatos y rangos. Se omite si la entrada no tiene nada que validar (por ejemplo, un `id` de ruta) |
-| Handler | Implementa `ICommandHandler` o `IQueryHandler` | Orquesta: reglas que dependen de datos, llamada al dominio, persistencia y respuesta |
+| Command | `internal sealed record` | Datos de entrada, sin lógica |
+| Validator | `AbstractValidator<T>` de FluentValidation | Opcional: solo lo que el dominio no valida (tabla siguiente). Cada regla declara con `WithName` el nombre del campo como lo lee el usuario |
+| Handler | Implementa `ICommandHandler` | Orquesta: llamada al dominio, reglas que dependen de datos, persistencia y respuesta |
 
-Los comandos modifican el estado; las consultas no. Un handler nunca llama a otro handler; si dos casos de uso comparten lógica, esa lógica va en el dominio o en un servicio de Application con su propia interfaz.
+Un handler nunca llama a otro handler; si dos casos de uso comparten lógica, esa lógica va en el dominio o en un servicio de Application con su propia interfaz.
 
-El decorador de validación ejecuta los validators antes del handler. Si hay errores, devuelve un `ValidationError` sin llamar al handler, así que los handlers no validan la forma de la entrada.
+### Dónde se valida
+
+| Regla | Dónde | Ejemplo |
+|---|---|---|
+| Forma de los datos de una entidad: obligatoriedad, longitudes, formatos, normalización | Dominio, con `Error.Validation(código, mensaje, campo)` | `ArticuloErrors.NumeroVacio` |
+| Parámetros que no son datos de una entidad | Validator de la Query o del Command | `gradoAcademicoId > 0`, paginación |
+| Reglas que dependen de otros registros | Handler de comando, con puertos | número duplicado, referencias de otro módulo |
+
+El decorador de validación ejecuta los validators antes del handler. Si hay errores, devuelve un `ValidationError` sin llamar al handler.
+
+### Consultas
+
+Una consulta no tiene reglas: proyecta. Application declara solo su contrato, en `<Entidad>Consultas.cs`: el `Response`, las Queries y, si reciben parámetros que validar, sus validators.
+
+```csharp
+using Sgpla.Modules.Catalogos.Domain.Articulos;
+
+namespace Sgpla.Modules.Catalogos.Application.Articulos;
+
+internal sealed record ArticuloResponse(int Id, string Numero, string Descripcion)
+{
+    public static ArticuloResponse Desde(Articulo articulo) => new(articulo.Id, articulo.Numero, articulo.Descripcion);
+}
+
+/// <summary>Todos los artículos, en orden alfabético del número (con el id como desempate).</summary>
+internal sealed record ListarArticulosQuery;
+
+internal sealed record ObtenerArticuloQuery(int Id);
+```
+
+Una entidad de dominio nunca sale de Application: los endpoints solo ven `Response`.
 
 ### Puertos
 
-Se separan la escritura y la lectura (ISP):
+Solo hay puertos de escritura. `I<Entidad>Repository` devuelve entidades de dominio y tiene los métodos que los comandos necesitan (`ObtenerPorIdAsync`, `ExisteNumeroAsync`, `Agregar`). Nunca guarda: eso lo hace `IUnitOfWork`.
 
-| Puerto | Devuelve | Reglas |
-|---|---|---|
-| `I<Entidad>Repository` | Entidades de dominio | Métodos que el caso de uso necesita (`ObtenerPorIdAsync`, `ExisteNumeroAsync`, `Agregar`). Nunca guarda: eso lo hace `IUnitOfWork` |
-| `I<Entidad>Queries` | `Response`, listas de `Response` o `Pagina<T>` | Solo lectura, proyectada y sin tracking |
-
-Un puerto se declara cuando un caso de uso lo necesita; no se crean repositorios genéricos ni métodos "por si acaso". Un catálogo fijo solo tiene el puerto de lectura.
+Un puerto se declara cuando un comando lo necesita; no se crean repositorios genéricos ni métodos "por si acaso". Las consultas no tienen puerto, y un recurso sin comandos (un catálogo fijo) tampoco.
 
 ```csharp
+using Sgpla.Modules.Catalogos.Domain.Articulos;
+
 namespace Sgpla.Modules.Catalogos.Application.Articulos;
 
 internal interface IArticuloRepository
 {
     Task<Articulo?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken);
 
-    /// <summary>Compara con la intercalación de la columna.</summary>
+    /// <summary>Compara el número ya normalizado, en la base.</summary>
     Task<bool> ExisteNumeroAsync(string numero, int? excluirId, CancellationToken cancellationToken);
 
     void Agregar(Articulo articulo);
 }
 ```
 
-```csharp
-namespace Sgpla.Modules.Catalogos.Application.GradosAcademicos;
-
-internal interface IGradoAcademicoQueries
-{
-    Task<GradoAcademicoResponse?> ObtenerAsync(int id, CancellationToken cancellationToken);
-
-    /// <summary>Todos los grados, en orden de id (jerarquía académica).</summary>
-    Task<IReadOnlyList<GradoAcademicoResponse>> ListarAsync(CancellationToken cancellationToken);
-}
-```
-
-### Respuesta
-
-```csharp
-internal sealed record ArticuloResponse(int Id, string Numero, string? Descripcion)
-{
-    public static ArticuloResponse Desde(Articulo articulo) =>
-        new(articulo.Id, articulo.Numero, articulo.Descripcion);
-}
-```
-
-Una entidad de dominio nunca sale de Application: los endpoints solo ven `Response`.
-
 ### Ejemplo: crear
 
+La forma del número y la descripción la valida `Articulo.Crear`, así que el comando no tiene validator.
+
 ```csharp
-namespace Sgpla.Modules.Catalogos.Application.Articulos.Crear;
+using Sgpla.BuildingBlocks.Application;
+using Sgpla.Modules.Catalogos.Domain.Articulos;
+using Sgpla.SharedKernel;
 
-internal sealed record CrearArticuloCommand(string Numero, string? Descripcion);
+namespace Sgpla.Modules.Catalogos.Application.Articulos;
 
-internal sealed class CrearArticuloValidator : AbstractValidator<CrearArticuloCommand>
-{
-    public CrearArticuloValidator()
-    {
-        RuleFor(c => c.Numero).NotEmpty().MaximumLength(Articulo.LongitudMaximaNumero);
-        RuleFor(c => c.Descripcion).MaximumLength(Articulo.LongitudMaximaDescripcion);
-    }
-}
+internal sealed record CrearArticuloCommand(string Numero, string Descripcion);
 
+/// <summary>La forma de la entrada la valida <see cref="Articulo.Crear"/>; aquí solo queda la unicidad del número.</summary>
 internal sealed class CrearArticuloHandler(
     IArticuloRepository repositorio,
     IUnitOfWork unidadDeTrabajo) : ICommandHandler<CrearArticuloCommand, ArticuloResponse>
@@ -397,14 +452,17 @@ internal sealed class CrearArticuloHandler(
 }
 ```
 
-### Ejemplo: corregir con referencias de otros módulos
+### Ejemplo: modificar con referencias de otros módulos
 
-`DATABASE.md` §15.2 permite corregir un artículo mientras no tenga referencias. Las referencias están en otro módulo (los Avisos de Publicacion), así que el handler consulta el contrato `IReferenciasArticulo` (sección 5). Repetir los valores actuales no es una corrección: responde éxito sin consultar referencias, para que la operación sea idempotente.
+`DATABASE.md` §15.2 permite modificar la descripción de un artículo siempre, y su número solo mientras ningún Aviso lo use. Las referencias están en otro módulo (los Avisos de Publicacion), así que el handler consulta el contrato `IReferenciasArticulo` (sección 5), y solo cuando el número cambia. Repetir los valores actuales no es una modificación: responde éxito sin guardar, para que la operación sea idempotente.
 
 ```csharp
 namespace Sgpla.Modules.Catalogos.Application.Contracts;
 
-/// <summary>Lo implementa cada módulo que guarda referencias a un artículo.</summary>
+/// <summary>
+/// Lo implementa cada módulo que guarda referencias a un artículo (Publicacion, por sus Avisos). Con una referencia,
+/// el número del artículo queda inmutable.
+/// </summary>
 public interface IReferenciasArticulo
 {
     Task<bool> TieneReferenciasAsync(int articuloId, CancellationToken cancellationToken);
@@ -412,12 +470,27 @@ public interface IReferenciasArticulo
 ```
 
 ```csharp
-internal sealed class CorregirArticuloHandler(
+using Sgpla.BuildingBlocks.Application;
+using Sgpla.Modules.Catalogos.Application.Contracts;
+using Sgpla.Modules.Catalogos.Domain.Articulos;
+using Sgpla.SharedKernel;
+
+namespace Sgpla.Modules.Catalogos.Application.Articulos;
+
+/// <param name="Descripcion"><c>null</c> conserva la descripción actual.</param>
+internal sealed record ModificarArticuloCommand(int Id, string Numero, string? Descripcion);
+
+/// <summary>
+/// Modifica número y descripción. La descripción siempre puede cambiar; el número solo mientras ningún Aviso use el
+/// artículo (DATABASE.md §15.2). Las referencias están en otros módulos, así que se consulta a todas las
+/// implementaciones de <see cref="IReferenciasArticulo"/>.
+/// </summary>
+internal sealed class ModificarArticuloHandler(
     IArticuloRepository repositorio,
     IEnumerable<IReferenciasArticulo> referencias,
-    IUnitOfWork unidadDeTrabajo) : ICommandHandler<CorregirArticuloCommand>
+    IUnitOfWork unidadDeTrabajo) : ICommandHandler<ModificarArticuloCommand>
 {
-    public async Task<Result> HandleAsync(CorregirArticuloCommand command, CancellationToken cancellationToken)
+    public async Task<Result> HandleAsync(ModificarArticuloCommand command, CancellationToken cancellationToken)
     {
         var articulo = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
         if (articulo is null)
@@ -426,29 +499,33 @@ internal sealed class CorregirArticuloHandler(
         }
 
         var (numeroAnterior, descripcionAnterior) = (articulo.Numero, articulo.Descripcion);
-        var corregido = articulo.Corregir(command.Numero, command.Descripcion);
-        if (corregido.IsFailure)
+        var modificado = articulo.Modificar(command.Numero, command.Descripcion);
+        if (modificado.IsFailure)
         {
-            return corregido;
+            return modificado;
         }
 
-        // Repetir los mismos valores no es una corrección: se acepta aunque el artículo ya esté en uso.
-        if (articulo.Numero == numeroAnterior && articulo.Descripcion == descripcionAnterior)
+        var cambiaNumero = !string.Equals(articulo.Numero, numeroAnterior, StringComparison.Ordinal);
+        var cambiaDescripcion = !string.Equals(articulo.Descripcion, descripcionAnterior, StringComparison.Ordinal);
+        if (!cambiaNumero && !cambiaDescripcion)
         {
             return Result.Success();
         }
 
-        foreach (var referencia in referencias)
+        if (cambiaNumero)
         {
-            if (await referencia.TieneReferenciasAsync(articulo.Id, cancellationToken))
+            foreach (var referencia in referencias)
             {
-                return ArticuloErrors.EnUso;
+                if (await referencia.TieneReferenciasAsync(articulo.Id, cancellationToken))
+                {
+                    return ArticuloErrors.NumeroInmutable;
+                }
             }
-        }
 
-        if (await repositorio.ExisteNumeroAsync(articulo.Numero, articulo.Id, cancellationToken))
-        {
-            return ArticuloErrors.NumeroDuplicado;
+            if (await repositorio.ExisteNumeroAsync(articulo.Numero, articulo.Id, cancellationToken))
+            {
+                return ArticuloErrors.NumeroDuplicado;
+            }
         }
 
         await unidadDeTrabajo.SaveChangesAsync(cancellationToken);
@@ -457,7 +534,7 @@ internal sealed class CorregirArticuloHandler(
 }
 ```
 
-### Reglas del handler
+### Reglas del handler de comando
 
 - Recibe sus dependencias por constructor primario, siempre como interfaces.
 - Llama a `SaveChangesAsync` una sola vez, al final. Todo lo que modifica la operación se guarda de forma atómica.
@@ -472,15 +549,18 @@ internal sealed class CorregirArticuloHandler(
 Una `IEntityTypeConfiguration<T>` por entidad. `SgplaDbContext` las descubre en el ensamblado del módulo.
 
 ```csharp
-namespace Sgpla.Modules.Catalogos.Infrastructure.GradosAcademicos;
+namespace Sgpla.Modules.Catalogos.Infrastructure.Articulos;
 
-internal sealed class GradoAcademicoConfiguration : IEntityTypeConfiguration<GradoAcademico>
+internal sealed class ArticuloConfiguration : IEntityTypeConfiguration<Articulo>
 {
-    public void Configure(EntityTypeBuilder<GradoAcademico> builder)
+    public void Configure(EntityTypeBuilder<Articulo> builder)
     {
-        builder.ToTable("grado_academico", "academico");
-        builder.HasKey(g => g.Id);
-        builder.Property(g => g.Nombre).HasMaxLength(GradoAcademico.LongitudMaximaNombre);
+        builder.ToTable("articulo", "plazas");
+        builder.HasKey(a => a.Id);
+
+        // varchar en la base: sin IsUnicode(false) los parámetros serían nvarchar y forzarían una conversión.
+        builder.Property(a => a.Numero).HasMaxLength(Articulo.LongitudMaximaNumero).IsUnicode(false);
+        builder.Property(a => a.Descripcion).HasMaxLength(Articulo.LongitudMaximaDescripcion);
     }
 }
 ```
@@ -499,9 +579,11 @@ Reglas:
 - No se declaran índices, restricciones únicas, CHECK ni intercalaciones. El esquema lo define DbUp, y un cambio de esquema es una migración nueva en `Scripts/` (ver el README del backend).
 - Las referencias a actores (`cargado_por_usuario_id` y similares) se mapean como `int` sin navegación, para no depender del módulo Usuarios.
 
-### Repositorios y consultas
+### Repositorios
 
 ```csharp
+namespace Sgpla.Modules.Catalogos.Infrastructure.Articulos;
+
 internal sealed class ArticuloRepository(SgplaDbContext contexto) : IArticuloRepository
 {
     public Task<Articulo?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
@@ -513,22 +595,50 @@ internal sealed class ArticuloRepository(SgplaDbContext contexto) : IArticuloRep
 
     public void Agregar(Articulo articulo) => contexto.Set<Articulo>().Add(articulo);
 }
+```
 
-internal sealed class GradoAcademicoQueries(SgplaDbContext contexto) : IGradoAcademicoQueries
+### Handlers de consulta
+
+Un handler de consulta implementa `IQueryHandler` en Infrastructure y consulta `SgplaDbContext` directamente: `AsNoTracking`, proyección al `Response` en SQL y `Result` con el error `NotFound` del dominio. No hay puerto intermedio: la consulta no tiene reglas que aislar, EF Core ya es la abstracción sobre la base, y las pruebas de integración la cubren contra SQL Server real. Se registran por escaneo y, como cualquier handler, pasan por el decorador de validación.
+
+Los handlers de consulta de un recurso comparten el archivo `<Entidad>Consultas.cs`.
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Sgpla.BuildingBlocks.Application;
+using Sgpla.BuildingBlocks.Infrastructure.Persistence;
+using Sgpla.Modules.Catalogos.Application.Articulos;
+using Sgpla.Modules.Catalogos.Domain.Articulos;
+using Sgpla.SharedKernel;
+
+namespace Sgpla.Modules.Catalogos.Infrastructure.Articulos;
+
+internal sealed class ListarArticulosHandler(SgplaDbContext contexto)
+    : IQueryHandler<ListarArticulosQuery, IReadOnlyList<ArticuloResponse>>
 {
-    public Task<GradoAcademicoResponse?> ObtenerAsync(int id, CancellationToken cancellationToken) =>
-        contexto.Set<GradoAcademico>()
+    public async Task<Result<IReadOnlyList<ArticuloResponse>>> HandleAsync(
+        ListarArticulosQuery query,
+        CancellationToken cancellationToken) =>
+        Result.Success<IReadOnlyList<ArticuloResponse>>(await contexto.Set<Articulo>()
             .AsNoTracking()
-            .Where(g => g.Id == id)
-            .Select(g => new GradoAcademicoResponse(g.Id, g.Nombre))
+            .OrderBy(a => a.Numero)
+            .ThenBy(a => a.Id)
+            .Select(a => new ArticuloResponse(a.Id, a.Numero, a.Descripcion))
+            .ToListAsync(cancellationToken));
+}
+
+internal sealed class ObtenerArticuloHandler(SgplaDbContext contexto) : IQueryHandler<ObtenerArticuloQuery, ArticuloResponse>
+{
+    public async Task<Result<ArticuloResponse>> HandleAsync(ObtenerArticuloQuery query, CancellationToken cancellationToken)
+    {
+        var articulo = await contexto.Set<Articulo>()
+            .AsNoTracking()
+            .Where(a => a.Id == query.Id)
+            .Select(a => new ArticuloResponse(a.Id, a.Numero, a.Descripcion))
             .FirstOrDefaultAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<GradoAcademicoResponse>> ListarAsync(CancellationToken cancellationToken) =>
-        await contexto.Set<GradoAcademico>()
-            .AsNoTracking()
-            .OrderBy(g => g.Id)
-            .Select(g => new GradoAcademicoResponse(g.Id, g.Nombre))
-            .ToListAsync(cancellationToken);
+        return articulo is null ? ArticuloErrors.NoEncontrado(query.Id) : articulo;
+    }
 }
 ```
 
@@ -560,14 +670,17 @@ internal static class ArticuloEndpoints
     public static RouteGroupBuilder MapArticuloEndpoints(this RouteGroupBuilder modulo)
     {
         var grupo = modulo.MapGroup("/articulos").WithTags("Artículos");
+        // Autorización: cuando exista JWT (módulo Usuarios), registrar y modificar quedan solo para el Superusuario.
 
+        grupo.MapGet("/", Listar).WithName("ListarArticulos")
+            .WithSummary("Lista todos los artículos, en orden alfabético del número.");
         grupo.MapGet("/{id:int}", Obtener).WithName(NombreRutaObtener).WithSummary("Obtiene un artículo.")
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapPost("/", Crear).WithName("CrearArticulo").WithSummary("Registra un artículo.")
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
-        grupo.MapPut("/{id:int}", Corregir).WithName("CorregirArticulo")
-            .WithSummary("Corrige el artículo mientras ningún Aviso lo use.")
+        grupo.MapPut("/{id:int}", Modificar).WithName("ModificarArticulo")
+            .WithSummary("Modifica el artículo: la descripción siempre; el número, solo mientras ningún Aviso lo use.")
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -575,38 +688,46 @@ internal static class ArticuloEndpoints
         return modulo;
     }
 
+    private static async Task<Results<Ok<IReadOnlyList<ArticuloResponse>>, ProblemHttpResult>> Listar(
+        IQueryHandler<ListarArticulosQuery, IReadOnlyList<ArticuloResponse>> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new ListarArticulosQuery(), cancellationToken)).ToOk();
+
+    private static async Task<Results<Ok<ArticuloResponse>, ProblemHttpResult>> Obtener(
+        int id,
+        IQueryHandler<ObtenerArticuloQuery, ArticuloResponse> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new ObtenerArticuloQuery(id), cancellationToken)).ToOk();
+
+    /// <summary>El cuerpo coincide con el comando, así que se enlaza directamente sin un request propio.</summary>
     private static async Task<Results<CreatedAtRoute<ArticuloResponse>, ProblemHttpResult>> Crear(
-        CrearArticuloRequest request,
+        CrearArticuloCommand command,
         ICommandHandler<CrearArticuloCommand, ArticuloResponse> handler,
         CancellationToken cancellationToken)
     {
-        var resultado = await handler.HandleAsync(
-            new CrearArticuloCommand(request.Numero, request.Descripcion), cancellationToken);
+        var resultado = await handler.HandleAsync(command, cancellationToken);
 
         return resultado.IsSuccess
             ? TypedResults.CreatedAtRoute(resultado.Value, NombreRutaObtener, new { id = resultado.Value.Id })
             : resultado.Error.ToProblem();
     }
 
-    private static async Task<Results<NoContent, ProblemHttpResult>> Corregir(
+    private static async Task<Results<NoContent, ProblemHttpResult>> Modificar(
         int id,
-        CorregirArticuloRequest request,
-        ICommandHandler<CorregirArticuloCommand> handler,
-        CancellationToken cancellationToken)
-    {
-        var resultado = await handler.HandleAsync(
-            new CorregirArticuloCommand(id, request.Numero, request.Descripcion), cancellationToken);
-
-        return resultado.IsSuccess ? TypedResults.NoContent() : resultado.Error.ToProblem();
-    }
-
-    // Obtener sigue la misma forma con IQueryHandler; el listado de artículos se define al implementarlo.
+        ModificarArticuloRequest request,
+        ICommandHandler<ModificarArticuloCommand> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new ModificarArticuloCommand(id, request.Numero, request.Descripcion), cancellationToken))
+            .ToNoContent();
 }
+
+/// <param name="Descripcion">Opcional: si no llega (o llega <c>null</c>), se conserva la descripción actual.</param>
+internal sealed record ModificarArticuloRequest(string Numero, string? Descripcion);
 ```
 
 Reglas:
-- **Un request por operación** (`CrearArticuloRequest`), aunque se parezca al Command. El request es el contrato HTTP; el Command es el del caso de uso, y pueden evolucionar por separado (por ejemplo, el `id` viene de la ruta).
-- **Siempre `TypedResults` y tipos de retorno `Results<...>`,** para que OpenAPI documente cada respuesta. Todo endpoint lleva `WithName` y `WithSummary`.
+- **Un request solo si difiere del Command.** Si el cuerpo coincide con el Command, el endpoint lo enlaza directamente (`CrearArticuloCommand`). Si difieren, por ejemplo porque el `id` viene de la ruta, hay un `<Accion><Entidad>Request` en el mismo archivo que los endpoints del recurso.
+- **Siempre `TypedResults` y tipos de retorno `Results<...>`,** para que OpenAPI documente cada respuesta. `ToOk()` y `ToNoContent()` traducen el `Result`; `ToProblem()` queda para las respuestas que esos helpers no cubren, como un 201 con `CreatedAtRoute`. Todo endpoint lleva `WithName` y `WithSummary`.
 - **Cada error de la tabla de operaciones se declara** con `ProducesValidationProblem()` (400) y `ProducesProblem(<código>)` (404, 409). `ProblemHttpResult` no publica sus códigos, así que sin esas llamadas OpenAPI no los muestra.
 - **Rutas con restricción de tipo:** `{id:int}`.
 - **Autorización:** se declara en el grupo del módulo, o del recurso si difiere, con `RequireAuthorization(<política>)`. Las políticas (`Superusuario`, `Dgaa`, `EntidadAcademica`) llegan con el módulo Usuarios. Hasta entonces, el grupo lleva un comentario en ese punto, sin otra solución provisional.
@@ -616,7 +737,7 @@ Reglas:
 | Operación | Método y ruta | Éxito | Errores |
 |---|---|---|---|
 | Listar | `GET /` con `pagina` (desde 1), `tamanoPagina` (1 a 100, 20 por omisión) e `incluirEliminados` si hay baja lógica | 200 con `Pagina<T>` | 400 |
-| Listar un catálogo fijo | `GET /`, sin parámetros | 200 con un arreglo ordenado por `id` | — |
+| Listar completo | `GET /` sin paginación, para catálogos fijos y recursos con pocos registros (como `Articulo`), con filtros opcionales | 200 con un arreglo en un orden total | 400 si un filtro es inválido |
 | Obtener | `GET /{id}` | 200 | 404 |
 | Crear | `POST /` | 201 con `Location` y el recurso | 400, 409 |
 | Editar | `PUT /{id}` con los campos editables | 204 | 400, 404, 409 |
@@ -658,7 +779,7 @@ Todos los errores se responden como ProblemDetails, con la extensión `codigo` i
 
 | `ErrorType` | HTTP | Cuándo |
 |---|---|---|
-| `Validation` | 400 | Entrada mal formada; incluye `errors` por campo. También un `id` del cuerpo que referencia a un registro inexistente (por ejemplo, el grado de un tratamiento) |
+| `Validation` | 400 | Entrada mal formada; incluye `errors` por campo, de un validator o del `Campo` de un error de dominio. También un `id` del cuerpo que referencia a un registro inexistente (por ejemplo, el grado de un tratamiento) |
 | `NotFound` | 404 | El recurso de la ruta no existe (o está dado de baja y la operación no admite bajas) |
 | `Conflict` | 409 | Duplicados, valores inmutables, transiciones de estado inválidas, padres inactivos |
 
@@ -674,45 +795,41 @@ Todos los errores se responden como ProblemDetails, con la extensión `codigo` i
 
 ### Catálogos fijos
 
-Un catálogo fijo tiene valores definidos por el negocio que ningún usuario agrega, modifica ni elimina (`DATABASE.md` §5; por ejemplo, `grado_academico`). Se implementa así:
+Un catálogo fijo tiene valores definidos por el negocio que ningún usuario agrega, modifica ni elimina (`DATABASE.md` §5; por ejemplo, `grado_academico`). No tiene reglas, así que casi todo es compartido:
 
 | Pieza | Regla |
 |---|---|
 | Datos | Se cargan en `Baseline/seed.sql` con ids fijos (`SET IDENTITY_INSERT ... ON`) y quedan documentados en `DATABASE.md` |
-| Domain | La entidad no tiene fábrica ni comportamiento: constructor privado, propiedades con `private set` y las constantes de longitud para EF. `<Entidad>Errors` solo declara `NoEncontrado` |
-| Application | Solo el puerto `I<Entidad>Queries` y los casos de uso `Listar` y `Obtener`; sin repositorio, comandos ni validators |
-| Endpoints | `GET /` devuelve un arreglo JSON con todos los valores, ordenado por `id`; `GET /{id}` responde 200 o 404 con `codigo`. No hay rutas de escritura: un `POST`, `PUT` o `DELETE` responde 405 |
-| Pruebas | Sin pruebas unitarias. Una prueba de semilla con los ids y nombres exactos, y pruebas de integración del listado exacto, de obtener (200 y 404) y del 405 de escritura |
+| Domain | Subclase sellada de `CatalogoFijo` (`Id` y `Nombre`) en `Domain/CatalogosFijos`, con constructor privado, la constante `LongitudMaximaNombre` y, si las tiene, sus columnas adicionales con `private set`. Sin fábrica, comportamiento ni `Errors` propio: el 404 es `CatalogoFijoErrors.NoEncontrado<T>`, con código `<Catalogo>.NoEncontrado` |
+| Infrastructure | Una clase de una línea que hereda de `CatalogoFijoConfiguration<T>` con esquema, tabla y longitud |
+| Si solo tiene nombre | Nada más: `AddCatalogoFijo<T>()` registra los handlers genéricos y `MapCatalogoFijo<T>(ruta, etiqueta)` mapea las rutas con `CatalogoFijoResponse` |
+| Si tiene columnas adicionales o filtros | Sus propias Queries, handlers y endpoints, como cualquier consulta (`ModalidadRecepcion`, `TratamientoAcademico`) |
+| Endpoints | `GET /` devuelve un arreglo JSON con todos los valores, ordenado por `id`, y puede aceptar filtros opcionales por query (por ejemplo, `gradoAcademicoId` en tratamientos académicos; un filtro sin coincidencias devuelve un arreglo vacío). `GET /{id}` responde 200 o 404 con `codigo`. No hay rutas de escritura: un `POST`, `PUT` o `DELETE` responde 405 |
+| Pruebas | Sin pruebas unitarias. Una prueba de semilla con los ids y nombres exactos, y pruebas de integración del listado exacto, de obtener (200 y 404) y del 405 de escritura. Mientras un catálogo no tenga valores definidos, la semilla lo deja vacío y las pruebas verifican el arreglo vacío |
+
+Un catálogo nuevo que solo tiene nombre son la entidad, su configuración y dos líneas en `<Modulo>Module`:
 
 ```csharp
-internal static class GradoAcademicoEndpoints
+// Domain/CatalogosFijos/TipoPlaza.cs
+internal sealed class TipoPlaza : CatalogoFijo
 {
-    public static RouteGroupBuilder MapGradoAcademicoEndpoints(this RouteGroupBuilder modulo)
+    public const int LongitudMaximaNombre = 150;
+
+    private TipoPlaza()
     {
-        var grupo = modulo.MapGroup("/grados-academicos").WithTags("Grados académicos");
-
-        grupo.MapGet("/", Listar).WithName("ListarGradosAcademicos")
-            .WithSummary("Lista todos los grados académicos, en orden de jerarquía.");
-        grupo.MapGet("/{id:int}", Obtener).WithName("ObtenerGradoAcademico").WithSummary("Obtiene un grado académico.")
-            .ProducesProblem(StatusCodes.Status404NotFound);
-
-        return modulo;
     }
-
-    private static async Task<Results<Ok<IReadOnlyList<GradoAcademicoResponse>>, ProblemHttpResult>> Listar(
-        IQueryHandler<ListarGradosAcademicosQuery, IReadOnlyList<GradoAcademicoResponse>> handler,
-        CancellationToken cancellationToken)
-    {
-        var resultado = await handler.HandleAsync(new ListarGradosAcademicosQuery(), cancellationToken);
-
-        return resultado.IsSuccess ? TypedResults.Ok(resultado.Value) : resultado.Error.ToProblem();
-    }
-
-    // Obtener sigue la misma forma.
 }
+
+// Infrastructure/CatalogosFijos/CatalogoFijoConfiguration.cs
+internal sealed class TipoPlazaConfiguration()
+    : CatalogoFijoConfiguration<TipoPlaza>("plazas", "tipo_plaza", TipoPlaza.LongitudMaximaNombre);
+
+// CatalogosModule.cs
+services.AddCatalogoFijo<TipoPlaza>();
+grupo.MapCatalogoFijo<TipoPlaza>("/tipos-plaza", "Tipos de plaza");
 ```
 
-El handler del listado devuelve `Result.Success(lista)`, porque C# no convierte implícitamente desde una interfaz como `IReadOnlyList<T>`.
+`MapCatalogoFijo<T>` no conoce el dominio: recibe el tipo como parámetro genérico sin restricciones, y quien lo cierra con la entidad es la raíz de composición.
 
 ## 10. Composición del módulo
 
@@ -732,11 +849,16 @@ public static class CatalogosModule
         var ensamblado = typeof(CatalogosModule).Assembly;
 
         services.AddPersistenciaModulo(ensamblado);
-        services.AddHandlersModulo(ensamblado);   // handlers, validators y decorador de validación
+        services.AddHandlersModulo(ensamblado);
 
-        services.AddScoped<IGradoAcademicoQueries, GradoAcademicoQueries>();
+        // Catálogos fijos que solo tienen nombre: handlers genéricos. Los demás se registran por escaneo.
+        services.AddCatalogoFijo<GradoAcademico>();
+        services.AddCatalogoFijo<TipoDocumentoExpediente>();
+        services.AddCatalogoFijo<TipoPlaza>();
+        services.AddCatalogoFijo<TipoContratacion>();
+
+        // Artículos. IReferenciasArticulo lo registra cada módulo que lo implementa (Publicacion).
         services.AddScoped<IArticuloRepository, ArticuloRepository>();
-        services.AddScoped<IArticuloQueries, ArticuloQueries>();
 
         return services;
     }
@@ -744,21 +866,38 @@ public static class CatalogosModule
     public static IEndpointRouteBuilder MapCatalogosEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var grupo = endpoints.MapGroup(Ruta);
-        // Autorización: grupo.RequireAuthorization(...) cuando exista JWT (módulo Usuarios).
+        // Autorización: cuando exista JWT (módulo Usuarios), las consultas quedan para cualquier usuario autenticado.
 
-        grupo.MapGradoAcademicoEndpoints();
+        grupo.MapCatalogoFijo<GradoAcademico>("/grados-academicos", "Grados académicos");
+        grupo.MapCatalogoFijo<TipoDocumentoExpediente>("/tipos-documento-expediente", "Tipos de documento de expediente");
+        grupo.MapCatalogoFijo<TipoPlaza>("/tipos-plaza", "Tipos de plaza");
+        grupo.MapCatalogoFijo<TipoContratacion>("/tipos-contratacion", "Tipos de contratación");
+        grupo.MapTratamientoAcademicoEndpoints();
+        grupo.MapModalidadRecepcionEndpoints();
         grupo.MapArticuloEndpoints();
 
         return endpoints;
     }
+
+    private static void AddCatalogoFijo<TCatalogo>(this IServiceCollection services)
+        where TCatalogo : CatalogoFijo
+    {
+        services.AddScoped<
+            IQueryHandler<ListarCatalogoFijoQuery<TCatalogo>, IReadOnlyList<CatalogoFijoResponse>>,
+            ListarCatalogoFijoHandler<TCatalogo>>();
+        services.AddScoped<
+            IQueryHandler<ObtenerCatalogoFijoQuery<TCatalogo>, CatalogoFijoResponse>,
+            ObtenerCatalogoFijoHandler<TCatalogo>>();
+    }
 }
 ```
 
-El contrato `IReferenciasArticulo` no se registra aquí: lo registra cada módulo que lo implementa, en su propio `<Modulo>Module` (por ejemplo, `services.AddScoped<IReferenciasArticulo, ReferenciasArticuloEnAvisos>()` en Publicacion).
+El contrato `IReferenciasArticulo` no se registra aquí: lo registra cada módulo que lo implementa, en su propio `<Modulo>Module` (por ejemplo, `services.AddScoped<IReferenciasArticulo, ReferenciasArticuloEnAvisos>()` en Publicacion). Mientras ninguno lo implemente, el handler recibe una lista vacía y el número siempre puede modificarse.
 
 Reglas:
-- Los handlers y validators se registran por escaneo con `AddHandlersModulo`. Cada handler se resuelve por su interfaz envuelto en el decorador de validación; la decoración es propia (`ActivatorUtilities`), sin bibliotecas de terceros.
-- Los puertos se registran uno por uno, con ciclo de vida `Scoped`, para que la composición sea visible y revisable.
+- Los handlers y validators se registran por escaneo con `AddHandlersModulo`, estén en Application (comandos) o en Infrastructure (consultas). Cada handler se resuelve por su interfaz envuelto en el decorador de validación; la decoración es propia (`ActivatorUtilities`), sin bibliotecas de terceros.
+- Los handlers genéricos de catálogos fijos no se pueden escanear, porque la interfaz no tiene la misma aridad que la clase; los registra `AddCatalogoFijo<T>` sin decorador, porque no reciben parámetros que validar.
+- Los repositorios se registran uno por uno, con ciclo de vida `Scoped`, para que la composición sea visible y revisable.
 - La configuración del módulo, cuando exista, se enlaza a una clase `<Nombre>Options` validada al arrancar (`ValidateOnStart`).
 - Una dependencia nueva entre módulos requiere tres cambios en el mismo PR:
   - la referencia en el `.csproj`;
@@ -804,7 +943,7 @@ internal static partial class SincronizarPlaneaLog
 
 | Proyecto | Qué se prueba | Obligatorio |
 |---|---|---|
-| `Sgpla.UnitTests` | Fábricas, normalización e invariantes de cada entidad. Ramas de reglas de un handler con puertos falsos, cuando el handler tiene lógica propia | Sí, para toda entidad con comportamiento (los catálogos fijos no tienen) |
+| `Sgpla.UnitTests` | Fábricas, normalización e invariantes de cada entidad. Ramas de reglas de un handler de comando con puertos falsos, cuando tiene lógica propia. Los handlers de consulta no llevan pruebas unitarias: los cubren las de integración | Sí, para toda entidad con comportamiento (los catálogos fijos no tienen) |
 | `Sgpla.IntegrationTests` | Cada endpoint de punta a punta contra SQL Server en contenedor: éxito y cada error que documenta (400, 404, 409). La semilla de cada catálogo fijo | Sí, para todo endpoint |
 | `Sgpla.ArchitectureTests` | Las reglas de este documento | Automático; no se edita salvo para agregar módulos o reglas |
 
@@ -818,7 +957,7 @@ public sealed class ArticuloTests
     [Fact]
     public void Crear_ConEspaciosYMinusculas_NormalizaElNumero()
     {
-        var resultado = Articulo.Crear("  42  bis ", descripcion: null);
+        var resultado = Articulo.Crear("  42  bis ", "Descripción.");
 
         resultado.IsSuccess.ShouldBeTrue();
         resultado.Value.Numero.ShouldBe("42 BIS");
@@ -829,7 +968,7 @@ public sealed class ArticuloTests
     [InlineData("   ")]
     public void Crear_SinNumero_FallaConNumeroVacio(string numero)
     {
-        Articulo.Crear(numero, descripcion: null).Error.ShouldBe(ArticuloErrors.NumeroVacio);
+        Articulo.Crear(numero, "Descripción.").Error.ShouldBe(ArticuloErrors.NumeroVacio);
     }
 }
 ```
@@ -856,11 +995,12 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     public async Task Crear_ConNumeroEquivalenteEnMinusculas_Responde409()
     {
         using var cliente = _api.CreateClient();
-        var numero = $"{Random.Shared.Next(1, 100_000)} BIS";
-        using var primera = await cliente.PostAsJsonAsync(Ruta, new { numero }, TestContext.Current.CancellationToken);
+        var numero = $"{DatosUnicos.Numero()} BIS";
+        const string descripcion = "Fundamento de prueba.";
+        using var primera = await cliente.PostAsJsonAsync(Ruta, new { numero, descripcion }, TestContext.Current.CancellationToken);
 
         using var respuesta = await cliente.PostAsJsonAsync(
-            Ruta, new { numero = numero.ToLowerInvariant() }, TestContext.Current.CancellationToken);
+            Ruta, new { numero = numero.ToLowerInvariant(), descripcion }, TestContext.Current.CancellationToken);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
@@ -873,22 +1013,23 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
 
 | Principio | Cómo lo cumple el estándar |
 |---|---|
-| **Responsabilidad única** | Un handler por caso de uso, un validator por entrada, una configuración por entidad y un archivo de endpoints por recurso. Cada capa tiene una sola razón para cambiar: el negocio (Domain), el flujo (Application), la tecnología (Infrastructure) o el protocolo (Endpoints) |
-| **Abierto/cerrado** | Un caso de uso nuevo es una carpeta nueva, sin tocar las existentes. Los comportamientos transversales (validación) son decoradores. Un módulo nuevo que referencie un artículo implementa su contrato sin modificar al dueño |
+| **Responsabilidad única** | Un handler por caso de uso, una configuración por entidad y un archivo de endpoints por recurso. Cada regla vive en un solo lugar: la forma de los datos en el dominio, las reglas entre registros en el handler. Cada capa tiene una sola razón para cambiar: el negocio (Domain), el flujo (Application), la tecnología (Infrastructure) o el protocolo (Endpoints) |
+| **Abierto/cerrado** | Un caso de uso nuevo es un archivo nuevo, sin tocar los existentes; un catálogo fijo nuevo reutiliza `CatalogoFijo`, su configuración y sus handlers sin modificarlos. Los comportamientos transversales (validación) son decoradores. Un módulo nuevo que referencie un artículo implementa su contrato sin modificar al dueño |
 | **Sustitución de Liskov** | Toda implementación de un puerto cumple el contrato completo: sin `NotImplementedException`, sin efectos ocultos (un repositorio no guarda) y con las mismas garantías que las implementaciones falsas de las pruebas |
-| **Segregación de interfaces** | Puertos por recurso y separados en escritura (`Repository`) y lectura (`Queries`). Los contratos entre módulos exponen solo lo que el consumidor necesita |
-| **Inversión de dependencias** | Application declara los puertos que necesita e Infrastructure los implementa. Los módulos dependientes implementan los contratos del módulo del que dependen. `<Modulo>Module` compone todo en un solo lugar |
+| **Segregación de interfaces** | Puertos de escritura por recurso, con solo los métodos que usan sus comandos; las consultas no necesitan puerto. Los contratos entre módulos exponen solo lo que el consumidor necesita |
+| **Inversión de dependencias** | Application declara los puertos que necesitan sus comandos e Infrastructure los implementa. Los handlers de consulta dependen de los contratos de Application (Query y Response), nunca al revés. Los módulos dependientes implementan los contratos del módulo del que dependen. `<Modulo>Module` compone todo en un solo lugar |
 
 ## 14. Receta para un recurso nuevo
 
 1. **Leer la especificación.** Revisar la tabla en `DATABASE.md` (columnas, restricciones, baja lógica, inmutabilidad, casos de aceptación) y las operaciones permitidas en `PLAN_INICIAL.md`.
-2. **Domain.** Crear la entidad con sus constantes, la fábrica `Crear`, los métodos de comportamiento y `<Entidad>Errors`. Escribir sus pruebas unitarias. Si es un catálogo fijo, seguir la subsección "Catálogos fijos" de la sección 9.
-3. **Application.** Crear los puertos, el `Response` y, por cada operación, la carpeta con Command o Query, Validator y Handler. Si otro módulo participa, declarar o usar el contrato en `Contracts`.
-4. **Infrastructure.** Crear la configuración de EF, el repositorio y las consultas. Si el recurso necesita un cambio de esquema, crear la migración en `Scripts/`.
-5. **Endpoints.** Crear los requests y `<Entidad>Endpoints` con la tabla de operaciones estándar.
-6. **Composición.** Registrar los puertos en `<Modulo>Module` y mapear los endpoints en el grupo del módulo.
-7. **Pruebas de integración.** Cubrir cada endpoint en su caso de éxito y en cada error documentado.
-8. **Verificar.** Recorrer la lista de la sección 15.
+2. **¿Es un catálogo fijo?** Seguir la subsección "Catálogos fijos" de la sección 9 y saltar al paso 7.
+3. **Domain.** Crear la entidad con sus constantes, la fábrica `Crear`, los métodos de comportamiento y `<Entidad>Errors`, con el campo en cada error de validación. Escribir sus pruebas unitarias.
+4. **Application.** Crear `<Entidad>Consultas.cs` con el `Response` y las Queries, el repositorio que necesiten los comandos y un archivo `<Accion><Entidad>.cs` por comando. Agregar un validator solo para lo que el dominio no valida. Si otro módulo participa, declarar o usar el contrato en `Contracts`.
+5. **Infrastructure.** Crear la configuración de EF, el repositorio y `<Entidad>Consultas.cs` con los handlers de consulta. Si el recurso necesita un cambio de esquema, crear la migración en `Scripts/`.
+6. **Endpoints.** Crear `<Entidad>Endpoints` con la tabla de operaciones estándar, y un request solo donde difiera del Command.
+7. **Composición.** Registrar los repositorios (o `AddCatalogoFijo<T>`) en `<Modulo>Module` y mapear los endpoints en el grupo del módulo.
+8. **Pruebas de integración.** Cubrir cada endpoint en su caso de éxito y en cada error documentado.
+9. **Verificar.** Recorrer la lista de la sección 15.
 
 ## 15. Lista de verificación
 
@@ -910,11 +1051,14 @@ Un módulo o recurso está terminado cuando:
 
 | No hacer | Por qué | En su lugar |
 |---|---|---|
-| Usar `SgplaDbContext` en un handler | Acopla Application a EF Core y rompe la inversión de dependencias | Un puerto implementado en Infrastructure |
+| Usar `SgplaDbContext` en un handler de comando | Acopla las reglas de negocio a EF Core y no se pueden probar con puertos falsos | Un repositorio implementado en Infrastructure |
+| Crear un puerto y un handler que solo reenvía la llamada para una consulta | Tres piezas sin lógica por cada lectura | Un handler de consulta en Infrastructure |
+| Repetir en un validator una regla que ya valida el dominio | Dos fuentes de verdad que terminan divergiendo | `Error.Validation` con su campo en el dominio |
+| Escribir entidad con comportamiento, handlers, respuestas y endpoints propios para un catálogo fijo que solo tiene nombre | Repetición sin reglas que proteger | `CatalogoFijo`, `AddCatalogoFijo<T>` y `MapCatalogoFijo<T>` |
 | Devolver entidades de dominio desde un endpoint | Expone el modelo interno y acopla el contrato HTTP al dominio | Un `Response` de Application |
 | Asignar propiedades de una entidad desde fuera | Permite estados inválidos | Métodos de comportamiento que validan |
 | Lanzar excepciones por reglas de negocio | Oculta los flujos esperados y complica el mapeo HTTP | Devolver `Error` en un `Result` |
-| Validar reglas de negocio en el endpoint | Se duplican o se saltan si el caso de uso se invoca desde otro lugar | Validator o dominio |
+| Validar reglas de negocio en el endpoint | Se duplican o se saltan si el caso de uso se invoca desde otro lugar | Dominio, handler o validator (sección 7) |
 | Llamar a `SaveChangesAsync` en un repositorio | Rompe la atomicidad del caso de uso | `IUnitOfWork` en el handler, una vez |
 | Usar tipos internos de otro módulo | Acopla módulos y rompe el grafo | `Application/Contracts` del otro módulo |
 | Crear un repositorio genérico `IRepository<T>` | Expone operaciones que el caso de uso no necesita | Puertos específicos por recurso |

@@ -565,7 +565,7 @@ CREATE TABLE plazas.articulo
 (
     id          int IDENTITY(1,1) NOT NULL,
     numero      varchar(50)       NOT NULL,
-    descripcion nvarchar(1000)    NULL,
+    descripcion nvarchar(1000)    NOT NULL,
     CONSTRAINT pk_articulo PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_articulo__numero UNIQUE (numero),
     -- Admite espacios internos, p. ej. 42 BIS.
@@ -574,7 +574,7 @@ CREATE TABLE plazas.articulo
         AND DATALENGTH(numero) = LEN(numero)
         AND numero NOT LIKE ' %'
         AND numero COLLATE Latin1_General_100_BIN2 = UPPER(numero)),
-    CONSTRAINT ck_articulo__descripcion_no_vacia CHECK (descripcion IS NULL OR LEN(TRIM(descripcion)) > 0)
+    CONSTRAINT ck_articulo__descripcion_no_vacia CHECK (LEN(TRIM(descripcion)) > 0)
 );
 
 CREATE TABLE plazas.modalidad_recepcion

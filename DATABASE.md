@@ -138,10 +138,10 @@ Excepciones deliberadas:
 - `integracion.sincronizacion_planea` es una bitácora append-only, usa marcas temporales propias y no tiene `fecha_eliminacion`.
 - `academico.municipio` es un catálogo fijo de los municipios de Veracruz, no administrable y sin baja lógica.
 - `usuarios.rol` es un catálogo fijo, no administrable y sin baja lógica.
-- `academico.grado_academico` es un catálogo fijo cargado por la semilla, no administrable y sin baja lógica.
+- `academico.grado_academico`, `academico.tipo_documento_expediente`, `plazas.tratamiento_academico`, `plazas.modalidad_recepcion`, `plazas.tipo_plaza` y `plazas.tipo_contratacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica.
 - Los perfiles `usuarios.usuario_dgaa` y `usuarios.usuario_entidad_academica` dependen del ciclo de vida de `usuarios.usuario` y no tienen `fecha_eliminacion` propia.
 - `usuarios.credencial_superusuario` tiene `fecha_eliminacion` propia para que la autenticación local exija que tanto la cuenta como la credencial estén activas; ambas fechas se coordinan transaccionalmente.
-- Los catálogos permanentes de `plazas` no usan baja lógica; sus valores se vuelven inmutables después de recibir su primera referencia.
+- `plazas.articulo` es el único catálogo administrable del proceso de plazas: no usa baja lógica, su número se vuelve inmutable después de la primera referencia y su descripción siempre es editable (§15.2).
 - `plazas.aviso` en estado `CREADO` y sus hijos de borrador admiten eliminación física bajo las reglas de la sección 15.
 - `plazas.acta_consejo_tecnico` y `plazas.acta_oferta` son las únicas entidades nuevas con baja lógica; no se restauran.
 - Ofertas, Aspirantes, Docentes e integrantes del Consejo solo admiten eliminación física cuando nunca fueron referenciados.
@@ -624,12 +624,15 @@ Valores cargados por `Baseline/seed.sql`, en orden de jerarquía académica: `1`
 
 ### 6.22 `academico.tipo_documento_expediente`
 
+Catálogo fijo de tipos de documento de expediente. Usa identificadores internos y no admite altas, modificaciones, bajas lógicas ni eliminaciones durante la operación normal.
+
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
-| `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK de catálogo permanente |
-| `nombre` | `nvarchar(150)` | `NOT NULL` | Nombre único e inmutable después de su primera referencia |
+| `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK interna asignada al cargar los datos semilla |
+| `nombre` | `nvarchar(150) COLLATE Modern_Spanish_100_CI_AI` | `NOT NULL` | Nombre único e inmutable |
 
-Sirve para los documentos lógicos de Aspirantes y Docentes. No usa baja lógica.
+Sirve para los documentos lógicos de Aspirantes y Docentes. Sus valores se cargarán en `Baseline/seed.sql` con ids estables; aún no están definidos.
+
 ## 7. Cardinalidades
 
 Las cardinalidades del proceso de plazas vacantes se detallan en el diagrama y los diccionarios de la sección 15.
@@ -744,7 +747,7 @@ La operación debe:
 - la baja de un área académica se bloquea mientras tenga entidades académicas activas;
 - la baja de un área de formación se bloquea mientras tenga EE activas;
 - la baja de un sistema educativo o nivel se bloquea mientras tenga programas activos;
-- `grado_academico` es un catálogo fijo (§6.21) y `tipo_documento_expediente` un catálogo permanente; ninguno tiene baja lógica y el nombre de `tipo_documento_expediente` queda inmutable después de la primera referencia;
+- `grado_academico` y `tipo_documento_expediente` son catálogos fijos (§6.21 y §6.22), sin baja lógica;
 - la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos;
 - la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos;
 - ninguna baja de estos catálogos se propaga a las entidades clasificadas.
@@ -786,7 +789,7 @@ Reglas adicionales:
 - Restaurar o crear un programa requiere que su sistema educativo y nivel de formación estén activos.
 - Antes de la primera programación de una EE pueden cambiar sus horas, créditos y área de formación.
 - Después de la primera programación solo pueden cambiar `experiencia_educativa.nombre`, `perfil_docente` y los cupos; cualquier cambio de cupo se valida con las reglas de no negatividad y orden.
-- Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio`, `rol` y `grado_academico` son catálogos fijos.
+- Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio`, `rol`, `grado_academico`, `tipo_documento_expediente`, `tratamiento_academico`, `modalidad_recepcion`, `tipo_plaza` y `tipo_contratacion` son catálogos fijos.
 - `entidad_academica.calle`, `numero_exterior`, `colonia`, `codigo_postal` y `municipio_id` son editables y representan únicamente el domicilio vigente; los valores anteriores no se conservan.
 - `entidad_academica.telefono` y `extension` son editables y representan únicamente los datos de contacto vigentes; los valores anteriores no se conservan.
 - El domicilio es independiente de `campus_id`: no se valida que el municipio o código postal correspondan con el campus y una modificación de domicilio no cambia esa relación inmutable.
@@ -1095,7 +1098,8 @@ La ausencia de rate limiting es un riesgo aceptado: Argon2id mitiga ataques fuer
 - Permitir modificar teléfono y extensión sin cambiar la identidad ni conservar historial.
 - Permitir que el domicilio editado no corresponda con la ubicación del campus, sin modificar `campus_id`.
 - Impedir altas, modificaciones y bajas del catálogo fijo de municipios mediante los flujos normales.
-- Impedir altas, modificaciones y bajas del catálogo fijo de grados académicos mediante los flujos normales.
+- Impedir altas, modificaciones y bajas de los catálogos fijos de grados académicos, tipos de documento de expediente, tratamientos académicos, modalidades de recepción, tipos de plaza y tipos de contratación mediante los flujos normales.
+- Permitir corregir el número de un artículo solo mientras ningún Aviso lo use, y su descripción en cualquier momento.
 - Impedir reasignar programas, planes o EE.
 - Permitir cambiar el área académica de una entidad sin programas.
 - Rechazar el cambio de área académica después de crear su primer programa.
@@ -1181,19 +1185,27 @@ La vista Mermaid de este dominio también se mantiene exclusivamente en `DATABAS
 
 ### 15.2 Catálogos permanentes
 
-Los siguientes catálogos usan `int IDENTITY(1,1)`, no tienen `fecha_eliminacion` y no admiten eliminación física durante la operación. El nombre puede corregirse mientras el valor no tenga referencias; después se vuelve inmutable. Los nombres se comparan con `Modern_Spanish_100_CI_AI`.
+Los siguientes catálogos usan `int IDENTITY(1,1)`, no tienen `fecha_eliminacion` y no admiten eliminación física durante la operación. Los nombres se comparan con `Modern_Spanish_100_CI_AI`.
 
-| Tabla | Columnas adicionales | Unicidad |
-|---|---|---|
-| `academico.grado_academico` | `nombre nvarchar(150)` | `nombre`. Catálogo fijo (§6.21): no admite correcciones |
-| `plazas.tratamiento_academico` | `nombre nvarchar(30)`, `grado_academico_id int` | `nombre` global |
-| `plazas.articulo` | `numero varchar(50)`, `descripcion nvarchar(1000) NULL` | `numero` normalizado |
-| `plazas.modalidad_recepcion` | `nombre nvarchar(100)`, `requiere_lugar bit` | `nombre` |
-| `plazas.tipo_plaza` | `nombre nvarchar(150)` | `nombre` |
-| `plazas.tipo_contratacion` | `nombre nvarchar(150)` | `nombre` |
-| `academico.tipo_documento_expediente` | `nombre nvarchar(150)` | `nombre` |
+| Tabla | Columnas adicionales | Unicidad | Tipo |
+|---|---|---|---|
+| `academico.grado_academico` | `nombre nvarchar(150)` | `nombre` | Fijo (§6.21) |
+| `academico.tipo_documento_expediente` | `nombre nvarchar(150)` | `nombre` | Fijo (§6.22) |
+| `plazas.tratamiento_academico` | `nombre nvarchar(30)`, `grado_academico_id int` | `nombre` global | Fijo |
+| `plazas.modalidad_recepcion` | `nombre nvarchar(100)`, `requiere_lugar bit` | `nombre` | Fijo |
+| `plazas.tipo_plaza` | `nombre nvarchar(150)` | `nombre` | Fijo |
+| `plazas.tipo_contratacion` | `nombre nvarchar(150)` | `nombre` | Fijo |
+| `plazas.articulo` | `numero varchar(50)`, `descripcion nvarchar(1000)` | `numero` normalizado | Administrable |
 
-`articulo.numero` es una referencia opaca y permite valores como `42` o `42 BIS`. Cada Aviso elige exactamente un artículo; el artículo no se duplica en Oferta ni Programación Académica.
+Los catálogos fijos se cargan en `Baseline/seed.sql` con ids estables y no admiten altas, modificaciones ni bajas durante la operación normal. Salvo `grado_academico` y `tratamiento_academico`, sus valores aún no están definidos.
+
+`tratamiento_academico` carga `1` Lic (Licenciatura), `2` Mtro y `3` Mtra (Maestría), y `4` Dr y `5` Dra (Doctorado). Especialidad no tiene tratamiento.
+
+`plazas.articulo` es el único administrable y solo lo registra y corrige el Superusuario:
+
+- `numero` es una referencia opaca que permite valores como `42` o `42 BIS`. Se normaliza recortando los espacios exteriores, colapsando los internos a uno solo y pasándolo a mayúsculas, y solo admite caracteres ASCII imprimibles. Puede corregirse mientras ningún Aviso use el artículo; después se vuelve inmutable.
+- `descripcion` es obligatoria, no admite texto vacío y puede corregirse en cualquier momento. Una corrección que no la incluye conserva la actual; una vez registrada, el artículo nunca queda sin descripción.
+- Cada Aviso elige exactamente un artículo; el artículo no se duplica en Oferta ni Programación Académica.
 
 ### 15.3 `plazas.integrante_consejo_tecnico`
 
@@ -1797,7 +1809,7 @@ Las solicitudes RECHAZADAS y CANCELADAS no impiden la baja. Las operaciones de c
 
 No existen decisiones funcionales pendientes para implementar este modelo base. Aún deben realizarse como trabajo posterior:
 
-- datos iniciales de los catálogos no incluidos en `Baseline/seed.sql`: `area_academica`, `entidad_academica` y `periodo_escolar` los registra el Superusuario, y los catálogos permanentes del esquema `plazas` siguen sin datos;
+- datos iniciales de los catálogos no incluidos en `Baseline/seed.sql`: `area_academica`, `entidad_academica` y `periodo_escolar` los registra el Superusuario, y los catálogos fijos `tipo_documento_expediente`, `modalidad_recepcion`, `tipo_plaza` y `tipo_contratacion` siguen sin valores definidos;
 - implementación transaccional de bajas, restauraciones e inmutabilidad;
 - implementación del adaptador y la sincronización atómica con PLANEA, incluidos Docentes y asignaciones iniciales;
 - implementación del bootstrap, autenticación LDAP y verificación local de Superusuarios;

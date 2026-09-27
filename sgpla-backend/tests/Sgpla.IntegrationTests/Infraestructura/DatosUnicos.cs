@@ -8,4 +8,7 @@ public static class DatosUnicos
 {
     /// <summary>Un nombre con prefijo legible y un sufijo aleatorio de 32 caracteres hexadecimales.</summary>
     public static string Nombre(string prefijo) => $"{prefijo} {Guid.NewGuid():N}";
+
+    /// <summary>Un número de artículo ya normalizado: 16 caracteres hexadecimales en mayúsculas.</summary>
+    public static string Numero() => Guid.NewGuid().ToString("N")[..16].ToUpperInvariant();
 }

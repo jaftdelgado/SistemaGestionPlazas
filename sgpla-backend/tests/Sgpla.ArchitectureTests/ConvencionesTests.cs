@@ -1,29 +1,24 @@
 using NetArchTest.Rules;
+using Sgpla.BuildingBlocks.Application;
 
 namespace Sgpla.ArchitectureTests;
 
 /// <summary>
-/// Ubicación, sellado y visibilidad de los tipos de cada módulo según su sufijo.
+/// Ubicación, sellado y visibilidad de los tipos de cada módulo según su sufijo o su rol.
 /// Ver ESTANDAR_MODULOS.md, secciones 3 a 5.
 /// </summary>
 public class ConvencionesTests
 {
     [Theory]
     [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
-    public void Handlers_ResidenEnApplicationYSonSellados(string modulo)
-    {
-        var ns = Modulos.Namespace(modulo);
+    public void CommandHandlers_ResidenEnApplicationYSonSellados(string modulo) =>
+        ComprobarHandlers(modulo, "Application", typeof(ICommandHandler<>), typeof(ICommandHandler<,>));
 
-        var ubicacion = Clases(modulo).And().HaveNameEndingWith("Handler")
-            .Should().ResideInNamespace($"{ns}.Application")
-            .GetResult();
-        var sellado = Clases(modulo).And().HaveNameEndingWith("Handler")
-            .Should().BeSealed()
-            .GetResult();
-
-        ubicacion.IsSuccessful.ShouldBeTrue(Describir(ubicacion));
-        sellado.IsSuccessful.ShouldBeTrue(Describir(sellado));
-    }
+    /// <summary>Una consulta es un adaptador de lectura: proyecta desde <c>SgplaDbContext</c> sin pasar por un puerto.</summary>
+    [Theory]
+    [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
+    public void QueryHandlers_ResidenEnInfrastructureYSonSellados(string modulo) =>
+        ComprobarHandlers(modulo, "Infrastructure", typeof(IQueryHandler<,>));
 
     [Theory]
     [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
@@ -39,11 +34,6 @@ public class ConvencionesTests
     [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
     public void Repositories_ResidenEnInfrastructure(string modulo) =>
         ComprobarUbicacion(modulo, "Repository", "Infrastructure");
-
-    [Theory]
-    [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
-    public void Queries_ResidenEnInfrastructure(string modulo) =>
-        ComprobarUbicacion(modulo, "Queries", "Infrastructure");
 
     [Theory]
     [MemberData(nameof(Modulos.Nombres), MemberType = typeof(Modulos))]
@@ -66,6 +56,26 @@ public class ConvencionesTests
     /// <summary>Las interfaces (puertos) quedan fuera: se declaran en Application.</summary>
     private static PredicateList Clases(string modulo) =>
         Types.InAssembly(Modulos.Ensamblados[modulo]).That().AreClasses();
+
+    /// <summary>
+    /// Por reflexión y no por sufijo: así también cubre los handlers genéricos (<c>ListarCatalogoFijoHandler`1</c>),
+    /// cuyo nombre no termina en <c>Handler</c>.
+    /// </summary>
+    private static void ComprobarHandlers(string modulo, string capa, params Type[] interfaces)
+    {
+        var espacio = $"{Modulos.Namespace(modulo)}.{capa}";
+
+        var incumplen = Modulos.Ensamblados[modulo].GetTypes()
+            .Where(tipo => tipo.IsClass && tipo.GetInterfaces().Any(interfaz =>
+                interfaz.IsGenericType && interfaces.Contains(interfaz.GetGenericTypeDefinition())))
+            .Where(tipo => !tipo.IsSealed
+                || tipo.Namespace is null
+                || !(tipo.Namespace == espacio || tipo.Namespace.StartsWith($"{espacio}.", StringComparison.Ordinal)))
+            .Select(tipo => tipo.FullName)
+            .ToArray();
+
+        incumplen.ShouldBeEmpty($"Handlers fuera de {capa} o sin sellar: {string.Join(", ", incumplen)}");
+    }
 
     private static void ComprobarUbicacion(string modulo, string sufijo, string capa)
     {

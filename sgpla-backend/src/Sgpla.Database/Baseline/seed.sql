@@ -350,3 +350,21 @@ VALUES (1, N'Licenciatura'),
        (4, N'Doctorado');
 
 SET IDENTITY_INSERT academico.grado_academico OFF;
+
+-- 12. plazas.tratamiento_academico
+-- Tratamientos académicos asociados al grado correspondiente.
+
+SET IDENTITY_INSERT plazas.tratamiento_academico ON;
+
+INSERT INTO plazas.tratamiento_academico (id, nombre, grado_academico_id)
+VALUES (1, N'Lic',  (SELECT id FROM academico.grado_academico WHERE nombre = N'Licenciatura')),
+       (2, N'Mtro', (SELECT id FROM academico.grado_academico WHERE nombre = N'Maestría')),
+       (3, N'Mtra', (SELECT id FROM academico.grado_academico WHERE nombre = N'Maestría')),
+       (4, N'Dr',   (SELECT id FROM academico.grado_academico WHERE nombre = N'Doctorado')),
+       (5, N'Dra',  (SELECT id FROM academico.grado_academico WHERE nombre = N'Doctorado'));
+
+SET IDENTITY_INSERT plazas.tratamiento_academico OFF;
+
+-- 13. Catálogos fijos pendientes de valores (DATABASE.md §6.22 y §15.2):
+-- academico.tipo_documento_expediente, plazas.modalidad_recepcion,
+-- plazas.tipo_plaza y plazas.tipo_contratacion.

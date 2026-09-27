@@ -14,7 +14,14 @@ public enum ErrorType
 [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Nombre fijado por ESTANDAR_MODULOS.md; solo se consume desde C#.")]
 public record Error(string Code, string Message, ErrorType Type)
 {
-    public static Error Validation(string code, string message) => new(code, message, ErrorType.Validation);
+    /// <summary>
+    /// Propiedad de la entrada a la que se refiere un error de validación (<c>Numero</c>), si la hay. La respuesta HTTP
+    /// lo reporta en <c>errors</c> bajo ese campo, igual que los errores de los validators.
+    /// </summary>
+    public string? Campo { get; init; }
+
+    public static Error Validation(string code, string message, string? campo = null) =>
+        new(code, message, ErrorType.Validation) { Campo = campo };
 
     public static Error NotFound(string code, string message) => new(code, message, ErrorType.NotFound);
 

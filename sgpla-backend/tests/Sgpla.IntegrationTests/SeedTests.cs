@@ -14,6 +14,12 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [InlineData("academico.region", 5)]
     [InlineData("academico.campus", 24)]
     [InlineData("academico.grado_academico", 4)]
+    [InlineData("plazas.tratamiento_academico", 5)]
+    // Catálogos fijos cuyos valores aún no están definidos.
+    [InlineData("academico.tipo_documento_expediente", 0)]
+    [InlineData("plazas.modalidad_recepcion", 0)]
+    [InlineData("plazas.tipo_plaza", 0)]
+    [InlineData("plazas.tipo_contratacion", 0)]
     // Omitidos a propósito: los registra el Superusuario desde la aplicación.
     [InlineData("academico.area_academica", 0)]
     [InlineData("academico.periodo_escolar", 0)]
@@ -61,5 +67,23 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
         }
 
         grados.ShouldBe([(1, "Licenciatura"), (2, "Especialidad"), (3, "Maestría"), (4, "Doctorado")]);
+    }
+
+    [Fact]
+    public async Task Seed_CargaLosTratamientosAcademicosFijos()
+    {
+        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await conexion.OpenAsync(TestContext.Current.CancellationToken);
+        await using var comando = new SqlCommand(
+            "SELECT id, nombre, grado_academico_id FROM plazas.tratamiento_academico ORDER BY id", conexion);
+
+        var tratamientos = new List<(int Id, string Nombre, int GradoAcademicoId)>();
+        await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        while (await lector.ReadAsync(TestContext.Current.CancellationToken))
+        {
+            tratamientos.Add((lector.GetInt32(0), lector.GetString(1), lector.GetInt32(2)));
+        }
+
+        tratamientos.ShouldBe([(1, "Lic", 1), (2, "Mtro", 3), (3, "Mtra", 3), (4, "Dr", 4), (5, "Dra", 4)]);
     }
 }

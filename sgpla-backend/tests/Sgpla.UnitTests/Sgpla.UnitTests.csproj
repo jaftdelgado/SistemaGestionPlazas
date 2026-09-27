@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\Sgpla.SharedKernel\Sgpla.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\Sgpla.BuildingBlocks.Application\Sgpla.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalogos\Sgpla.Modules.Catalogos\Sgpla.Modules.Catalogos.csproj" />
   </ItemGroup>
 
 </Project>

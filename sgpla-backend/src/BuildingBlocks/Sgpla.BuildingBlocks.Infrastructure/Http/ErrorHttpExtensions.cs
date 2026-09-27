@@ -13,7 +13,8 @@ public static class ErrorHttpExtensions
 
     /// <summary>
     /// Traduce un error de negocio a ProblemDetails: 400, 404 o 409 según su tipo, con la extensión
-    /// <c>codigo</c> y, en los de validación, los errores por campo. El <c>traceId</c> lo agrega el host.
+    /// <c>codigo</c> y, en los de validación, los errores por campo (los de los validators o el
+    /// <see cref="Error.Campo"/> de un error de dominio). El <c>traceId</c> lo agrega el host.
     /// </summary>
     public static ProblemHttpResult ToProblem(this Error error)
     {
@@ -27,12 +28,19 @@ public static class ErrorHttpExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(error), error.Type, "Tipo de error sin código HTTP."),
         };
 
-        var problema = error is ValidationError validacion
-            ? new HttpValidationProblemDetails(validacion.Errores.ToDictionary(
+        IReadOnlyDictionary<string, string[]>? errores = error switch
+        {
+            ValidationError validacion => validacion.Errores,
+            { Campo: { } campo } => new Dictionary<string, string[]>(StringComparer.Ordinal) { [campo] = [error.Message] },
+            _ => null,
+        };
+
+        var problema = errores is null
+            ? new ProblemDetails()
+            : new HttpValidationProblemDetails(errores.ToDictionary(
                 campo => NombreCampo(campo.Key),
                 campo => campo.Value,
-                StringComparer.Ordinal))
-            : new ProblemDetails();
+                StringComparer.Ordinal));
 
         problema.Status = estado;
         problema.Title = titulo;
