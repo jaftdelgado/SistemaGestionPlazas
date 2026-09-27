@@ -59,7 +59,7 @@ Refinamiento 1 (acordado con el usuario):
 
 | Módulo | Tablas (esquema) | Operaciones |
 |---|---|---|
-| **Institucional** | region, campus, area_academica, entidad_academica (`academico`) | CRUD + baja lógica/restauración |
+| **Institucional** | region, campus, area_academica, entidad_academica (`academico`) | CRUD + baja lógica/restauración; `region` y `campus` son de solo lectura (semilla) |
 | **OfertaEducativa** | sistema_educativo, nivel_formacion, programa_educativo, plan_estudios, archivo_plan_estudios, area_formacion, experiencia_educativa, periodo_escolar, programacion_academica, horario_programacion (`academico`) | CRUD + baja en cascada; `horario_programacion` solo lectura; el archivo del plan se reemplaza, no se edita |
 | **Catalogos** | grado_academico, tipo_documento_expediente, municipio (`academico`); tratamiento_academico, articulo, modalidad_recepcion, tipo_plaza, tipo_contratacion (`plazas`) | Catálogos fijos, precargados en la semilla y de solo lectura (listar/obtener): grado_academico, tipo_documento_expediente, municipio, tratamiento_academico, modalidad_recepcion, tipo_plaza, tipo_contratacion. `articulo` es administrable por el Superusuario: alta, consulta y corrección (el número solo mientras ningún Aviso lo use; la descripción siempre); sin baja |
 | **Docentes** | docente, formacion_docente, documento_docente, version_documento_docente, asignacion_docente (`academico`) | CRUD de docente y formaciones; documentos versionados; asignaciones sin CRUD directo (se derivan de PLANEA o del aval de un Acta) |

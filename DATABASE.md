@@ -137,6 +137,7 @@ Excepciones deliberadas:
 - `academico.horario_programacion` representa únicamente el snapshot vigente de PLANEA, no tiene `fecha_eliminacion` y admite reemplazo físico transaccional.
 - `integracion.sincronizacion_planea` es una bitácora append-only, usa marcas temporales propias y no tiene `fecha_eliminacion`.
 - `academico.municipio` es un catálogo fijo de los municipios de Veracruz, no administrable y sin baja lógica.
+- `academico.region` y `academico.campus` son catálogos fijos de la semilla, no administrables y sin baja lógica (Modulo_Institucional.md, decisión D1).
 - `usuarios.rol` es un catálogo fijo, no administrable y sin baja lógica.
 - `academico.grado_academico`, `academico.tipo_documento_expediente`, `plazas.tratamiento_academico`, `plazas.modalidad_recepcion`, `plazas.tipo_plaza` y `plazas.tipo_contratacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica.
 - Los perfiles `usuarios.usuario_dgaa` y `usuarios.usuario_entidad_academica` dependen del ciclo de vida de `usuarios.usuario` y no tienen `fecha_eliminacion` propia.
@@ -161,12 +162,13 @@ Convención de nombres para objetos SQL:
 
 ### 6.1 `academico.region`
 
+Solo lectura; valores de la semilla (Modulo_Institucional.md, decisión D1).
+
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
 | `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
 | `clave` | `int` | `NOT NULL` | Clave institucional numérica, positiva, única e inmutable |
 | `nombre` | `nvarchar(200)` | `NOT NULL` | Nombre editable; no necesita ser único |
-| `fecha_eliminacion` | `datetime2(0)` | `NULL` | Baja lógica UTC |
 
 Restricciones:
 
@@ -176,13 +178,14 @@ Restricciones:
 
 ### 6.2 `academico.campus`
 
+Solo lectura; valores de la semilla (Modulo_Institucional.md, decisión D1).
+
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
 | `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
 | `clave` | `varchar(50)` | `NOT NULL` | Alfanumérica, mayúsculas, única e inmutable |
 | `nombre` | `nvarchar(200)` | `NOT NULL` | Editable; no necesita ser único |
 | `region_id` | `int` | `NOT NULL` | FK inmutable a `academico.region` |
-| `fecha_eliminacion` | `datetime2(0)` | `NULL` | Baja lógica UTC |
 
 Restricciones e índices:
 
@@ -713,16 +716,14 @@ La base protege la estructura con PK, FK, UNIQUE y CHECK. La aplicación impleme
 
 ### 9.1 Baja en cascada por propiedad
 
-La baja se propaga recursivamente por esta jerarquía:
+Región y campus son de solo lectura y no se dan de baja (Modulo_Institucional.md, decisión D1), así que la cascada empieza en `entidad_academica`:
 
 ```text
-region
-  -> campus
-    -> entidad_academica
-      -> programa_educativo
-        -> plan_estudios
-          -> experiencia_educativa
-            -> programacion_academica
+entidad_academica
+  -> programa_educativo
+    -> plan_estudios
+      -> experiencia_educativa
+        -> programacion_academica
 ```
 
 También se propaga de:

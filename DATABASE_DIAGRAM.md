@@ -127,7 +127,6 @@ erDiagram
         int id PK
         int clave UK
         nvarchar nombre
-        datetime2 fecha_eliminacion
     }
 
     ACADEMICO_CAMPUS {
@@ -135,7 +134,6 @@ erDiagram
         varchar clave UK
         nvarchar nombre
         int region_id FK
-        datetime2 fecha_eliminacion
     }
 
     ACADEMICO_AREA_ACADEMICA {
