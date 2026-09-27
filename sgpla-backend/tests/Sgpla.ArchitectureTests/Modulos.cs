@@ -34,7 +34,7 @@ internal static class Modulos
 
     public static readonly IReadOnlyDictionary<string, string[]> DependenciasPermitidas = new Dictionary<string, string[]>
     {
-        ["Institucional"] = [],
+        ["Institucional"] = ["Catalogos"],
         ["Catalogos"] = [],
         ["Usuarios"] = ["Institucional"],
         ["OfertaEducativa"] = ["Institucional"],

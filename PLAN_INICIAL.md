@@ -59,9 +59,9 @@ Refinamiento 1 (acordado con el usuario):
 
 | Módulo | Tablas (esquema) | Operaciones |
 |---|---|---|
-| **Institucional** | region, campus, area_academica, municipio, entidad_academica (`academico`) | CRUD + baja lógica/restauración; `municipio` es solo lectura (semilla) |
+| **Institucional** | region, campus, area_academica, entidad_academica (`academico`) | CRUD + baja lógica/restauración |
 | **OfertaEducativa** | sistema_educativo, nivel_formacion, programa_educativo, plan_estudios, archivo_plan_estudios, area_formacion, experiencia_educativa, periodo_escolar, programacion_academica, horario_programacion (`academico`) | CRUD + baja en cascada; `horario_programacion` solo lectura; el archivo del plan se reemplaza, no se edita |
-| **Catalogos** | grado_academico, tipo_documento_expediente (`academico`); tratamiento_academico, articulo, modalidad_recepcion, tipo_plaza, tipo_contratacion (`plazas`) | Catálogos fijos, precargados en la semilla y de solo lectura (listar/obtener): grado_academico, tipo_documento_expediente, tratamiento_academico, modalidad_recepcion, tipo_plaza, tipo_contratacion. `articulo` es administrable por el Superusuario: alta, consulta y corrección (el número solo mientras ningún Aviso lo use; la descripción siempre); sin baja |
+| **Catalogos** | grado_academico, tipo_documento_expediente, municipio (`academico`); tratamiento_academico, articulo, modalidad_recepcion, tipo_plaza, tipo_contratacion (`plazas`) | Catálogos fijos, precargados en la semilla y de solo lectura (listar/obtener): grado_academico, tipo_documento_expediente, municipio, tratamiento_academico, modalidad_recepcion, tipo_plaza, tipo_contratacion. `articulo` es administrable por el Superusuario: alta, consulta y corrección (el número solo mientras ningún Aviso lo use; la descripción siempre); sin baja |
 | **Docentes** | docente, formacion_docente, documento_docente, version_documento_docente, asignacion_docente (`academico`) | CRUD de docente y formaciones; documentos versionados; asignaciones sin CRUD directo (se derivan de PLANEA o del aval de un Acta) |
 | **Usuarios** | rol, usuario, usuario_dgaa, usuario_entidad_academica, credencial_superusuario (`usuarios`) | Alta/consulta/edición de nombre/baja/restauración; `rol` es fijo; login LDAP y local, cambio/restablecimiento de contraseña, comando de bootstrap |
 | **Integracion** | sincronizacion_planea (`integracion`) | Sin CRUD: disparar sincronización y consultar la bitácora |
@@ -73,7 +73,7 @@ Refinamiento 1 (acordado con el usuario):
 Los tres módulos del proceso de plazas comparten el esquema SQL `plazas`.
 
 **Grafo de dependencias entre módulos** (acíclico, validado por tests de arquitectura):
-- Institucional → (ninguno); Catalogos → (ninguno)
+- Institucional → Catalogos; Catalogos → (ninguno)
 - Usuarios → Institucional
 - OfertaEducativa → Institucional
 - Docentes → OfertaEducativa, Catalogos

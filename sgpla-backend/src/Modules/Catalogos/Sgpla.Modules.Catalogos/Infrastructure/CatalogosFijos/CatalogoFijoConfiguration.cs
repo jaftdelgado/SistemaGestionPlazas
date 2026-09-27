@@ -20,6 +20,9 @@ internal abstract class CatalogoFijoConfiguration<TCatalogo>(string esquema, str
     }
 }
 
+internal sealed class MunicipioConfiguration()
+    : CatalogoFijoConfiguration<Municipio>("academico", "municipio", Municipio.LongitudMaximaNombre);
+
 internal sealed class GradoAcademicoConfiguration()
     : CatalogoFijoConfiguration<GradoAcademico>("academico", "grado_academico", GradoAcademico.LongitudMaximaNombre);
 

@@ -7,6 +7,7 @@ using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Catalogos.Application.Articulos;
 using Sgpla.Modules.Catalogos.Application.CatalogosFijos;
+using Sgpla.Modules.Catalogos.Application.Contracts;
 using Sgpla.Modules.Catalogos.Domain.CatalogosFijos;
 using Sgpla.Modules.Catalogos.Endpoints.Articulos;
 using Sgpla.Modules.Catalogos.Endpoints.CatalogosFijos;
@@ -28,7 +29,8 @@ public static class CatalogosModule
         services.AddPersistenciaModulo(ensamblado);
         services.AddHandlersModulo(ensamblado);
 
-        // Catálogos fijos que solo tienen nombre: handlers genéricos. Los demás se registran por escaneo.
+        // Catálogos fijos que solo tienen nombre: handlers genéricos. Los demás se registran por escaneo,
+        // incluidos Municipio, TratamientoAcademico y ModalidadRecepcion, que tienen consultas propias.
         services.AddCatalogoFijo<GradoAcademico>();
         services.AddCatalogoFijo<TipoDocumentoExpediente>();
         services.AddCatalogoFijo<TipoPlaza>();
@@ -36,6 +38,9 @@ public static class CatalogosModule
 
         // Artículos. IReferenciasArticulo lo registra cada módulo que lo implementa (Publicacion).
         services.AddScoped<IArticuloRepository, ArticuloRepository>();
+
+        // Contratos para otros módulos (Institucional).
+        services.AddScoped<IMunicipios, Municipios>();
 
         return services;
     }
@@ -49,6 +54,7 @@ public static class CatalogosModule
         grupo.MapCatalogoFijo<TipoDocumentoExpediente>("/tipos-documento-expediente", "Tipos de documento de expediente");
         grupo.MapCatalogoFijo<TipoPlaza>("/tipos-plaza", "Tipos de plaza");
         grupo.MapCatalogoFijo<TipoContratacion>("/tipos-contratacion", "Tipos de contratación");
+        grupo.MapMunicipioEndpoints();
         grupo.MapTratamientoAcademicoEndpoints();
         grupo.MapModalidadRecepcionEndpoints();
         grupo.MapArticuloEndpoints();

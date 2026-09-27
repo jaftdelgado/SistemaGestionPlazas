@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.SharedKernel\Sgpla.SharedKernel.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Infrastructure\Sgpla.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Catalogos\Sgpla.Modules.Catalogos\Sgpla.Modules.Catalogos.csproj" />
   </ItemGroup>
 
 </Project>
