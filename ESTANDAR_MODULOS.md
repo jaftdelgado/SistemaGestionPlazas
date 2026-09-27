@@ -61,9 +61,9 @@ Viven en `src/BuildingBlocks` y se construyen junto con el primer módulo que la
 
 | Proyecto | Contenido |
 |---|---|
-| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`. Pendiente: `IEliminable` (baja lógica), con Institucional |
+| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`, `IEliminable` (baja lógica: `FechaEliminacion`, `null` significa activa) |
 | `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación. Pendiente: `ICurrentUser`, con Usuarios |
-| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409). Pendiente: nombres de filtros de consulta, con la primera entidad con baja lógica |
+| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409), `FiltrosConsulta` (nombres de los filtros de consulta globales de EF Core; hoy solo `BajaLogica`, que oculta las filas con `fecha_eliminacion`) |
 
 Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime.UtcNow` directamente. Para los logs se usa `ILogger<T>` de .NET; no se crea una abstracción propia (sección 11).
 

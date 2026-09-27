@@ -23,6 +23,7 @@ builder.Logging.Configure(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ViolacionUnicidadExceptionHandler>();
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddCors(options => options.AddPolicy(PoliticaCors, policy => policy
     .WithOrigins(builder.Configuration.GetSection("Cors:OrigenesPermitidos").Get<string[]>() ?? [])

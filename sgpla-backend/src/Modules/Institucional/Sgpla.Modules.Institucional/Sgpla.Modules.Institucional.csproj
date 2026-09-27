@@ -15,4 +15,8 @@
     <ProjectReference Include="..\..\Catalogos\Sgpla.Modules.Catalogos\Sgpla.Modules.Catalogos.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sgpla.UnitTests" />
+  </ItemGroup>
+
 </Project>
