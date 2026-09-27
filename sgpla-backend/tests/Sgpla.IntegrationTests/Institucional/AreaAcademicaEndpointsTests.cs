@@ -217,12 +217,65 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
         respuesta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task DarDeBaja_ConEntidadesActivas_Responde409()
+    {
+        using var cliente = _api.CreateClient();
+        var (id, _) = await Crear(cliente);
+        await CrearEntidad(cliente, id);
+
+        using var respuesta = await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        problema.GetProperty("codigo").GetString().ShouldBe("AreaAcademica.TieneEntidadesActivas");
+    }
+
+    [Fact]
+    public async Task DarDeBaja_SiSusEntidadesEstanDadasDeBaja_Responde204()
+    {
+        using var cliente = _api.CreateClient();
+        var (id, _) = await Crear(cliente);
+        var entidadId = await CrearEntidad(cliente, id);
+        (await cliente.DeleteAsync(
+            new Uri($"/api/v1/institucional/entidades-academicas/{entidadId}", UriKind.Relative), Cancelacion))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var respuesta = await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static Uri Uri(string sufijo = "") => new($"{Ruta}{sufijo}", UriKind.Relative);
 
     private static async Task<JsonElement> Leer(HttpResponseMessage respuesta) =>
         await respuesta.Content.ReadFromJsonAsync<JsonElement>(Cancelacion);
+
+    private static async Task<int> CrearEntidad(HttpClient cliente, int areaAcademicaId)
+    {
+        using var respuesta = await cliente.PostAsJsonAsync(
+            new Uri("/api/v1/institucional/entidades-academicas", UriKind.Relative),
+            new
+            {
+                clave = DatosUnicos.ClaveAlfanumerica(),
+                nombre = "Facultad de Prueba",
+                calle = "Calle de prueba",
+                numeroExterior = (string?)null,
+                colonia = "Colonia de prueba",
+                codigoPostal = "91020",
+                telefono = "2288421700",
+                extension = (string?)null,
+                campusId = 1,
+                areaAcademicaId,
+                municipioId = 87,
+            },
+            Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
+
+        return (await Leer(respuesta)).GetProperty("id").GetInt32();
+    }
 
     private static async Task<(int Id, int Clave)> Crear(
         HttpClient cliente, int? clave = null, string? extension = null)

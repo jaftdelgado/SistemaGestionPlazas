@@ -5,9 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Institucional.Application.AreasAcademicas;
+using Sgpla.Modules.Institucional.Application.EntidadesAcademicas;
 using Sgpla.Modules.Institucional.Endpoints.AreasAcademicas;
+using Sgpla.Modules.Institucional.Endpoints.EntidadesAcademicas;
 using Sgpla.Modules.Institucional.Endpoints.Ubicaciones;
 using Sgpla.Modules.Institucional.Infrastructure.AreasAcademicas;
+using Sgpla.Modules.Institucional.Infrastructure.EntidadesAcademicas;
 
 namespace Sgpla.Modules.Institucional;
 
@@ -25,6 +28,7 @@ public static class InstitucionalModule
         services.AddHandlersModulo(ensamblado);
 
         services.AddScoped<IAreaAcademicaRepository, AreaAcademicaRepository>();
+        services.AddScoped<IEntidadAcademicaRepository, EntidadAcademicaRepository>();
 
         return services;
     }
@@ -39,6 +43,7 @@ public static class InstitucionalModule
         grupo.MapRegionEndpoints();
         grupo.MapCampusEndpoints();
         grupo.MapAreaAcademicaEndpoints();
+        grupo.MapEntidadAcademicaEndpoints();
 
         return endpoints;
     }

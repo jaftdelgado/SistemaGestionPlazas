@@ -749,11 +749,13 @@ La operación debe:
 - la baja de un área de formación se bloquea mientras tenga EE activas;
 - la baja de un sistema educativo o nivel se bloquea mientras tenga programas activos;
 - `grado_academico` y `tipo_documento_expediente` son catálogos fijos (§6.21 y §6.22), sin baja lógica;
-- la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos;
-- la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos;
+- la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos (pendiente de Usuarios: `pendientes.md`, P3);
+- la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos (pendiente de Usuarios: `pendientes.md`, P4);
 - ninguna baja de estos catálogos se propaga a las entidades clasificadas.
 
 ### 9.3 Restauración
+
+Área y entidad académica no se restauran (Modulo_Institucional.md, decisión D3): un registro dado de baja no existe para la API de Institucional y `DELETE` sobre él responde 404, no 204. La restauración general de este apartado aplica al resto del modelo.
 
 La restauración es selectiva, nunca en cascada:
 
@@ -1113,6 +1115,8 @@ La ausencia de rate limiting es un riesgo aceptado: Argon2id mitiga ataques fuer
 - Copiar perfil y grados del Aspirante al crear un Docente designado, sin copiar sus archivos.
 
 ### Baja y restauración
+
+Los casos de restauración no aplican a área ni a entidad académica: ninguna de las dos se restaura (Modulo_Institucional.md, decisión D3).
 
 - Propagar correctamente la baja por la jerarquía de propiedad.
 - Propagar la baja de un periodo a sus programaciones.
