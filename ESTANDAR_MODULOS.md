@@ -61,8 +61,8 @@ Viven en `src/BuildingBlocks` y se construyen junto con el primer módulo que la
 
 | Proyecto | Contenido |
 |---|---|
-| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`, `IEliminable` (baja lógica: `FechaEliminacion`, `null` significa activa) |
-| `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación. Pendiente: `ICurrentUser`, con Usuarios |
+| `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`, `IEliminable` (baja lógica: `FechaEliminacion`, `null` significa activa), `Rol` (roles fijos de `usuarios.rol`), `Normalizacion` (texto, recorte y dígitos ASCII) |
+| `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación, `ICurrentUser` y `Politicas` (nombres de las políticas de autorización) |
 | `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409), `FiltrosConsulta` (nombres de los filtros de consulta globales de EF Core; hoy solo `BajaLogica`, que oculta las filas con `fecha_eliminacion`) |
 
 Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime.UtcNow` directamente. Para los logs se usa `ILogger<T>` de .NET; no se crea una abstracción propia (sección 11).
@@ -782,6 +782,8 @@ Todos los errores se responden como ProblemDetails, con la extensión `codigo` i
 | `Validation` | 400 | Entrada mal formada; incluye `errors` por campo, de un validator o del `Campo` de un error de dominio. También un `id` del cuerpo que referencia a un registro inexistente (por ejemplo, el grado de un tratamiento) |
 | `NotFound` | 404 | El recurso de la ruta no existe (o está dado de baja y la operación no admite bajas) |
 | `Conflict` | 409 | Duplicados, valores inmutables, transiciones de estado inválidas, padres inactivos |
+| `Unauthorized` | 401 | Credenciales rechazadas o sesión inválida |
+| `Unavailable` | 503 | Un servicio externo (LDAP) no está disponible |
 
 ```json
 {

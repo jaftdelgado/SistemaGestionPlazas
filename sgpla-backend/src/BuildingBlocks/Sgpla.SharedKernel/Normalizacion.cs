@@ -1,8 +1,9 @@
 using System.Text.RegularExpressions;
 
-namespace Sgpla.Modules.Institucional.Domain.Comun;
+namespace Sgpla.SharedKernel;
 
-internal static partial class Normalizacion
+/// <summary>Normalización de textos compartida por los módulos (Modulo_Usuarios.md, sección 3).</summary>
+public static partial class Normalizacion
 {
     /// <summary>"  Facultad   de  Letras " → "Facultad de Letras". <c>null</c> → "".</summary>
     public static string Texto(string? valor) => EspaciosRepetidos().Replace(valor?.Trim() ?? string.Empty, " ");

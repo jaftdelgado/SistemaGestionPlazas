@@ -8,6 +8,8 @@ public enum ErrorType
     Validation,
     NotFound,
     Conflict,
+    Unauthorized,
+    Unavailable,
 }
 
 /// <summary>Error de negocio: un código estable, un mensaje en español para el usuario y su categoría.</summary>
@@ -26,6 +28,10 @@ public record Error(string Code, string Message, ErrorType Type)
     public static Error NotFound(string code, string message) => new(code, message, ErrorType.NotFound);
 
     public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
+
+    public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
+
+    public static Error Unavailable(string code, string message) => new(code, message, ErrorType.Unavailable);
 }
 
 /// <summary>Error de validación de la entrada, con los mensajes agrupados por campo.</summary>

@@ -5,7 +5,6 @@ using Sgpla.Modules.Catalogos.Application.Contracts;
 using Sgpla.Modules.Institucional.Application.EntidadesAcademicas;
 using Sgpla.Modules.Institucional.Application.Ubicaciones;
 using Sgpla.Modules.Institucional.Domain.AreasAcademicas;
-using Sgpla.Modules.Institucional.Domain.Comun;
 using Sgpla.Modules.Institucional.Domain.EntidadesAcademicas;
 using Sgpla.Modules.Institucional.Domain.Ubicaciones;
 using Sgpla.SharedKernel;

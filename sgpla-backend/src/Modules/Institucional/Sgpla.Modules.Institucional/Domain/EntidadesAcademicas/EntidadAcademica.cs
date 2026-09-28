@@ -1,4 +1,3 @@
-using Sgpla.Modules.Institucional.Domain.Comun;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Institucional.Domain.EntidadesAcademicas;

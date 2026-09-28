@@ -25,6 +25,8 @@ public static class ErrorHttpExtensions
             ErrorType.Validation => (StatusCodes.Status400BadRequest, "Solicitud inválida"),
             ErrorType.NotFound => (StatusCodes.Status404NotFound, "No encontrado"),
             ErrorType.Conflict => (StatusCodes.Status409Conflict, "Conflicto"),
+            ErrorType.Unauthorized => (StatusCodes.Status401Unauthorized, "No autenticado"),
+            ErrorType.Unavailable => (StatusCodes.Status503ServiceUnavailable, "Servicio no disponible"),
             _ => throw new ArgumentOutOfRangeException(nameof(error), error.Type, "Tipo de error sin código HTTP."),
         };
 
