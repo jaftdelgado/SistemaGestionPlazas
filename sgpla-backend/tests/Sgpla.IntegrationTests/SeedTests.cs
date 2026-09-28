@@ -20,10 +20,11 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [InlineData("plazas.modalidad_recepcion", 0)]
     [InlineData("plazas.tipo_plaza", 0)]
     [InlineData("plazas.tipo_contratacion", 0)]
-    // Omitidos a propósito: los registra el Superusuario desde la aplicación.
-    [InlineData("academico.area_academica", 0)]
+    // Omitido a propósito: lo registra el Superusuario desde la aplicación.
     [InlineData("academico.periodo_escolar", 0)]
-    [InlineData("academico.entidad_academica", 0)]
+    // academico.area_academica y academico.entidad_academica ya no son de conteo fijo: el módulo Institucional
+    // agregó sus endpoints de creación, y las pruebas de integración insertan filas reales ahí (igual que
+    // plazas.articulo, que por la misma razón tampoco se afirma en cero).
     public async Task Seed_CargaLosCatalogosEsperados(string tabla, int filasEsperadas)
     {
         await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
