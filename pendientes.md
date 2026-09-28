@@ -28,6 +28,7 @@ Contexto: `Modulo_Institucional.md`, decisión D6. Institucional no puede depend
 - **Lo desbloquea:** Usuarios.
 - **Resolución prevista:** contrato `IUsuariosDeAreaAcademica` con `Task<bool> TieneUsuariosActivosAsync(int areaAcademicaId, CancellationToken)`, que implementa Usuarios. `DarDeBajaAreaAcademicaHandler` responde 409 `AreaAcademica.TieneUsuariosActivos`.
 - **Mientras tanto:** la baja solo se bloquea por entidades activas.
+- **Se resuelve en:** `Modulo_Usuarios.md`, PR 2.
 
 ### P4. La baja de una entidad académica se bloquea con usuarios de entidad activos
 
@@ -35,6 +36,7 @@ Contexto: `Modulo_Institucional.md`, decisión D6. Institucional no puede depend
 - **Lo desbloquea:** Usuarios.
 - **Resolución prevista:** contrato `IUsuariosDeEntidadAcademica` con `Task<bool> TieneUsuariosActivosAsync(int entidadAcademicaId, CancellationToken)`, que implementa Usuarios. `DarDeBajaEntidadAcademicaHandler` responde 409 `EntidadAcademica.TieneUsuariosActivos` antes de la cascada de P1: si hay usuarios activos, no se da de baja nada.
 - **Mientras tanto:** la baja de una entidad no se bloquea.
+- **Se resuelve en:** `Modulo_Usuarios.md`, PR 2.
 
 ### P5. Autorización y ámbito
 
@@ -50,6 +52,7 @@ Contexto: `Modulo_Institucional.md`, decisión D6. Institucional no puede depend
 
 - **Resolución prevista:** `RequireAuthorization` en los grupos. En `ListarEntidadesAcademicasHandler` y `ObtenerEntidadAcademicaHandler`, un filtro por ámbito que sale de `ICurrentUser`. Fuera de su ámbito, obtener responde 404, no 403, para no revelar que la entidad existe.
 - **Mientras tanto:** los endpoints no exigen autenticación y cada grupo lleva el comentario de autorización del estándar.
+- **Se resuelve en:** `Modulo_Usuarios.md`, PR 3.
 
 ## Catalogos
 
@@ -59,3 +62,4 @@ Contexto: `Modulo_Institucional.md`, decisión D6. Institucional no puede depend
 - **Lo desbloquea:** Usuarios.
 - **Resolución prevista:** `RequireAuthorization("Superusuario")` en `POST` y `PUT` de `/articulos`, y consultas para cualquier usuario autenticado.
 - **Mientras tanto:** está señalado con un comentario en `ArticuloEndpoints`.
+- **Se resuelve en:** `Modulo_Usuarios.md`, PR 3.
