@@ -61,6 +61,6 @@ internal sealed class CambiarContrasenaHandler(
 
 internal static partial class CambiarContrasenaLog
 {
-    [LoggerMessage(Level = LogLevel.Information, Message = "Contraseña cambiada del usuario {UsuarioId}")]
+    [LoggerMessage(EventId = 1004, Level = LogLevel.Information, Message = "Contraseña cambiada del usuario {UsuarioId}")]
     public static partial void ContrasenaCambiada(this ILogger logger, int usuarioId);
 }

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using Sgpla.IntegrationTests.Infraestructura;
+using Sgpla.SharedKernel;
 
 namespace Sgpla.IntegrationTests.Usuarios;
 
@@ -225,6 +226,20 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
         using var respuesta = await cliente.GetAsync(Uri("/sesion"), Cancelacion);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task ObtenerSesion_ConTokenVencido_Responde401()
+    {
+        using var cliente = _api.CreateClient();
+        cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", SgplaApiFactory.EmitirTokenVencido(1, Rol.Superusuario));
+
+        using var respuesta = await cliente.GetAsync(Uri("/sesion"), Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        problema.GetProperty("codigo").GetString().ShouldBe("Autenticacion.NoAutenticado");
     }
 
     [Fact]

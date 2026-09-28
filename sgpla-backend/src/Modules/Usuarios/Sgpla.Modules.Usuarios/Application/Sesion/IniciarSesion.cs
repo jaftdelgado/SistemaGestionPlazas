@@ -43,9 +43,10 @@ internal sealed class IniciarSesionHandler(
             return UsuarioErrors.CuentaNoRegistrada;
         }
 
+        VerificacionContrasena? verificacion = null;
         var fallido = usuario.Rol switch
         {
-            Rol.Superusuario => ValidarSuperusuario(usuario, command.Contrasena),
+            Rol.Superusuario => ValidarSuperusuario(usuario, command.Contrasena, out verificacion),
             Rol.Dgaa or Rol.EntidadAcademica => await ValidarLdapAsync(usuario, command.Contrasena, cancellationToken),
             _ => throw new InvalidOperationException("Rol desconocido."),
         };
@@ -63,7 +64,7 @@ internal sealed class IniciarSesionHandler(
             };
         }
 
-        if (usuario.Rol == Rol.Superusuario && RequiereRehash(usuario, command.Contrasena))
+        if (verificacion == VerificacionContrasena.CorrectaRequiereRehash)
         {
             usuario.ActualizarVerificador(hasher.Hashear(command.Contrasena));
             await unidadDeTrabajo.SaveChangesAsync(cancellationToken);
@@ -95,19 +96,18 @@ internal sealed class IniciarSesionHandler(
         };
     }
 
-    private MotivoAccesoFallido? ValidarSuperusuario(Usuario usuario, string contrasena)
+    /// <summary>Verifica la contraseña una sola vez; el resultado sirve tanto para aceptar o rechazar como para decidir el rehash.</summary>
+    private MotivoAccesoFallido? ValidarSuperusuario(Usuario usuario, string contrasena, out VerificacionContrasena? verificacion)
     {
         if (usuario.Credencial!.FechaEliminacion is not null)
         {
+            verificacion = null;
             return MotivoAccesoFallido.CuentaNoRegistrada;
         }
 
-        var verificacion = hasher.Verificar(usuario.Credencial.Contrasena, contrasena);
+        verificacion = hasher.Verificar(usuario.Credencial.Contrasena, contrasena);
         return verificacion == VerificacionContrasena.Incorrecta ? MotivoAccesoFallido.CredencialesInvalidas : null;
     }
-
-    private bool RequiereRehash(Usuario usuario, string contrasena) =>
-        hasher.Verificar(usuario.Credencial!.Contrasena, contrasena) == VerificacionContrasena.CorrectaRequiereRehash;
 
     private static string NormalizarCorreo(string correo)
     {
@@ -126,12 +126,12 @@ internal enum MotivoAccesoFallido
 
 internal static partial class IniciarSesionLog
 {
-    [LoggerMessage(Level = LogLevel.Information, Message = "Acceso exitoso del usuario {UsuarioId} con rol {Rol}")]
+    [LoggerMessage(EventId = 1001, Level = LogLevel.Information, Message = "Acceso exitoso del usuario {UsuarioId} con rol {Rol}")]
     public static partial void AccesoExitoso(this ILogger logger, int usuarioId, Rol rol);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Acceso fallido del usuario {UsuarioId} por {Motivo}")]
+    [LoggerMessage(EventId = 1002, Level = LogLevel.Warning, Message = "Acceso fallido del usuario {UsuarioId} por {Motivo}")]
     public static partial void AccesoFallido(this ILogger logger, int? usuarioId, MotivoAccesoFallido motivo);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Verificador actualizado (rehash) del usuario {UsuarioId}")]
+    [LoggerMessage(EventId = 1003, Level = LogLevel.Information, Message = "Verificador actualizado (rehash) del usuario {UsuarioId}")]
     public static partial void VerificadorActualizado(this ILogger logger, int usuarioId);
 }

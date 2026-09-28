@@ -41,13 +41,19 @@ internal sealed class HasherContrasenasFalso : IHasherContrasenas
 
     public List<string> Hasheados { get; } = [];
 
+    public int LlamadasAVerificar { get; private set; }
+
     public string Hashear(string contrasena)
     {
         Hasheados.Add(contrasena);
         return Hasheada;
     }
 
-    public VerificacionContrasena Verificar(string verificador, string contrasena) => Resultado;
+    public VerificacionContrasena Verificar(string verificador, string contrasena)
+    {
+        LlamadasAVerificar++;
+        return Resultado;
+    }
 }
 
 internal sealed class GeneradorContrasenasFalso(string temporal) : IGeneradorContrasenas

@@ -1,4 +1,7 @@
+using System.Globalization;
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -7,10 +10,13 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.Modules.Usuarios.Application.Autenticacion;
 using Sgpla.Modules.Usuarios.Application.Cuentas;
 using Sgpla.Modules.Usuarios.Domain.Cuentas;
+using Sgpla.SharedKernel;
 
 namespace Sgpla.IntegrationTests.Infraestructura;
 
@@ -19,6 +25,12 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
 {
     /// <summary>Contraseña conocida de <see cref="CrearSuperusuarioAsync"/>, para las pruebas de inicio de sesión.</summary>
     public const string ContrasenaConocidaSuperusuario = "Temp0ral!Conocida";
+
+    /// <summary>Misma clave que <see cref="ConfigureWebHost"/> fija en <c>Jwt:Clave</c>, para firmar tokens de prueba a mano.</summary>
+    public const string ClaveJwtDePrueba = "clave-de-pruebas-de-integracion-nunca-usar-en-produccion";
+
+    /// <summary>Correo fijo de <c>SGPLA_BOOTSTRAP_CORREO</c> en las pruebas, para comprobar que el bootstrap no lo usa.</summary>
+    public const string CorreoDeBootstrap = "bootstrap@sgpla-pruebas.mx";
 
     /// <summary>
     /// Ruta protegida solo con <see cref="Politicas.Autenticado"/>, registrada nada más para las pruebas (Modulo_Usuarios.md,
@@ -36,11 +48,11 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         builder.UseSetting("ConnectionStrings:Sgpla", sqlServer.CadenaConexion);
 
         // Jwt:Clave y Ldap:Servidor son obligatorios y nunca van en appsettings*.json (Modulo_Usuarios.md, sección 4).
-        builder.UseSetting("Jwt:Clave", "clave-de-pruebas-de-integracion-nunca-usar-en-produccion");
+        builder.UseSetting("Jwt:Clave", ClaveJwtDePrueba);
         builder.UseSetting("Ldap:Servidor", "ldap-de-pruebas.invalido");
 
         // Para BootstrapTests: la base compartida siempre tiene Superusuarios, así que el bootstrap nunca los crea.
-        builder.UseSetting("SGPLA_BOOTSTRAP_CORREO", "bootstrap@sgpla-pruebas.mx");
+        builder.UseSetting("SGPLA_BOOTSTRAP_CORREO", CorreoDeBootstrap);
         builder.UseSetting("SGPLA_BOOTSTRAP_NOMBRE", "Bootstrap de pruebas");
 
         builder.ConfigureServices(services =>
@@ -117,6 +129,34 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         await unidadDeTrabajo.SaveChangesAsync(CancellationToken.None);
 
         return correo;
+    }
+
+    /// <summary>
+    /// Firma un token ya vencido con la misma clave y el mismo emisor que usan las pruebas, para provocar el 401 por
+    /// expiración sin tocar el reloj de la aplicación.
+    /// </summary>
+    public static string EmitirTokenVencido(int usuarioId, Rol rol)
+    {
+        var vencimiento = DateTime.UtcNow.AddMinutes(-10);
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, usuarioId.ToString(CultureInfo.InvariantCulture)),
+            new("rol", ((byte)rol).ToString(CultureInfo.InvariantCulture)),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        };
+
+        var credenciales = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ClaveJwtDePrueba)), SecurityAlgorithms.HmacSha256);
+
+        return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = "sgpla",
+            Audience = "sgpla-web",
+            Subject = new ClaimsIdentity(claims),
+            IssuedAt = vencimiento.AddHours(-8),
+            Expires = vencimiento,
+            SigningCredentials = credenciales,
+        });
     }
 
     private HttpClient ClienteConToken(TokenEmitido token)

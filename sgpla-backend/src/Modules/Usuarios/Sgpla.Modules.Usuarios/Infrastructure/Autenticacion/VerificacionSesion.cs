@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Sgpla.BuildingBlocks.Infrastructure.Http;
+using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Institucional.Application.Contracts;
-using Sgpla.Modules.Usuarios.Application.Cuentas;
+using Sgpla.Modules.Usuarios.Domain.Cuentas;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
@@ -35,8 +37,21 @@ internal static class VerificacionSesion
             return;
         }
 
-        var repositorio = context.HttpContext.RequestServices.GetRequiredService<IUsuarioRepository>();
-        var cuenta = await repositorio.ObtenerPorIdAsync(usuarioId, context.HttpContext.RequestAborted);
+        // AsNoTracking y proyección mínima: esta verificación corre en cada petición autenticada y no necesita el
+        // agregado completo con seguimiento de EF Core (Modulo_Usuarios.md, sección 6).
+        var contexto = context.HttpContext.RequestServices.GetRequiredService<SgplaDbContext>();
+        var cuenta = await contexto.Set<Usuario>()
+            .AsNoTracking()
+            .Where(u => u.Id == usuarioId)
+            .Select(u => new
+            {
+                u.Rol,
+                AreaAcademicaId = u.PerfilDgaa != null ? (int?)u.PerfilDgaa.AreaAcademicaId : null,
+                EntidadAcademicaId = u.PerfilEntidadAcademica != null ? (int?)u.PerfilEntidadAcademica.EntidadAcademicaId : null,
+                CredencialFechaActualizacion = u.Credencial != null ? u.Credencial.FechaActualizacion : (DateTime?)null,
+                CredencialFechaEliminacion = u.Credencial != null ? u.Credencial.FechaEliminacion : (DateTime?)null,
+            })
+            .FirstOrDefaultAsync(context.HttpContext.RequestAborted);
 
         if (cuenta is null)
         {
@@ -50,7 +65,7 @@ internal static class VerificacionSesion
             return;
         }
 
-        if (cuenta.Rol == Rol.Superusuario && cuenta.Credencial?.FechaEliminacion is not null)
+        if (cuenta.Rol == Rol.Superusuario && cuenta.CredencialFechaEliminacion is not null)
         {
             context.Fail("La credencial está dada de baja.");
             return;
@@ -70,7 +85,8 @@ internal static class VerificacionSesion
             }
         }
 
-        if (cuenta.CambioContrasenaPendiente && principal?.Identity is ClaimsIdentity identidad)
+        var cambioContrasenaPendiente = cuenta.Rol == Rol.Superusuario && cuenta.CredencialFechaActualizacion is null;
+        if (cambioContrasenaPendiente && principal?.Identity is ClaimsIdentity identidad)
         {
             identidad.AddClaim(new Claim(ClaimCambioContrasenaPendiente, "true"));
         }

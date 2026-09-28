@@ -49,6 +49,6 @@ internal sealed class CrearSuperusuarioInicialHandler(
 
 internal static partial class CrearSuperusuarioInicialLog
 {
-    [LoggerMessage(Level = LogLevel.Information, Message = "Superusuario inicial creado: {UsuarioId}")]
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Information, Message = "Superusuario inicial creado: {UsuarioId}")]
     public static partial void SuperusuarioInicialCreado(this ILogger logger, int usuarioId);
 }

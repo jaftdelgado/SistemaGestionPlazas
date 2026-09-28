@@ -70,6 +70,8 @@ Variables nuevas en `.env` (ver `.env.example`), todas con un valor de desarroll
 | `SGPLA_LDAP_SERVIDOR`, `SGPLA_LDAP_PUERTO`, `SGPLA_LDAP_SEGURIDAD` | Directorio LDAP de la UV para el login de DGAA y Entidad Académica. `SGPLA_LDAP_SEGURIDAD=SinTls` (el valor actual de la UV) solo se acepta si `SGPLA_API_ENVIRONMENT=Development`. |
 | `SGPLA_BOOTSTRAP_CORREO`, `SGPLA_BOOTSTRAP_NOMBRE` | Correo y nombre del primer Superusuario, usados solo por el bootstrap. |
 
+`SGPLA_JWT_CLAVE` es obligatoria para **cualquier** comando de `docker compose` (`up`, `run`, incluida una migración sola): el servicio `api` no arranca sin ella. Si tienes un `.env` de antes de este cambio, agrégala copiándola de `.env.example`.
+
 El primer Superusuario se crea con el subcomando `bootstrap-superusuario` de la propia imagen de la API, no con la CLI de migraciones:
 
 ```bash

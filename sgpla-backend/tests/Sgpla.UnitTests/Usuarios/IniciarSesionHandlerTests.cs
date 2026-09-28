@@ -131,6 +131,31 @@ public sealed class IniciarSesionHandlerTests
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task HandleAsync_SuperusuarioConExito_VerificaLaContrasenaUnaSolaVez()
+    {
+        var superusuario = Usuario.CrearSuperusuario("admin@gmail.com", "Nombre", "hash").Value;
+        _repositorio.Registrar(1, superusuario);
+
+        await Handler(ResultadoLdap.Autenticado).HandleAsync(
+            new IniciarSesionCommand("admin@gmail.com", "correcta"), TestContext.Current.CancellationToken);
+
+        _hasher.LlamadasAVerificar.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SuperusuarioRequiereRehash_VerificaLaContrasenaUnaSolaVez()
+    {
+        var superusuario = Usuario.CrearSuperusuario("admin@gmail.com", "Nombre", "hash-viejo").Value;
+        _repositorio.Registrar(1, superusuario);
+        _hasher.Resultado = VerificacionContrasena.CorrectaRequiereRehash;
+
+        await Handler(ResultadoLdap.Autenticado).HandleAsync(
+            new IniciarSesionCommand("admin@gmail.com", "correcta"), TestContext.Current.CancellationToken);
+
+        _hasher.LlamadasAVerificar.ShouldBe(1);
+    }
+
     private IniciarSesionHandler Handler(ResultadoLdap resultadoLdap) => Handler(new LdapAutenticadorFalso(resultadoLdap));
 
     private IniciarSesionHandler Handler(LdapAutenticadorFalso ldap) => new(

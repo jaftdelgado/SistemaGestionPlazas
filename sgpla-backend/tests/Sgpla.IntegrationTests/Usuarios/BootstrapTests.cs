@@ -1,5 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using Sgpla.IntegrationTests.Infraestructura;
 using Sgpla.Modules.Usuarios;
+using Sgpla.Modules.Usuarios.Application.Cuentas;
 
 namespace Sgpla.IntegrationTests.Usuarios;
 
@@ -15,13 +17,23 @@ public sealed class BootstrapTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     public async Task EjecutarBootstrapAsync_ConUnSuperusuarioActivo_Devuelve0YNoCreaNada()
     {
         using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var existiaAntes = await ExisteCorreoDeBootstrapAsync();
         using var salida = new StringWriter();
 
         var codigo = await UsuariosModule.EjecutarBootstrapAsync(_api.Services, salida, TestContext.Current.CancellationToken);
 
         codigo.ShouldBe(0);
         salida.ToString().ShouldContain("Ya existe un Superusuario activo");
+        existiaAntes.ShouldBeFalse();
+        (await ExisteCorreoDeBootstrapAsync()).ShouldBeFalse();
     }
 
     public ValueTask DisposeAsync() => _api.DisposeAsync();
+
+    private async Task<bool> ExisteCorreoDeBootstrapAsync()
+    {
+        await using var alcance = _api.Services.CreateAsyncScope();
+        var repositorio = alcance.ServiceProvider.GetRequiredService<IUsuarioRepository>();
+        return await repositorio.ExisteCorreoAsync(SgplaApiFactory.CorreoDeBootstrap, TestContext.Current.CancellationToken);
+    }
 }

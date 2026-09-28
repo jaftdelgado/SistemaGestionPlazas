@@ -27,7 +27,8 @@ internal sealed class AmbitosInstitucionales(SgplaDbContext contexto) : IAmbitos
             .IgnoreQueryFilters([FiltrosConsulta.BajaLogica])
             .AsNoTracking()
             .Where(a => ids.Contains(a.Id))
-            .ToDictionaryAsync(a => a.Id, a => new AreaAcademicaResumen(a.Id, a.Clave, a.Nombre), cancellationToken);
+            .Select(a => new AreaAcademicaResumen(a.Id, a.Clave, a.Nombre))
+            .ToDictionaryAsync(resumen => resumen.Id, cancellationToken);
     }
 
     public async Task<IReadOnlyDictionary<int, EntidadAcademicaResumen>> ObtenerEntidadesAsync(
@@ -43,7 +44,8 @@ internal sealed class AmbitosInstitucionales(SgplaDbContext contexto) : IAmbitos
             .IgnoreQueryFilters([FiltrosConsulta.BajaLogica])
             .AsNoTracking()
             .Where(e => ids.Contains(e.Id))
-            .ToDictionaryAsync(e => e.Id, e => new EntidadAcademicaResumen(e.Id, e.Clave, e.Nombre), cancellationToken);
+            .Select(e => new EntidadAcademicaResumen(e.Id, e.Clave, e.Nombre))
+            .ToDictionaryAsync(resumen => resumen.Id, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<int>> ObtenerEntidadesDeAreaAsync(
