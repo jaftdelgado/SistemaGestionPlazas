@@ -256,12 +256,12 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     }
 
     [Fact]
-    public async Task RutaAutenticada_ConContrasenaPendiente_Responde403ConCambioContrasenaPendiente()
+    public async Task ListarCuentas_ConContrasenaPendiente_Responde403ConCambioContrasenaPendiente()
     {
         var correo = await _api.CrearSuperusuarioAsync();
         using var cliente = await ClienteConSesionAsync(correo, SgplaApiFactory.ContrasenaConocidaSuperusuario);
 
-        using var respuesta = await cliente.GetAsync(new Uri(SgplaApiFactory.RutaDePruebaAutenticada, UriKind.Relative), Cancelacion);
+        using var respuesta = await cliente.GetAsync(new Uri($"{Ruta}/cuentas", UriKind.Relative), Cancelacion);
         var problema = await Leer(respuesta);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -286,9 +286,8 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
         using var clienteNuevo = _api.CreateClient();
         clienteNuevo.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", sesion.GetProperty("token").GetString());
-        using var respuestaRutaAutenticada = await clienteNuevo.GetAsync(
-            new Uri(SgplaApiFactory.RutaDePruebaAutenticada, UriKind.Relative), Cancelacion);
-        respuestaRutaAutenticada.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        using var respuestaCuentas = await clienteNuevo.GetAsync(new Uri($"{Ruta}/cuentas", UriKind.Relative), Cancelacion);
+        respuestaCuentas.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Fact]

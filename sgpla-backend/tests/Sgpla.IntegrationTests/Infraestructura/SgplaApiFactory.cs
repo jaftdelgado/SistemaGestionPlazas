@@ -2,11 +2,8 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -32,13 +29,6 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
     /// <summary>Correo fijo de <c>SGPLA_BOOTSTRAP_CORREO</c> en las pruebas, para comprobar que el bootstrap no lo usa.</summary>
     public const string CorreoDeBootstrap = "bootstrap@sgpla-pruebas.mx";
 
-    /// <summary>
-    /// Ruta protegida solo con <see cref="Politicas.Autenticado"/>, registrada nada más para las pruebas (Modulo_Usuarios.md,
-    /// sección 13, PR 1): mientras el PR 1 no protege ningún endpoint real, sirve para probar el 403 de contraseña
-    /// pendiente. El PR 2 la reemplaza por <c>GET /cuentas</c>.
-    /// </summary>
-    public const string RutaDePruebaAutenticada = "/pruebas/autenticado";
-
     /// <summary>Logs emitidos por el host, con sus scopes.</summary>
     public ProveedorLogsEnMemoria Logs { get; } = new();
 
@@ -59,7 +49,6 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         {
             services.RemoveAll<ILdapAutenticador>();
             services.AddScoped<ILdapAutenticador, LdapFalso>();
-            services.AddSingleton<IStartupFilter, RutaDePruebaStartupFilter>();
         });
 
         // La regla es solo para este proveedor: captura desde Information sin cambiar lo que muestra la consola.
@@ -164,16 +153,5 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         var cliente = CreateClient();
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
         return cliente;
-    }
-
-    private sealed class RutaDePruebaStartupFilter : IStartupFilter
-    {
-        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
-        {
-            next(app);
-            app.UseEndpoints(endpoints => endpoints
-                .MapGet(RutaDePruebaAutenticada, () => Results.NoContent())
-                .RequireAuthorization(Politicas.Autenticado));
-        };
     }
 }

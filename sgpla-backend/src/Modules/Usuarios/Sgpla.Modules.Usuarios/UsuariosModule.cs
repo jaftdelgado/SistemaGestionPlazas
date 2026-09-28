@@ -14,6 +14,7 @@ using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Usuarios.Application.Autenticacion;
 using Sgpla.Modules.Usuarios.Application.Cuentas;
 using Sgpla.Modules.Usuarios.Domain.Cuentas;
+using Sgpla.Modules.Usuarios.Endpoints.Cuentas;
 using Sgpla.Modules.Usuarios.Endpoints.Sesion;
 using Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
 using Sgpla.Modules.Usuarios.Infrastructure.Cuentas;
@@ -104,6 +105,7 @@ public static class UsuariosModule
     {
         var grupo = endpoints.MapGroup(Ruta);
         grupo.MapSesionEndpoints();
+        grupo.MapCuentaEndpoints();
 
         return endpoints;
     }

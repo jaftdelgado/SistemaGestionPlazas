@@ -560,7 +560,7 @@ Restricciones e índices:
 - `ux_usuario__correo_activo (correo) WHERE fecha_eliminacion IS NULL`, índice único filtrado.
 - `ix_usuario__rol_id (rol_id)`.
 
-El correo solo es único entre cuentas activas. Después de desactivar una cuenta podrá utilizarse en una nueva identidad con otro rol o ámbito. Restaurar una cuenta requerirá que no exista otra cuenta activa con el mismo correo.
+El correo solo es único entre cuentas activas. Después de desactivar una cuenta podrá utilizarse en una nueva identidad con otro rol o ámbito. Las cuentas no se restauran (`Modulo_Usuarios.md`, decisión D3).
 
 ### 6.18 `usuarios.usuario_dgaa`
 
@@ -766,7 +766,7 @@ La restauración es selectiva, nunca en cascada:
 
 Los horarios no se restauran. Después de restaurar una programación o cualquiera de sus padres debe ejecutarse una sincronización exitosa de PLANEA para volver a materializarlos.
 
-La baja de `usuarios.usuario` conserva su perfil de ámbito. Al dar de baja un Superusuario, la aplicación asigna el mismo instante UTC a `usuario.fecha_eliminacion` y `credencial_superusuario.fecha_eliminacion` dentro de una sola transacción. La restauración exige correo disponible, rol y ámbito vigentes. Para reactivar un Superusuario se limpian ambas fechas de eliminación, se genera una contraseña temporal nueva, se reemplaza `contrasena` y se establece `fecha_actualizacion = NULL` en la misma transacción; nunca se reutiliza la contraseña anterior.
+La baja de `usuarios.usuario` conserva su perfil de ámbito. Al dar de baja un Superusuario, la aplicación asigna el mismo instante UTC a `usuario.fecha_eliminacion` y `credencial_superusuario.fecha_eliminacion` dentro de una sola transacción. Las cuentas no se restauran (`Modulo_Usuarios.md`, decisión D3): una cuenta dada de baja no existe para la API, y el correo queda libre para una cuenta nueva.
 
 ## 10. Inmutabilidad y edición
 
@@ -1004,7 +1004,7 @@ Las políticas de autorización son fijas y no se modelan tablas configurables d
 - No se implementa recuperación por correo.
 - El correo es único entre usuarios activos. Una baja permite crear una nueva cuenta con el mismo correo y otro rol o ámbito.
 - Al desactivar un Superusuario se asigna la misma `fecha_eliminacion` UTC a la cuenta y a su credencial dentro de una transacción; no se permite desactivar el último Superusuario activo.
-- Al reactivar un Superusuario se limpian ambas fechas de eliminación, se asigna una contraseña temporal nueva y se establece `fecha_actualizacion = NULL` dentro de una transacción. La contraseña anterior nunca se reutiliza.
+- Las cuentas no se restauran: una vez dada de baja, no se reactiva (`Modulo_Usuarios.md`, decisión D3).
 
 ### 13.3 Autenticación LDAP
 
@@ -1120,7 +1120,7 @@ Estos eventos se emiten hoy como logs estructurados con `[LoggerMessage]` y `Eve
 
 ### Baja y restauración
 
-Los casos de restauración no aplican a área ni a entidad académica: ninguna de las dos se restaura (Modulo_Institucional.md, decisión D3).
+Los casos de restauración no aplican a área ni a entidad académica: ninguna de las dos se restaura (Modulo_Institucional.md, decisión D3). Tampoco aplican a las cuentas de usuario, que siguen la misma regla (Modulo_Usuarios.md, decisión D3).
 
 - Propagar correctamente la baja por la jerarquía de propiedad.
 - Propagar la baja de un periodo a sus programaciones.
