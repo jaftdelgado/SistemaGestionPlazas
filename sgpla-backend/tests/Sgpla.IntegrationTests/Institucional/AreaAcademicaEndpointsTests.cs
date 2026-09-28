@@ -246,6 +246,34 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
         respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    [Fact]
+    public async Task DarDeBaja_ConUsuariosActivos_Responde409()
+    {
+        using var clienteAdmin = await _api.CrearClienteSuperusuarioAsync();
+        var (id, _) = await Crear(clienteAdmin);
+        await CrearCuentaDgaa(clienteAdmin, id);
+
+        using var respuesta = await clienteAdmin.DeleteAsync(Uri($"/{id}"), Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        problema.GetProperty("codigo").GetString().ShouldBe("AreaAcademica.TieneUsuariosActivos");
+    }
+
+    [Fact]
+    public async Task DarDeBaja_SiSusUsuariosEstanDadosDeBaja_Responde204()
+    {
+        using var clienteAdmin = await _api.CrearClienteSuperusuarioAsync();
+        var (id, _) = await Crear(clienteAdmin);
+        var cuentaId = await CrearCuentaDgaa(clienteAdmin, id);
+        (await clienteAdmin.DeleteAsync(new Uri($"/api/v1/usuarios/cuentas/{cuentaId}", UriKind.Relative), Cancelacion))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var respuesta = await clienteAdmin.DeleteAsync(Uri($"/{id}"), Cancelacion);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static Uri Uri(string sufijo = "") => new($"{Ruta}{sufijo}", UriKind.Relative);
@@ -275,6 +303,24 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
 
         return (await Leer(respuesta)).GetProperty("id").GetInt32();
+    }
+
+    private static async Task<int> CrearCuentaDgaa(HttpClient cliente, int areaAcademicaId)
+    {
+        using var respuesta = await cliente.PostAsJsonAsync(
+            new Uri("/api/v1/usuarios/cuentas", UriKind.Relative),
+            new
+            {
+                correo = DatosUnicos.Correo("uv.mx"),
+                nombre = "DGAA de prueba",
+                rolId = 2,
+                areaAcademicaId,
+                entidadAcademicaId = (int?)null,
+            },
+            Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
+
+        return (await Leer(respuesta)).GetProperty("cuenta").GetProperty("id").GetInt32();
     }
 
     private static async Task<(int Id, int Clave)> Crear(

@@ -1,5 +1,6 @@
 using Sgpla.Modules.Catalogos.Application.Contracts;
 using Sgpla.Modules.Institucional.Application.AreasAcademicas;
+using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.Institucional.Application.EntidadesAcademicas;
 using Sgpla.Modules.Institucional.Domain.AreasAcademicas;
 using Sgpla.Modules.Institucional.Domain.EntidadesAcademicas;
@@ -65,6 +66,24 @@ internal sealed class EntidadAcademicaRepositoryFalso : IEntidadAcademicaReposit
         Task.FromResult(AreasAcademicasActivas.Contains(areaAcademicaId));
 
     public void Agregar(EntidadAcademica entidadAcademica) => Agregados.Add(entidadAcademica);
+}
+
+/// <summary>Responde si el área tiene usuarios DGAA activos, según <see cref="TieneUsuariosActivos"/>.</summary>
+internal sealed class UsuariosDeAreaAcademicaFalso : IUsuariosDeAreaAcademica
+{
+    public bool TieneUsuariosActivos { get; set; }
+
+    public Task<bool> TieneUsuariosActivosAsync(int areaAcademicaId, CancellationToken cancellationToken) =>
+        Task.FromResult(TieneUsuariosActivos);
+}
+
+/// <summary>Responde si la entidad tiene usuarios activos, según <see cref="TieneUsuariosActivos"/>.</summary>
+internal sealed class UsuariosDeEntidadAcademicaFalso : IUsuariosDeEntidadAcademica
+{
+    public bool TieneUsuariosActivos { get; set; }
+
+    public Task<bool> TieneUsuariosActivosAsync(int entidadAcademicaId, CancellationToken cancellationToken) =>
+        Task.FromResult(TieneUsuariosActivos);
 }
 
 /// <summary>Municipios en memoria: los ids en <see cref="Existentes"/> existen y tienen el nombre indicado.</summary>

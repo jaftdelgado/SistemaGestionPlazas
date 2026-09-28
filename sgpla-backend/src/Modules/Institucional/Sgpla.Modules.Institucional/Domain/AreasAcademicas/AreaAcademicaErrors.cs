@@ -34,6 +34,9 @@ internal static class AreaAcademicaErrors
     public static readonly Error TieneEntidadesActivas = Error.Conflict(
         "AreaAcademica.TieneEntidadesActivas", "El área académica tiene entidades académicas activas.");
 
+    public static readonly Error TieneUsuariosActivos = Error.Conflict(
+        "AreaAcademica.TieneUsuariosActivos", "El área académica tiene usuarios DGAA activos.");
+
     public static Error NoEncontrado(int id) => Error.NotFound(
         "AreaAcademica.NoEncontrado", $"No existe el área académica {id}.");
 }

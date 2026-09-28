@@ -88,6 +88,9 @@ internal static class EntidadAcademicaErrors
     public static readonly Error ClaveDuplicada = Error.Conflict(
         "EntidadAcademica.ClaveDuplicada", "Ya existe una entidad académica con esa clave.");
 
+    public static readonly Error TieneUsuariosActivos = Error.Conflict(
+        "EntidadAcademica.TieneUsuariosActivos", "La entidad académica tiene usuarios activos.");
+
     public static Error NoEncontrado(int id) => Error.NotFound(
         "EntidadAcademica.NoEncontrado", $"No existe la entidad académica {id}.");
 }

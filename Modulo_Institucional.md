@@ -345,6 +345,7 @@ Métodos:
 | `AreaAcademica.ExtensionFormatoInvalido` | Validation | `Extension` | La extensión admite de uno a diez dígitos. |
 | `AreaAcademica.ClaveDuplicada` | Conflict | — | Ya existe un área académica con esa clave. |
 | `AreaAcademica.TieneEntidadesActivas` | Conflict | — | El área académica tiene entidades académicas activas. |
+| `AreaAcademica.TieneUsuariosActivos` | Conflict | — | El área académica tiene usuarios DGAA activos. |
 | `AreaAcademica.NoEncontrado(int id)` | NotFound | — | No existe el área académica {id}. |
 
 Los mensajes con longitudes se construyen con las constantes, no con literales.
@@ -477,6 +478,7 @@ Métodos:
 | `EntidadAcademica.AreaAcademicaInexistente` | Validation | `AreaAcademicaId` | No existe un área académica activa con ese id. |
 | `EntidadAcademica.MunicipioInexistente` | Validation | `MunicipioId` | No existe el municipio indicado. |
 | `EntidadAcademica.ClaveDuplicada` | Conflict | — | Ya existe una entidad académica con esa clave. |
+| `EntidadAcademica.TieneUsuariosActivos` | Conflict | — | La entidad académica tiene usuarios activos. |
 | `EntidadAcademica.NoEncontrado(int id)` | NotFound | — | No existe la entidad académica {id}. |
 
 `CampusInexistente`, `AreaAcademicaInexistente` y `MunicipioInexistente` son errores de validación con campo. Como no son reglas de forma, los devuelve el handler, no la fábrica; `ToProblem` los reporta en `errors` igual.

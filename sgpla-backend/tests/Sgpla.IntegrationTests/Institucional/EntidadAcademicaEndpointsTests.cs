@@ -332,6 +332,36 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     }
 
     [Fact]
+    public async Task DarDeBaja_ConUsuariosActivos_Responde409()
+    {
+        using var clienteAdmin = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearArea(clienteAdmin);
+        var (id, _) = await CrearYObtener(clienteAdmin, areaId);
+        await CrearCuentaEntidadAcademica(clienteAdmin, id);
+
+        using var respuesta = await clienteAdmin.DeleteAsync(Uri($"/{id}"), Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        problema.GetProperty("codigo").GetString().ShouldBe("EntidadAcademica.TieneUsuariosActivos");
+    }
+
+    [Fact]
+    public async Task DarDeBaja_SiSusUsuariosEstanDadosDeBaja_Responde204()
+    {
+        using var clienteAdmin = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearArea(clienteAdmin);
+        var (id, _) = await CrearYObtener(clienteAdmin, areaId);
+        var cuentaId = await CrearCuentaEntidadAcademica(clienteAdmin, id);
+        (await clienteAdmin.DeleteAsync(new Uri($"/api/v1/usuarios/cuentas/{cuentaId}", UriKind.Relative), Cancelacion))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var respuesta = await clienteAdmin.DeleteAsync(Uri($"/{id}"), Cancelacion);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
     public async Task Listar_FiltraPorAreaAcademicaYExcluyeLasDadasDeBaja()
     {
         using var cliente = _api.CreateClient();
@@ -456,6 +486,24 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     {
         var (_, clave) = await CrearYObtener(cliente, areaAcademicaId);
         return clave;
+    }
+
+    private static async Task<int> CrearCuentaEntidadAcademica(HttpClient cliente, int entidadAcademicaId)
+    {
+        using var respuesta = await cliente.PostAsJsonAsync(
+            new Uri("/api/v1/usuarios/cuentas", UriKind.Relative),
+            new
+            {
+                correo = DatosUnicos.Correo("uv.mx"),
+                nombre = "Entidad de prueba",
+                rolId = 3,
+                areaAcademicaId = (int?)null,
+                entidadAcademicaId,
+            },
+            Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
+
+        return (await Leer(respuesta)).GetProperty("cuenta").GetProperty("id").GetInt32();
     }
 
     private static async Task<(int Id, string Clave)> CrearYObtener(HttpClient cliente, int areaAcademicaId)

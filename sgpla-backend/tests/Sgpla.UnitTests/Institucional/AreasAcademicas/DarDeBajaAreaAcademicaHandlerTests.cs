@@ -9,6 +9,7 @@ public sealed class DarDeBajaAreaAcademicaHandlerTests
     private const int Id = 7;
 
     private readonly AreaAcademicaRepositoryFalso _repositorio = new();
+    private readonly UsuariosDeAreaAcademicaFalso _usuarios = new();
     private readonly UnitOfWorkFalso _unidadDeTrabajo = new();
     private readonly AreaAcademica _area = AreaAcademica.Crear(30, "Facultad de Letras", "2288421700", null).Value;
 
@@ -49,6 +50,18 @@ public sealed class DarDeBajaAreaAcademicaHandlerTests
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task HandleAsync_ConUsuariosActivos_FallaConTieneUsuariosActivosSinGuardar()
+    {
+        _usuarios.TieneUsuariosActivos = true;
+
+        var resultado = await Handler(DateTimeOffset.UtcNow).HandleAsync(
+            new DarDeBajaAreaAcademicaCommand(Id), TestContext.Current.CancellationToken);
+
+        resultado.Error.ShouldBe(AreaAcademicaErrors.TieneUsuariosActivos);
+        _unidadDeTrabajo.Guardados.ShouldBe(0);
+    }
+
     private DarDeBajaAreaAcademicaHandler Handler(DateTimeOffset ahora) =>
-        new(_repositorio, _unidadDeTrabajo, new TimeProviderFalso(ahora));
+        new(_repositorio, [_usuarios], _unidadDeTrabajo, new TimeProviderFalso(ahora));
 }

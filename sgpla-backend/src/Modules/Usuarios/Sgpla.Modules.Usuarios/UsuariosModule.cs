@@ -11,12 +11,14 @@ using Microsoft.IdentityModel.Tokens;
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
+using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.Usuarios.Application.Autenticacion;
 using Sgpla.Modules.Usuarios.Application.Cuentas;
 using Sgpla.Modules.Usuarios.Domain.Cuentas;
 using Sgpla.Modules.Usuarios.Endpoints.Cuentas;
 using Sgpla.Modules.Usuarios.Endpoints.Sesion;
 using Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
+using Sgpla.Modules.Usuarios.Infrastructure.Contratos;
 using Sgpla.Modules.Usuarios.Infrastructure.Cuentas;
 using Sgpla.SharedKernel;
 
@@ -61,6 +63,9 @@ public static class UsuariosModule
         services.AddSingleton<IGeneradorContrasenas, GeneradorContrasenas>();
         services.AddScoped<ILdapAutenticador, LdapAutenticador>();
         services.AddScoped<IEmisorTokens, EmisorTokens>();
+
+        services.AddScoped<IUsuariosDeAreaAcademica, UsuariosDeAmbito>();
+        services.AddScoped<IUsuariosDeEntidadAcademica, UsuariosDeAmbito>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, UsuarioActual>();

@@ -1,4 +1,5 @@
 using Sgpla.BuildingBlocks.Application;
+using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.Institucional.Domain.AreasAcademicas;
 using Sgpla.SharedKernel;
 
@@ -8,6 +9,7 @@ internal sealed record DarDeBajaAreaAcademicaCommand(int Id);
 
 internal sealed class DarDeBajaAreaAcademicaHandler(
     IAreaAcademicaRepository repositorio,
+    IEnumerable<IUsuariosDeAreaAcademica> usuarios,
     IUnitOfWork unidadDeTrabajo,
     TimeProvider reloj) : ICommandHandler<DarDeBajaAreaAcademicaCommand>
 {
@@ -22,6 +24,14 @@ internal sealed class DarDeBajaAreaAcademicaHandler(
         if (await repositorio.TieneEntidadesActivasAsync(area.Id, cancellationToken))
         {
             return AreaAcademicaErrors.TieneEntidadesActivas;
+        }
+
+        foreach (var contrato in usuarios)
+        {
+            if (await contrato.TieneUsuariosActivosAsync(area.Id, cancellationToken))
+            {
+                return AreaAcademicaErrors.TieneUsuariosActivos;
+            }
         }
 
         var ahora = reloj.GetUtcNow().UtcDateTime;

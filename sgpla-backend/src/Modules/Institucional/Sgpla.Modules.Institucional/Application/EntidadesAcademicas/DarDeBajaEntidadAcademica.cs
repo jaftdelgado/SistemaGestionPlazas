@@ -1,4 +1,5 @@
 using Sgpla.BuildingBlocks.Application;
+using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.Institucional.Domain.EntidadesAcademicas;
 using Sgpla.SharedKernel;
 
@@ -6,9 +7,10 @@ namespace Sgpla.Modules.Institucional.Application.EntidadesAcademicas;
 
 internal sealed record DarDeBajaEntidadAcademicaCommand(int Id);
 
-/// <summary>Sin cascada ni bloqueos todavía (Modulo_Institucional.md, decisión D6).</summary>
+/// <summary>Sin cascada todavía (Modulo_Institucional.md, decisión D6; pendientes.md, P1).</summary>
 internal sealed class DarDeBajaEntidadAcademicaHandler(
     IEntidadAcademicaRepository repositorio,
+    IEnumerable<IUsuariosDeEntidadAcademica> usuarios,
     IUnitOfWork unidadDeTrabajo,
     TimeProvider reloj) : ICommandHandler<DarDeBajaEntidadAcademicaCommand>
 {
@@ -18,6 +20,14 @@ internal sealed class DarDeBajaEntidadAcademicaHandler(
         if (entidad is null)
         {
             return EntidadAcademicaErrors.NoEncontrado(command.Id);
+        }
+
+        foreach (var contrato in usuarios)
+        {
+            if (await contrato.TieneUsuariosActivosAsync(entidad.Id, cancellationToken))
+            {
+                return EntidadAcademicaErrors.TieneUsuariosActivos;
+            }
         }
 
         var ahora = reloj.GetUtcNow().UtcDateTime;

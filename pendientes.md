@@ -22,22 +22,6 @@ Contexto: `Modulo_Institucional.md`, decisión D6. Institucional no puede depend
 - **Resolución prevista:** contrato `IProgramasDeEntidadAcademica` con `Task<bool> TieneProgramasAsync(int entidadAcademicaId, CancellationToken)`, que implementa OfertaEducativa contando también los programas dados de baja. `ModificarEntidadAcademicaHandler` lo consulta solo si cambia el área, y responde 409 `EntidadAcademica.AreaAcademicaInmutable`.
 - **Mientras tanto:** el área siempre puede cambiarse.
 
-### P3. La baja de un área académica se bloquea con usuarios DGAA activos
-
-- **Origen:** `DATABASE.md` §9.2.
-- **Lo desbloquea:** Usuarios.
-- **Resolución prevista:** contrato `IUsuariosDeAreaAcademica` con `Task<bool> TieneUsuariosActivosAsync(int areaAcademicaId, CancellationToken)`, que implementa Usuarios. `DarDeBajaAreaAcademicaHandler` responde 409 `AreaAcademica.TieneUsuariosActivos`.
-- **Mientras tanto:** la baja solo se bloquea por entidades activas.
-- **Se resuelve en:** `Modulo_Usuarios.md`, PR 2.
-
-### P4. La baja de una entidad académica se bloquea con usuarios de entidad activos
-
-- **Origen:** `DATABASE.md` §9.2.
-- **Lo desbloquea:** Usuarios.
-- **Resolución prevista:** contrato `IUsuariosDeEntidadAcademica` con `Task<bool> TieneUsuariosActivosAsync(int entidadAcademicaId, CancellationToken)`, que implementa Usuarios. `DarDeBajaEntidadAcademicaHandler` responde 409 `EntidadAcademica.TieneUsuariosActivos` antes de la cascada de P1: si hay usuarios activos, no se da de baja nada.
-- **Mientras tanto:** la baja de una entidad no se bloquea.
-- **Se resuelve en:** `Modulo_Usuarios.md`, PR 2.
-
 ### P5. Autorización y ámbito
 
 - **Origen:** `DATABASE.md` §13.1 y la decisión D7 de `Modulo_Institucional.md`.

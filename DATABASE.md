@@ -749,8 +749,8 @@ La operación debe:
 - la baja de un área de formación se bloquea mientras tenga EE activas;
 - la baja de un sistema educativo o nivel se bloquea mientras tenga programas activos;
 - `grado_academico` y `tipo_documento_expediente` son catálogos fijos (§6.21 y §6.22), sin baja lógica;
-- la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos (pendiente de Usuarios: `pendientes.md`, P3);
-- la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos (pendiente de Usuarios: `pendientes.md`, P4);
+- la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos (`Modulo_Usuarios.md`, sección 9);
+- la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos (`Modulo_Usuarios.md`, sección 9);
 - ninguna baja de estos catálogos se propaga a las entidades clasificadas.
 
 ### 9.3 Restauración
