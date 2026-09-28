@@ -19,6 +19,9 @@ internal sealed class CrearSuperusuarioInicialHandler(
     IUnitOfWork unidadDeTrabajo,
     ILogger<CrearSuperusuarioInicialHandler> logger) : ICommandHandler<CrearSuperusuarioInicialCommand, CuentaCreada>
 {
+    /// <summary>Nunca se persiste: solo permite validar con la fábrica antes de calcular el hash real.</summary>
+    private const string VerificadorProvisional = "sin-asignar";
+
     public async Task<Result<CuentaCreada>> HandleAsync(
         CrearSuperusuarioInicialCommand command, CancellationToken cancellationToken)
     {
@@ -27,23 +30,28 @@ internal sealed class CrearSuperusuarioInicialHandler(
             return UsuarioErrors.SuperusuarioExistente;
         }
 
-        var temporal = generador.GenerarTemporal();
-        var creado = Usuario.CrearSuperusuario(command.Correo, command.Nombre, hasher.Hashear(temporal));
+        var creado = Usuario.CrearSuperusuario(command.Correo, command.Nombre, VerificadorProvisional);
         if (creado.IsFailure)
         {
             return creado.Error;
         }
 
-        if (await repositorio.ExisteCorreoAsync(creado.Value.Correo, cancellationToken))
+        var usuario = creado.Value;
+
+        if (await repositorio.ExisteCorreoAsync(usuario.Correo, cancellationToken))
         {
             return UsuarioErrors.CorreoDuplicado;
         }
 
-        repositorio.Agregar(creado.Value);
-        await unidadDeTrabajo.SaveChangesAsync(cancellationToken);
-        logger.SuperusuarioInicialCreado(creado.Value.Id);
+        // El verificador real se calcula solo cuando ya se sabe que la cuenta se va a crear.
+        var temporal = generador.GenerarTemporal();
+        usuario.RestablecerContrasena(hasher.Hashear(temporal));
 
-        return new CuentaCreada(creado.Value.Id, temporal);
+        repositorio.Agregar(usuario);
+        await unidadDeTrabajo.SaveChangesAsync(cancellationToken);
+        logger.SuperusuarioInicialCreado(usuario.Id);
+
+        return new CuentaCreada(usuario.Id, temporal);
     }
 }
 

@@ -88,6 +88,17 @@ public sealed class CrearCuentaHandlerTests
         _repositorio.Agregados.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task HandleAsync_SuperusuarioConCorreoInvalido_NoLlamaAlHasher()
+    {
+        var resultado = await Handler("Tmp0ral!23").HandleAsync(
+            new CrearCuentaCommand("", "Nombre", (byte)Rol.Superusuario, null, null),
+            TestContext.Current.CancellationToken);
+
+        resultado.IsFailure.ShouldBeTrue();
+        _hasher.Hasheados.ShouldBeEmpty();
+    }
+
     private CrearCuentaHandler Handler(string temporal) => new(
         _repositorio,
         _ambitos,

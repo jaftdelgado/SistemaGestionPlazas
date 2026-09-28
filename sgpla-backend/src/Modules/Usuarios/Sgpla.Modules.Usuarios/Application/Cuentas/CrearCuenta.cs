@@ -43,14 +43,16 @@ internal sealed class CrearCuentaHandler(
     IUnitOfWork unidadDeTrabajo,
     ILogger<CrearCuentaHandler> logger) : ICommandHandler<CrearCuentaCommand, CuentaCreada>
 {
+    /// <summary>Nunca se persiste: solo permite validar con la fábrica antes de calcular el hash real.</summary>
+    private const string VerificadorProvisional = "sin-asignar";
+
     public async Task<Result<CuentaCreada>> HandleAsync(CrearCuentaCommand command, CancellationToken cancellationToken)
     {
         var rol = (Rol)command.RolId;
-        var temporal = rol == Rol.Superusuario ? generador.GenerarTemporal() : null;
 
         var creado = rol switch
         {
-            Rol.Superusuario => Usuario.CrearSuperusuario(command.Correo, command.Nombre, hasher.Hashear(temporal!)),
+            Rol.Superusuario => Usuario.CrearSuperusuario(command.Correo, command.Nombre, VerificadorProvisional),
             Rol.Dgaa => Usuario.CrearDgaa(command.Correo, command.Nombre, command.AreaAcademicaId!.Value),
             Rol.EntidadAcademica => Usuario.CrearEntidadAcademica(command.Correo, command.Nombre, command.EntidadAcademicaId!.Value),
             _ => throw new InvalidOperationException("Rol desconocido."),
@@ -77,6 +79,13 @@ internal sealed class CrearCuentaHandler(
         if (await repositorio.ExisteCorreoAsync(usuario.Correo, cancellationToken))
         {
             return UsuarioErrors.CorreoDuplicado;
+        }
+
+        // El verificador real se calcula solo cuando ya se sabe que la cuenta se va a crear.
+        var temporal = usuario.Rol == Rol.Superusuario ? generador.GenerarTemporal() : null;
+        if (temporal is not null)
+        {
+            usuario.RestablecerContrasena(hasher.Hashear(temporal));
         }
 
         repositorio.Agregar(usuario);

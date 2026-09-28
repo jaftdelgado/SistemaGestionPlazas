@@ -211,6 +211,78 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     }
 
     [Fact]
+    public async Task Crear_ConEntidadInexistente_Responde400ConErrorEnEntidadAcademicaId()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+
+        using var respuesta = await cliente.PostAsJsonAsync(
+            Uri(),
+            new
+            {
+                correo = DatosUnicos.Correo("uv.mx"),
+                nombre = "Nombre",
+                rolId = 3,
+                areaAcademicaId = (int?)null,
+                entidadAcademicaId = int.MaxValue,
+            },
+            Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        problema.GetProperty("errors").TryGetProperty("entidadAcademicaId", out _).ShouldBeTrue();
+        problema.GetProperty("codigo").GetString().ShouldBe("Usuario.EntidadAcademicaInexistente");
+    }
+
+    [Fact]
+    public async Task Crear_ConEntidadDadaDeBaja_Responde400ConErrorEnEntidadAcademicaId()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearAreaAsync(cliente);
+        var entidadId = await CrearEntidadAsync(cliente, areaId);
+        (await cliente.DeleteAsync(new Uri($"/api/v1/institucional/entidades-academicas/{entidadId}", UriKind.Relative), Cancelacion))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var respuesta = await cliente.PostAsJsonAsync(
+            Uri(),
+            new
+            {
+                correo = DatosUnicos.Correo("uv.mx"),
+                nombre = "Nombre",
+                rolId = 3,
+                areaAcademicaId = (int?)null,
+                entidadAcademicaId = entidadId,
+            },
+            Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        problema.GetProperty("errors").TryGetProperty("entidadAcademicaId", out _).ShouldBeTrue();
+        problema.GetProperty("codigo").GetString().ShouldBe("Usuario.EntidadAcademicaInexistente");
+    }
+
+    [Fact]
+    public async Task Crear_SuperusuarioConEntidadDeMas_Responde400ConErrorEnEntidadAcademicaId()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+
+        using var respuesta = await cliente.PostAsJsonAsync(
+            Uri(),
+            new
+            {
+                correo = DatosUnicos.Correo("gmail.com"),
+                nombre = "Nombre",
+                rolId = 1,
+                areaAcademicaId = (int?)null,
+                entidadAcademicaId = 1,
+            },
+            Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        problema.GetProperty("errors").TryGetProperty("entidadAcademicaId", out _).ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Crear_ConCorreoExistenteEnMayusculas_Responde409()
     {
         using var cliente = await _api.CrearClienteSuperusuarioAsync();

@@ -52,6 +52,18 @@ public sealed class CrearSuperusuarioInicialHandlerTests
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task HandleAsync_ConCorreoInvalido_NoLlamaAlHasher()
+    {
+        var handler = Handler("Tmp0ral!23");
+
+        var resultado = await handler.HandleAsync(
+            new CrearSuperusuarioInicialCommand("", "Superusuario"), TestContext.Current.CancellationToken);
+
+        resultado.IsFailure.ShouldBeTrue();
+        _hasher.Hasheados.ShouldBeEmpty();
+    }
+
     private CrearSuperusuarioInicialHandler Handler(string temporal) => new(
         _repositorio, _hasher, new GeneradorContrasenasFalso(temporal), _unidadDeTrabajo,
         NullLogger<CrearSuperusuarioInicialHandler>.Instance);
