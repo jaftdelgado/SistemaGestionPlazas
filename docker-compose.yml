@@ -45,6 +45,12 @@ services:
       ASPNETCORE_HTTP_PORTS: "8080"
       ConnectionStrings__Sgpla: *cadena-conexion
       Cors__OrigenesPermitidos__0: "${SGPLA_WEB_ORIGIN:-http://localhost:5173}"
+      Jwt__Clave: "${SGPLA_JWT_CLAVE:?la variable SGPLA_JWT_CLAVE es obligatoria}"
+      Ldap__Servidor: "${SGPLA_LDAP_SERVIDOR:-148.226.12.10}"
+      Ldap__Puerto: "${SGPLA_LDAP_PUERTO:-389}"
+      Ldap__Seguridad: "${SGPLA_LDAP_SEGURIDAD:-SinTls}"
+      SGPLA_BOOTSTRAP_CORREO: "${SGPLA_BOOTSTRAP_CORREO:-}"
+      SGPLA_BOOTSTRAP_NOMBRE: "${SGPLA_BOOTSTRAP_NOMBRE:-}"
     ports:
       - "${SGPLA_API_PORT:-8180}:8080"
     depends_on:

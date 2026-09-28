@@ -17,6 +17,13 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
   </ItemGroup>
 
+  <!-- Autenticación (Usuarios) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Isopoh.Cryptography.Argon2" Version="2.0.0" />
+    <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.12" />
+  </ItemGroup>
+
   <!-- Persistencia -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />

@@ -1018,6 +1018,8 @@ Para DGAA y Entidad Académica:
 
 El nombre almacenado es obligatorio y administrado localmente; no se sobrescribe con atributos de LDAP.
 
+La seguridad del canal es configurable (`Ldaps`, `StartTls` o `SinTls`); `SinTls` solo se acepta en el entorno Development, que es como opera hoy el directorio de la UV (`Modulo_Usuarios.md`, decisión D2).
+
 ### 13.4 Autenticación local
 
 Para Superusuario:
@@ -1045,6 +1047,8 @@ La ausencia de rate limiting es un riesgo aceptado: Argon2id mitiga ataques fuer
 - Accesos exitosos, fallidos, restablecimientos y cambios administrativos se envían como eventos estructurados a telemetría externa.
 - No se crea una tabla SQL de auditoría de autenticación.
 - Sesiones, refresh tokens, MFA y recuperación por correo quedan fuera del modelo actual.
+
+Estos eventos se emiten hoy como logs estructurados con `[LoggerMessage]` y `EventId` fijos; se exportarán a telemetría externa cuando el host la configure (`Modulo_Usuarios.md`, decisión D12).
 
 ## 14. Casos de aceptación
 

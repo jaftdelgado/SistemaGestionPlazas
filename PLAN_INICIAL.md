@@ -93,7 +93,7 @@ Reglas para mantenerlo acíclico:
 - Las referencias a actores (`cargado_por_usuario_id`, `resuelto_por_usuario_id`, etc.) se modelan como `int` sin navegación, así que ningún módulo depende de Usuarios.
 - `asignacion_docente.sincronizacion_planea_id` y `acta_oferta_id` también son `int` sin navegación.
 - Las FK físicas existen igual en SQL porque las crea DbUp.
-- El usuario autenticado y su ámbito (DGAA → área; EA → entidad) se exponen mediante `ICurrentUser` en SharedKernel. Los implementa el host.
+- El usuario autenticado y su ámbito (DGAA → área; EA → entidad) se exponen mediante `ICurrentUser` en `BuildingBlocks.Application`. Lo implementa el módulo Usuarios, porque la verificación por petición consulta sus tablas (`Modulo_Usuarios.md`, decisión D10).
 
 ## Estructura de la solución
 
@@ -129,7 +129,7 @@ sgpla-backend/
     Sgpla.Api/                   host: Program.cs, auth JWT, políticas, ProblemDetails, OpenAPI+Scalar, health checks, OpenTelemetry
     Sgpla.Database/              DbUp: Scripts/*.sql embebidos, DatabaseMigrator (librería) + CLI (Program.cs)
     BuildingBlocks/
-      Sgpla.SharedKernel/        Entity base, ISoftDeletable, Result/Error, IClock, ICurrentUser, AmbitoUsuario, RolId (constantes tipadas 1/2/3), paginación
+      Sgpla.SharedKernel/        Entity base, ISoftDeletable, Result/Error, IClock, Rol (constantes tipadas 1/2/3), Normalizacion, paginación
       Sgpla.BuildingBlocks.Infrastructure/  SgplaDbContext único, IAlmacenamientoArchivos (+ impl. en sistema de archivos local), SHA-256, SystemClock, helpers de endpoints/validación
     Modules/
       Institucional/Sgpla.Modules.Institucional/
@@ -167,13 +167,13 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 - Cualquier cambio posterior de esquema o de datos va en migraciones de `Scripts/`, a partir de `0001`.
 
 ### Seguridad y servicios externos (adaptadores + interfaces; los flujos completos quedan para fases posteriores)
-- **JWT**: `Microsoft.AspNetCore.Authentication.JwtBearer`. La API emite tokens de acceso de vida corta (refresh tokens fuera de alcance). Políticas `Superusuario`, `Dgaa`, `EntidadAcademica` y `CambioContrasenaPendiente`.
-- **LDAP UV** (módulo Usuarios/Infrastructure): `ILdapAutenticador` implementado con `System.DirectoryServices.Protocols` sobre TLS/LDAPS, sin fallback local. `LdapOptions` (host, puerto, base DN, formato de bind) se configura desde settings/secretos. La contraseña nunca se registra.
-- **Hash local**: `IPasswordHasher` con Argon2id en formato PHC (`Isopoh.Cryptography.Argon2`), con parámetros configurables y detección de rehash.
+- **JWT**: `Microsoft.AspNetCore.Authentication.JwtBearer`. La API emite tokens de 8 horas sin refresh (`Modulo_Usuarios.md`, decisión D4). Políticas `SesionIniciada`, `Autenticado` y `Superusuario`; `Dgaa` y `EntidadAcademica` se agregan cuando un endpoint las necesite (decisión D13).
+- **LDAP UV** (módulo Usuarios/Infrastructure): `ILdapAutenticador` implementado con `System.DirectoryServices.Protocols`, con bind directo por correo (sin base DN ni cuenta de servicio, igual que el sistema anterior de la UV). La seguridad del canal es configurable (`Ldaps`, `StartTls` o `SinTls`); `SinTls` solo se acepta en Development (decisión D2). La contraseña nunca se registra.
+- **Hash local**: `IHasherContrasenas` con Argon2id en formato PHC (`Isopoh.Cryptography.Argon2`), con parámetros configurables y detección de rehash.
 - **PLANEA** (módulo Integracion/Infrastructure): `IPlaneaClient` como typed `HttpClient`, con `Microsoft.Extensions.Http.Resilience`, `PlaneaOptions.BaseUrl` y validación de status/Content-Type/arreglo no vacío. El proceso de sincronización atómica queda como caso de uso por implementar.
 - **Almacenamiento de binarios**: la interfaz `IAlmacenamientoArchivos` se implementa en el sistema de archivos local para dev y test. El proveedor definitivo está pendiente, según `DATABASE.md` §17.
 - **Configuración de periodos** (actual/siguiente): `PeriodosOptions` en SolicitudesApertura.
-- **Bootstrap del primer Superusuario**: se deja reservado el subcomando `bootstrap-superusuario` en la CLI; se implementa junto con el módulo Usuarios.
+- **Bootstrap del primer Superusuario**: subcomando `bootstrap-superusuario` de la imagen de la API (`docker compose run --rm api bootstrap-superusuario`), no del CLI de migraciones (`Modulo_Usuarios.md`, decisión D7).
 
 ### Slice de referencia: `Institucional/Region`
 - Endpoints en `/api/v1/institucional/regiones`: `GET` (paginado, `incluirEliminados`), `GET /{id}`, `POST`, `PUT /{id}` (solo `nombre`; `clave` es inmutable), `DELETE /{id}` (baja lógica UTC idempotente), `POST /{id}/restaurar`. Requieren la política `Superusuario`.
@@ -185,7 +185,7 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 - **Sgpla.IntegrationTests**:
   - `SqlServerFixture` levanta `mcr.microsoft.com/mssql/server:2022-latest` con Testcontainers una sola vez por colección, ejecuta `DatabaseMigrator` y crea `SgplaApiFactory : WebApplicationFactory<Program>` con la cadena de conexión del contenedor.
   - Respawn limpia los datos entre tests y respeta las semillas de `usuarios.rol` y `dbo.schema_versions`.
-  - Un `TestAuthHandler` emite claims por rol. `ILdapAutenticador` se sustituye por un fake y PLANEA se simula con WireMock.Net.
+  - Las pruebas usan tokens reales emitidos por la API, no un `TestAuthHandler` (`Modulo_Usuarios.md`, decisión D11). `ILdapAutenticador` se sustituye por un fake y PLANEA se simula con WireMock.Net.
   - Tests iniciales: CRUD de Region (crear, duplicado → 409, editar nombre, clave inmutable, baja, restauración) y semilla de roles presente.
 - **Sgpla.ArchitectureTests**: Domain no depende de Application/Infrastructure/Endpoints/EF Core; Application no depende de Infrastructure/Endpoints; los módulos respetan el grafo anterior.
 - **`.github/workflows/backend-ci.yml`** (push y pull_request a `main`/`develop`):

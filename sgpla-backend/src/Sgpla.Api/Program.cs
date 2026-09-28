@@ -1,4 +1,5 @@
 using Scalar.AspNetCore;
+using Sgpla.Api;
 using Sgpla.BuildingBlocks.Infrastructure.Http;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Aspirantes;
@@ -22,7 +23,7 @@ builder.Logging.Configure(options =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ViolacionUnicidadExceptionHandler>();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<EsquemaSeguridadBearerTransformer>());
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddCors(options => options.AddPolicy(PoliticaCors, policy => policy
@@ -48,6 +49,11 @@ builder.Services
 
 var app = builder.Build();
 
+if (args is ["bootstrap-superusuario"])
+{
+    return await UsuariosModule.EjecutarBootstrapAsync(app.Services, Console.Out, CancellationToken.None);
+}
+
 // Un request mal formado (JSON inválido, parámetro no convertible) responde su 400 también en Development,
 // donde el enlace de parámetros lanza la excepción en lugar de responder directamente.
 app.UseExceptionHandler(new ExceptionHandlerOptions
@@ -66,6 +72,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(PoliticaCors);
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 
@@ -82,6 +90,7 @@ app
     .MapConsejoTecnicoEndpoints();
 
 await app.RunAsync();
+return 0;
 
 /// <summary>Punto de entrada expuesto para <c>WebApplicationFactory</c> en las pruebas de integración.</summary>
 public partial class Program;

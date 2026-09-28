@@ -9,13 +9,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Isopoh.Cryptography.Argon2" />
+    <PackageReference Include="System.DirectoryServices.Protocols" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.SharedKernel\Sgpla.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Application\Sgpla.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Infrastructure\Sgpla.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
   <!-- Dependencias entre módulos (ver PLAN_INICIAL.md, grafo de dependencias) -->
   <ItemGroup>
     <ProjectReference Include="..\..\Institucional\Sgpla.Modules.Institucional\Sgpla.Modules.Institucional.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sgpla.UnitTests" />
+    <InternalsVisibleTo Include="Sgpla.IntegrationTests" />
   </ItemGroup>
 
 </Project>

@@ -10,6 +10,10 @@ RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
+# libldap2: biblioteca nativa que necesita System.DirectoryServices.Protocols para el bind LDAP en Linux.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libldap2 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 USER $APP_UID
 EXPOSE 8080

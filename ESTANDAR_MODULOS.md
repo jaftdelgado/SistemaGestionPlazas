@@ -161,6 +161,7 @@ Las pruebas de arquitectura exigen que los handlers de comandos estén en Applic
   - los tipos de `Application/Contracts`, que usan otros módulos.
 - Un módulo solo puede usar el namespace `Application.Contracts` de los módulos que el grafo de `PLAN_INICIAL.md` le permite. Nunca usa sus entidades, handlers ni repositorios.
 - El módulo declara `<InternalsVisibleTo Include="Sgpla.UnitTests" />` en su `.csproj` para las pruebas unitarias. Las de integración entran por HTTP y no lo necesitan.
+  - Excepción: Usuarios declara también `<InternalsVisibleTo Include="Sgpla.IntegrationTests" />`, porque sus pruebas de integración emiten tokens reales y reemplazan el adaptador LDAP por un falso (`Modulo_Usuarios.md`, decisión D11).
 
 Hay dos formas de colaborar entre módulos, siempre a través de `Contracts`:
 

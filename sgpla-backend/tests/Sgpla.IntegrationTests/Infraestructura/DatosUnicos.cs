@@ -17,4 +17,7 @@ public static class DatosUnicos
 
     /// <summary>Una clave alfanumérica ya normalizada: los primeros 20 caracteres de un GUID, en mayúsculas.</summary>
     public static string ClaveAlfanumerica() => Guid.NewGuid().ToString("N")[..20].ToUpperInvariant();
+
+    /// <summary>Un correo único bajo el dominio indicado: <c>u{guid:N}@{dominio}</c>.</summary>
+    public static string Correo(string dominio) => $"u{Guid.NewGuid():N}@{dominio}";
 }

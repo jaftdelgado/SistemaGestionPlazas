@@ -60,6 +60,24 @@ Comandos útiles:
 
 Las imágenes se construyen con `src/Sgpla.Api/Dockerfile` y `src/Sgpla.Database/Dockerfile`; en ambos casos el contexto es `sgpla-backend/`.
 
+## Autenticación
+
+Variables nuevas en `.env` (ver `.env.example`), todas con un valor de desarrollo por omisión salvo el bootstrap:
+
+| Variable | Uso |
+|---|---|
+| `SGPLA_JWT_CLAVE` | Clave de firma de los JWT (HS256). Obligatoria y de al menos 32 caracteres; nunca uses el valor de ejemplo fuera de desarrollo. |
+| `SGPLA_LDAP_SERVIDOR`, `SGPLA_LDAP_PUERTO`, `SGPLA_LDAP_SEGURIDAD` | Directorio LDAP de la UV para el login de DGAA y Entidad Académica. `SGPLA_LDAP_SEGURIDAD=SinTls` (el valor actual de la UV) solo se acepta si `SGPLA_API_ENVIRONMENT=Development`. |
+| `SGPLA_BOOTSTRAP_CORREO`, `SGPLA_BOOTSTRAP_NOMBRE` | Correo y nombre del primer Superusuario, usados solo por el bootstrap. |
+
+El primer Superusuario se crea con el subcomando `bootstrap-superusuario` de la propia imagen de la API, no con la CLI de migraciones:
+
+```bash
+docker compose run --rm api bootstrap-superusuario
+```
+
+Imprime el id y una contraseña temporal una sola vez; cámbiala al iniciar sesión. Ejecutarlo de nuevo con un Superusuario ya activo no crea nada y termina con código 0, así que es seguro incluirlo en cada despliegue.
+
 ## Uso local con el SDK
 
 Todos los comandos se ejecutan desde `sgpla-backend/`, salvo el de `docker compose`.
