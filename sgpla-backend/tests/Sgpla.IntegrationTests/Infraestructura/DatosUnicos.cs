@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Sgpla.IntegrationTests.Infraestructura;
 
 /// <summary>
@@ -6,6 +8,8 @@ namespace Sgpla.IntegrationTests.Infraestructura;
 /// </summary>
 public static class DatosUnicos
 {
+    private static int _contadorClavePeriodo = 99999;
+
     /// <summary>Un nombre con prefijo legible y un sufijo aleatorio de 32 caracteres hexadecimales.</summary>
     public static string Nombre(string prefijo) => $"{prefijo} {Guid.NewGuid():N}";
 
@@ -20,4 +24,11 @@ public static class DatosUnicos
 
     /// <summary>Un correo único bajo el dominio indicado: <c>u{guid:N}@{dominio}</c>.</summary>
     public static string Correo(string dominio) => $"u{Guid.NewGuid():N}@{dominio}";
+
+    /// <summary>
+    /// Una clave de periodo escolar: seis dígitos que empiezan en 100000 y crecen de uno en uno. Es única en toda la base
+    /// compartida, porque el contenedor es nuevo en cada ejecución y la semilla no trae periodos.
+    /// </summary>
+    public static string ClavePeriodo() =>
+        Interlocked.Increment(ref _contadorClavePeriodo).ToString("D6", CultureInfo.InvariantCulture);
 }

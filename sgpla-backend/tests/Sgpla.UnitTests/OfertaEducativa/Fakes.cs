@@ -1,5 +1,8 @@
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.Modules.Institucional.Application.Contracts;
+using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Domain.PeriodosEscolares;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.UnitTests.OfertaEducativa;
@@ -45,4 +48,41 @@ internal sealed class AmbitosDeEntidadesFalso : IAmbitosInstitucionales
             .Where(par => par.Value.AreaAcademicaId == areaAcademicaId)
             .Select(par => par.Key)
             .ToList());
+}
+
+/// <summary>Repositorio en memoria de periodos escolares. La unicidad se simula con la clave normalizada.</summary>
+internal sealed class PeriodoEscolarRepositoryFalso : IPeriodoEscolarRepository
+{
+    private readonly Dictionary<int, PeriodoEscolar> _porId = [];
+
+    public List<PeriodoEscolar> Agregados { get; } = [];
+
+    public HashSet<string> ClavesExistentes { get; } = new(StringComparer.Ordinal);
+
+    public bool TieneProgramaciones { get; set; }
+
+    public void Registrar(int id, PeriodoEscolar periodoEscolar) => _porId[id] = periodoEscolar;
+
+    public Task<PeriodoEscolar?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
+        Task.FromResult(_porId.GetValueOrDefault(id));
+
+    public Task<bool> ExisteClaveAsync(string clave, CancellationToken cancellationToken) =>
+        Task.FromResult(ClavesExistentes.Contains(clave));
+
+    public Task<bool> TieneProgramacionesAsync(int periodoEscolarId, CancellationToken cancellationToken) =>
+        Task.FromResult(TieneProgramaciones);
+
+    public void Agregar(PeriodoEscolar periodoEscolar) => Agregados.Add(periodoEscolar);
+}
+
+/// <summary>Responde según <paramref name="tieneReferencias"/> y cuenta las consultas recibidas.</summary>
+internal sealed class ReferenciasPeriodoEscolarFalsas(bool tieneReferencias) : IReferenciasPeriodoEscolar
+{
+    public int Consultas { get; private set; }
+
+    public Task<bool> TieneReferenciasAsync(int periodoEscolarId, CancellationToken cancellationToken)
+    {
+        Consultas++;
+        return Task.FromResult(tieneReferencias);
+    }
 }
