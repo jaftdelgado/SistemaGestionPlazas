@@ -20,8 +20,8 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [InlineData("plazas.modalidad_recepcion", 0)]
     [InlineData("plazas.tipo_plaza", 0)]
     [InlineData("plazas.tipo_contratacion", 0)]
-    // Omitido a propósito: lo registra el Superusuario desde la aplicación.
-    [InlineData("academico.periodo_escolar", 0)]
+    // Omitido a propósito: lo registra el Superusuario y las pruebas de integración crean periodos en la base
+    // compartida, por lo que su conteo global no es estable.
     // academico.area_academica y academico.entidad_academica ya no son de conteo fijo: el módulo Institucional
     // agregó sus endpoints de creación, y las pruebas de integración insertan filas reales ahí (igual que
     // plazas.articulo, que por la misma razón tampoco se afirma en cero).
