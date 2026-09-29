@@ -10,12 +10,18 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.SharedKernel\Sgpla.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Application\Sgpla.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Infrastructure\Sgpla.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
   <!-- Dependencias entre módulos (ver PLAN_INICIAL.md, grafo de dependencias) -->
   <ItemGroup>
     <ProjectReference Include="..\..\Institucional\Sgpla.Modules.Institucional\Sgpla.Modules.Institucional.csproj" />
+    <ProjectReference Include="..\..\Catalogos\Sgpla.Modules.Catalogos\Sgpla.Modules.Catalogos.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sgpla.UnitTests" />
   </ItemGroup>
 
 </Project>

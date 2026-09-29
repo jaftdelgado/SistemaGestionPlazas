@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\Sgpla.BuildingBlocks.Infrastructure\Sgpla.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Catalogos\Sgpla.Modules.Catalogos\Sgpla.Modules.Catalogos.csproj" />
     <ProjectReference Include="..\..\src\Modules\Institucional\Sgpla.Modules.Institucional\Sgpla.Modules.Institucional.csproj" />
+    <ProjectReference Include="..\..\src\Modules\OfertaEducativa\Sgpla.Modules.OfertaEducativa\Sgpla.Modules.OfertaEducativa.csproj" />
     <ProjectReference Include="..\..\src\Modules\Usuarios\Sgpla.Modules.Usuarios\Sgpla.Modules.Usuarios.csproj" />
   </ItemGroup>
 

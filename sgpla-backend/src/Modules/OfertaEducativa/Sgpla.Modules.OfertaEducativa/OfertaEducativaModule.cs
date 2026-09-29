@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sgpla.BuildingBlocks.Application;
+using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
+using Sgpla.Modules.OfertaEducativa.Application.Ambito;
+using Sgpla.Modules.OfertaEducativa.Infrastructure.Ambito;
 
 namespace Sgpla.Modules.OfertaEducativa;
 
@@ -15,13 +19,21 @@ public static class OfertaEducativaModule
     public static IServiceCollection AddOfertaEducativaModule(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        services.AddPersistenciaModulo(typeof(OfertaEducativaModule).Assembly);
+        var ensamblado = typeof(OfertaEducativaModule).Assembly;
+
+        services.AddPersistenciaModulo(ensamblado);
+        services.AddHandlersModulo(ensamblado);
+
+        services.AddScoped<IAmbitoOfertaEducativa, AmbitoOfertaEducativa>();
+
         return services;
     }
 
     public static IEndpointRouteBuilder MapOfertaEducativaEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGroup(Ruta).WithTags("OfertaEducativa");
+        var grupo = endpoints.MapGroup(Ruta).RequireAuthorization(Politicas.Autenticado);
+        grupo.ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status403Forbidden);
+
         return endpoints;
     }
 }

@@ -37,7 +37,7 @@ internal static class Modulos
         ["Institucional"] = ["Catalogos"],
         ["Catalogos"] = [],
         ["Usuarios"] = ["Institucional"],
-        ["OfertaEducativa"] = ["Institucional"],
+        ["OfertaEducativa"] = ["Institucional", "Catalogos"],
         ["Docentes"] = ["OfertaEducativa", "Catalogos"],
         ["Integracion"] = ["OfertaEducativa", "Docentes"],
         ["SolicitudesApertura"] = ["OfertaEducativa"],
