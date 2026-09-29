@@ -505,9 +505,10 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
         var dgaaId = await CrearDgaaAsync(cliente, areaId);
         var entidadAcademicaCuentaId = await CrearEntidadAcademicaAsync(cliente, entidadId);
 
-        await VerificaFiltro(cliente, "rolId=2", dgaaId);
-        await VerificaFiltro(cliente, $"areaAcademicaId={areaId}", dgaaId, entidadAcademicaCuentaId);
-        await VerificaFiltro(cliente, $"entidadAcademicaId={entidadId}", entidadAcademicaCuentaId);
+        // El rol se combina con el área de la prueba: solo el rol 2 solo se acota a la base compartida.
+        await VerificaFiltroExacto(cliente, $"rolId=2&areaAcademicaId={areaId}", dgaaId);
+        await VerificaFiltroExacto(cliente, $"areaAcademicaId={areaId}", dgaaId, entidadAcademicaCuentaId);
+        await VerificaFiltroExacto(cliente, $"entidadAcademicaId={entidadId}", entidadAcademicaCuentaId);
     }
 
     [Fact]
@@ -707,6 +708,16 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     {
         using var respuesta = await cliente.GetAsync(new Uri(RutaSesion, UriKind.Relative), Cancelacion);
         return (await Leer(respuesta)).GetProperty("id").GetInt32();
+    }
+
+    private static async Task VerificaFiltroExacto(HttpClient cliente, string queryString, params int[] idsEsperados)
+    {
+        using var respuesta = await cliente.GetAsync(Uri($"?{queryString}"), Cancelacion);
+        var pagina = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var ids = pagina.GetProperty("elementos").EnumerateArray().Select(e => e.GetProperty("id").GetInt32()).ToList();
+        ids.ShouldBe(idsEsperados, ignoreOrder: true);
     }
 
     private static async Task VerificaFiltro(HttpClient cliente, string queryString, params int[] idsEsperados)
