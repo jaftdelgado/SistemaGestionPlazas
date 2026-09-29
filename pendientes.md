@@ -12,14 +12,14 @@ Contexto: `Modulo_OfertaEducativa.md`, sección 12. OfertaEducativa declara en s
 
 - **Origen:** `DATABASE.md` §16.6. La baja de una EE, un plan, un programa, una entidad o un periodo se bloquea mientras exista una Solicitud de Apertura PENDIENTE o ACEPTADA. Sin cascada (D10), basta con bloquear en la EE y en el plan: programa y entidad ya exigen hijos dados de baja. El periodo lo cubre P8.
 - **Lo desbloquea:** SolicitudesApertura.
-- **Resolución prevista:** SolicitudesApertura implementa `IReferenciasExperienciaEducativa.TieneReferenciasAsync` (nace en `Modulo_OfertaEducativa.md`, PR 3) con sus solicitudes PENDIENTE o ACEPTADA de esas EE. Las bajas de EE y de plan responden 409 `ExperienciaEducativa.TieneReferencias`.
+- **Resolución prevista:** SolicitudesApertura implementa `IReferenciasExperienciaEducativa.TieneReferenciasAsync` (declarado en `OfertaEducativa.Application.Contracts` desde el PR 3 de `Modulo_OfertaEducativa.md`; sin implementaciones) con sus solicitudes PENDIENTE o ACEPTADA de esas EE. Las bajas de EE y de plan responden 409 `ExperienciaEducativa.TieneReferencias`.
 - **Mientras tanto:** las bajas de EE y plan solo se bloquean por programaciones activas.
 
 ### P8. Un periodo escolar referenciado no se da de baja
 
 - **Origen:** `Modulo_OfertaEducativa.md` D11: la baja del periodo se bloquea con cualquier referencia. Hoy lo referencian `integracion.sincronizacion_planea`, `academico.solicitud_apertura` y `plazas.aviso`.
 - **Lo desbloquea:** Integracion, SolicitudesApertura y Publicacion, cada uno por sus tablas.
-- **Resolución prevista:** cada módulo implementa `IReferenciasPeriodoEscolar.TieneReferenciasAsync` (nace en `Modulo_OfertaEducativa.md`, PR 2) y la registra en su composición. `DarDeBajaPeriodoEscolarHandler` responde 409 `PeriodoEscolar.TieneReferencias`.
+- **Resolución prevista:** cada módulo implementa `IReferenciasPeriodoEscolar.TieneReferenciasAsync` (declarado en `OfertaEducativa.Application.Contracts` desde el PR 2 de `Modulo_OfertaEducativa.md`; sin implementaciones) y la registra en su composición. `DarDeBajaPeriodoEscolarHandler` responde 409 `PeriodoEscolar.TieneReferencias`.
 - **Mientras tanto:** la baja de un periodo solo se bloquea por sus programaciones.
 - **Se resuelve:** por partes; la entrada se borra cuando el último de los tres módulos lo implemente.
 

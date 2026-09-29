@@ -674,6 +674,8 @@ internal sealed record ArchivoGenerado(string Nombre, string TipoContenido, byte
 
 `ExperienciasEducativas` en la respuesta es el **número** de EE activas del plan. `ListarPlanesEstudioValidator` sigue el patrón de programas (`programaEducativoId`, `entidadAcademicaId` y `busqueda`, que busca en el código).
 
+El filtro `busqueda` se recorta, se pasa a mayúsculas con `ToUpperInvariant()` (como se guarda el código) y se compara con `Contains` sobre `Codigo`, para no depender de la colación del servidor.
+
 Comandos:
 
 | Archivo | Command | Dependencias del handler | Pasos |
@@ -681,7 +683,7 @@ Comandos:
 | `ImportarPlanEstudios.cs` | `ImportarPlanEstudiosCommand(int ProgramaEducativoId, string Codigo, IReadOnlyList<DatosExperienciaEducativa> ExperienciasEducativas)`; devuelve el `int` del id | `IPlanEstudiosRepository`, `IAmbitoOfertaEducativa`, `IClasificacionesAcademicas`, `IUnitOfWork` | 1. `PlanEstudios.Crear`. 2. `ObtenerEntidadDeProgramaActivoAsync` y `PuedeEscribirEnEntidadAsync`; si falla cualquiera → `ProgramaEducativoInexistente`. 3. Con **una** llamada a `ObtenerAreasFormacionAsync` (ids distintos), la primera EE con un área inexistente → `AreaFormacionInexistente` con su índice. 4. `ExisteCodigoAsync` → `CodigoDuplicado`. 5. `Agregar` y **un** `SaveChangesAsync` (plan y EE en la misma transacción). 6. Devuelve el `Id` |
 | `DarDeBajaPlanEstudios.cs` | `DarDeBajaPlanEstudiosCommand(int Id)` | `IPlanEstudiosRepository`, `IAmbitoOfertaEducativa`, `IEnumerable<IReferenciasExperienciaEducativa>`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerConExperienciasAsync` → `NoEncontrado`. 2. Ámbito de escritura de su entidad → `NoEncontrado`. 3. `TieneExperienciasConProgramacionesActivasAsync` → `ExperienciasConProgramacionesActivas`. 4. Si alguna implementación de `IReferenciasExperienciaEducativa` responde `true` para los ids de las EE activas → `ExperienciaEducativa.TieneReferencias` (sección 10), el mismo error que la baja individual, porque el motivo es el mismo. 5. `DarDeBaja(instante)` y `SaveChangesAsync` |
 
-El endpoint de importación enlaza un request propio (`ImportarPlanEstudiosRequest`, con `ExperienciaEducativaRequest` por elemento) y lo convierte al comando. El orden de la validación es el de los pasos: primero la forma de todo el plan (dominio), después las referencias.
+El endpoint de importación enlaza un request propio (`ImportarPlanEstudiosRequest`, con `ExperienciaEducativaRequest` por elemento) y lo convierte al comando. El orden de la validación es el de los pasos: primero la forma de todo el plan (dominio), después las referencias. Si `experienciasEducativas` llega `null` o se omite, el request la convierte en una lista vacía y el dominio responde `PlanEstudios.SinExperiencias`.
 
 ### Exportación (D7)
 
@@ -1216,7 +1218,7 @@ Cuatro PR en orden, cada uno desde `develop` y con la convención de ramas, comm
   - `ExperienciaEducativaTests`: cada error con su campo; materia y curso en mayúsculas y con ceros iniciales; perfil vacío → `null` y saltos de línea conservados; `Modificar` con y sin `tuvoProgramaciones`, incluido que nombre, perfil y cupos siempre cambian;
   - handlers de importar, dar de baja el plan, crear, modificar y dar de baja una EE, con fakes (incluido `IReferenciasExperienciaEducativa`).
 - **Pruebas de integración** (`OfertaEducativa/PlanEstudiosEndpointsTests.cs` y `ExperienciaEducativaEndpointsTests.cs`, con DGAA):
-  - importar las 58 EE del plan de ejemplo como datos de prueba en código (no se lee el `.xlsx`): 201 con `experienciasEducativas: 58`;
+  - importar las 58 EE del plan de ejemplo como datos de prueba en código (no se lee el `.xlsx`), en `tests/Sgpla.IntegrationTests/OfertaEducativa/PlanEjemploIsof14.cs`, extraídas una sola vez del Excel de la UV con los perfiles completos: 201 con `experienciasEducativas: 58`;
   - importar: 400 con el índice correcto (créditos 0 en la EE 4, área inexistente en la EE 7, EE repetida), 400 por programa de otra área o dado de baja, 409 por código repetido en el programa, y 201 con el mismo código en otro programa;
   - listar las EE del plan en orden de materia y curso, con `tuvoProgramaciones`;
   - exportar: `Content-Type` y nombre de archivo correctos; con ClosedXML se leen los 14 encabezados exactos y una fila completa, con `CURSO_EE` `00001` como texto;
