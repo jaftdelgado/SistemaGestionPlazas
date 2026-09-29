@@ -732,7 +732,7 @@ Reglas:
 - **Siempre `TypedResults` y tipos de retorno `Results<...>`,** para que OpenAPI documente cada respuesta. `ToOk()` y `ToNoContent()` traducen el `Result`; `ToProblem()` queda para las respuestas que esos helpers no cubren, como un 201 con `CreatedAtRoute`. Todo endpoint lleva `WithName` y `WithSummary`.
 - **Cada error de la tabla de operaciones se declara** con `ProducesValidationProblem()` (400) y `ProducesProblem(<código>)` (404, 409). `ProblemHttpResult` no publica sus códigos, así que sin esas llamadas OpenAPI no los muestra.
 - **Rutas con restricción de tipo:** `{id:int}`.
-- **Autorización:** se declara con `RequireAuthorization` y las constantes de `Politicas` (`SesionIniciada`, `Autenticado`, `Superusuario`), en el grupo del módulo o, cuando difiere, en la ruta o el grupo del recurso. El grupo del módulo declara además `ProducesProblem(401)` y `ProducesProblem(403)`, para que OpenAPI muestre esas respuestas.
+- **Autorización:** se declara con `RequireAuthorization` y las constantes de `Politicas` (`SesionIniciada`, `Autenticado`, `Superusuario`, `Dgaa`), en el grupo del módulo o, cuando difiere, en la ruta o el grupo del recurso. El grupo del módulo declara además `ProducesProblem(401)` y `ProducesProblem(403)`, para que OpenAPI muestre esas respuestas.
 
 ### Operaciones estándar
 

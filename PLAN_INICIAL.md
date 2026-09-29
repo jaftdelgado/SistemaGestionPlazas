@@ -75,7 +75,7 @@ Los tres módulos del proceso de plazas comparten el esquema SQL `plazas`.
 **Grafo de dependencias entre módulos** (acíclico, validado por tests de arquitectura):
 - Institucional → Catalogos; Catalogos → (ninguno)
 - Usuarios → Institucional
-- OfertaEducativa → Institucional
+- OfertaEducativa → Institucional, Catalogos
 - Docentes → OfertaEducativa, Catalogos
 - Integracion → OfertaEducativa, Docentes
 - SolicitudesApertura → OfertaEducativa

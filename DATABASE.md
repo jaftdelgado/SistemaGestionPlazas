@@ -963,7 +963,7 @@ Los tres IDs y nombres del catálogo son fijos e inmutables. La aplicación usa 
 
 Las políticas de autorización son fijas y no se modelan tablas configurables de permisos:
 
-- Superusuario tiene acceso administrativo global.
+- Superusuario tiene acceso administrativo global, salvo en la estructura curricular (programas educativos, planes de estudio y experiencias educativas), que solo consulta: la escribe únicamente el DGAA del área de la entidad (`Modulo_OfertaEducativa.md`, D9).
 - DGAA accede al área asignada y a sus entidades y programas.
 - Entidad Académica accede exclusivamente a la entidad asignada y su descendencia.
 
@@ -1617,7 +1617,7 @@ Enviar exige documento original vigente, resultados finales, asistencia y votaci
 - Los documentos y perfiles históricos referidos por Solicitudes o revisiones nunca se eliminan ni se sobrescriben.
 - Entidad Académica crea Ofertas, Avisos, Aspirantes, Solicitudes y Actas dentro de su entidad; envía documentos y firma/publica.
 - DGAA solo revisa o cancela Avisos y revisa Actas de entidades pertenecientes a su Área Académica.
-- Superusuario conserva acceso global.
+- Superusuario conserva acceso global; en la estructura curricular (programas, planes y experiencias educativas) solo consulta (`Modulo_OfertaEducativa.md`, D9).
 - Aspirante, Docente e integrante del Consejo no son identidades de autenticación.
 - Las reglas entre estados, perfiles exclusivos, ámbitos, traslapes, snapshots y operaciones atómicas se aplican en la capa de aplicación; PK, FK, CHECK, unicidad e índices filtrados protegen los invariantes expresables en SQL Server.
 
