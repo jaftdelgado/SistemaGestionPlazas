@@ -8,9 +8,12 @@ using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.OfertaEducativa.Application.Ambito;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Endpoints.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Endpoints.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.Ambito;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Infrastructure.ProgramasEducativos;
 
 namespace Sgpla.Modules.OfertaEducativa;
 
@@ -29,6 +32,7 @@ public static class OfertaEducativaModule
 
         services.AddScoped<IAmbitoOfertaEducativa, AmbitoOfertaEducativa>();
         services.AddScoped<IPeriodoEscolarRepository, PeriodoEscolarRepository>();
+        services.AddScoped<IProgramaEducativoRepository, ProgramaEducativoRepository>();
 
         return services;
     }
@@ -39,6 +43,7 @@ public static class OfertaEducativaModule
         grupo.ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status403Forbidden);
 
         grupo.MapPeriodoEscolarEndpoints();
+        grupo.MapProgramaEducativoEndpoints();
 
         return endpoints;
     }

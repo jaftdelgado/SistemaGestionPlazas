@@ -1,8 +1,12 @@
 using Sgpla.BuildingBlocks.Application;
+using Sgpla.Modules.Catalogos.Application.Contracts;
 using Sgpla.Modules.Institucional.Application.Contracts;
+using Sgpla.Modules.OfertaEducativa.Application.Ambito;
 using Sgpla.Modules.OfertaEducativa.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Domain.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Domain.ProgramasEducativos;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.UnitTests.OfertaEducativa;
@@ -85,4 +89,93 @@ internal sealed class ReferenciasPeriodoEscolarFalsas(bool tieneReferencias) : I
         Consultas++;
         return Task.FromResult(tieneReferencias);
     }
+}
+
+/// <summary>El DGAA solo puede escribir en las entidades de <see cref="EntidadesEscribibles"/>.</summary>
+internal sealed class AmbitoOfertaEducativaFalso : IAmbitoOfertaEducativa
+{
+    public HashSet<int> EntidadesEscribibles { get; } = [];
+
+    public IReadOnlyCollection<int>? EntidadesVisibles { get; set; }
+
+    public Task<IReadOnlyCollection<int>?> EntidadesVisiblesAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(EntidadesVisibles);
+
+    public Task<bool> PuedeEscribirEnEntidadAsync(int entidadAcademicaId, CancellationToken cancellationToken) =>
+        Task.FromResult(EntidadesEscribibles.Contains(entidadAcademicaId));
+}
+
+/// <summary>Clasificaciones en memoria: los ids de cada conjunto existen; los demás no.</summary>
+internal sealed class ClasificacionesAcademicasFalso : IClasificacionesAcademicas
+{
+    public HashSet<int> Sistemas { get; } = [];
+
+    public HashSet<int> Niveles { get; } = [];
+
+    public HashSet<int> Areas { get; } = [];
+
+    public Task<IReadOnlyDictionary<int, SistemaEducativoResumen>> ObtenerSistemasEducativosAsync(
+        IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<int, SistemaEducativoResumen>>(ids
+            .Where(Sistemas.Contains)
+            .Distinct()
+            .ToDictionary(id => id, id => new SistemaEducativoResumen(id, $"Sistema {id}")));
+
+    public Task<IReadOnlyDictionary<int, NivelFormacionResumen>> ObtenerNivelesFormacionAsync(
+        IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<int, NivelFormacionResumen>>(ids
+            .Where(Niveles.Contains)
+            .Distinct()
+            .ToDictionary(id => id, id => new NivelFormacionResumen(id, $"N{id}", $"Nivel {id}")));
+
+    public Task<IReadOnlyDictionary<int, AreaFormacionResumen>> ObtenerAreasFormacionAsync(
+        IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<int, AreaFormacionResumen>>(ids
+            .Where(Areas.Contains)
+            .Distinct()
+            .ToDictionary(id => id, id => new AreaFormacionResumen(id, $"A{id}", $"Área {id}")));
+}
+
+/// <summary>
+/// Repositorio en memoria de programas educativos. La unicidad se simula con los nombres registrados, comparados de
+/// forma ordinal, y el propio programa se excluye por su id, como hace la consulta real.
+/// </summary>
+internal sealed class ProgramaEducativoRepositoryFalso : IProgramaEducativoRepository
+{
+    private readonly Dictionary<int, ProgramaEducativo> _porId = [];
+    private readonly List<(int EntidadAcademicaId, string Nombre, int SistemaEducativoId, int Id)> _nombres = [];
+
+    public List<ProgramaEducativo> Agregados { get; } = [];
+
+    public bool TuvoPlanes { get; set; }
+
+    public bool TienePlanesActivos { get; set; }
+
+    public void Registrar(int id, ProgramaEducativo programa)
+    {
+        _porId[id] = programa;
+        _nombres.Add((programa.EntidadAcademicaId, programa.Nombre, programa.SistemaEducativoId, id));
+    }
+
+    public void RegistrarNombre(int entidadAcademicaId, string nombre, int sistemaEducativoId, int id) =>
+        _nombres.Add((entidadAcademicaId, nombre, sistemaEducativoId, id));
+
+    public Task<ProgramaEducativo?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
+        Task.FromResult(_porId.GetValueOrDefault(id));
+
+    public Task<bool> ExisteNombreAsync(
+        int entidadAcademicaId, string nombre, int sistemaEducativoId, int? excluirId, CancellationToken cancellationToken) =>
+        Task.FromResult(_nombres.Any(n =>
+            n.EntidadAcademicaId == entidadAcademicaId
+            && n.SistemaEducativoId == sistemaEducativoId
+            && string.Equals(n.Nombre, nombre, StringComparison.Ordinal)
+            && (excluirId is null || n.Id != excluirId)));
+
+    public Task<bool> TuvoPlanesAsync(int programaEducativoId, CancellationToken cancellationToken) =>
+        Task.FromResult(TuvoPlanes);
+
+    public Task<bool> TienePlanesActivosAsync(int programaEducativoId, CancellationToken cancellationToken) =>
+        Task.FromResult(TienePlanesActivos);
+
+    public void Agregar(ProgramaEducativo programaEducativo) => Agregados.Add(programaEducativo);
 }
