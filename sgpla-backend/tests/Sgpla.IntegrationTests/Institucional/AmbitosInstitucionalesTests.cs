@@ -20,7 +20,7 @@ public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task AreaAcademicaActivaAsync_ActivaInexistenteYDadaDeBaja_RespondeSegunCorresponda()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (idActiva, _) = await CrearArea(cliente);
         var (idBaja, _) = await CrearArea(cliente);
         await DarDeBajaArea(cliente, idBaja);
@@ -33,7 +33,7 @@ public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task EntidadAcademicaActivaAsync_ActivaInexistenteYDadaDeBaja_RespondeSegunCorresponda()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearArea(cliente);
         var idActiva = await CrearEntidad(cliente, areaId);
         var idBaja = await CrearEntidad(cliente, areaId);
@@ -47,7 +47,7 @@ public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task ObtenerAreasAsync_IncluyeLasDadasDeBajaYOmiteLasInexistentes()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (idActiva, claveActiva) = await CrearArea(cliente);
         var (idBaja, claveBaja) = await CrearArea(cliente);
         await DarDeBajaArea(cliente, idBaja);
@@ -70,7 +70,7 @@ public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task ObtenerEntidadesAsync_IncluyeLasDadasDeBajaYOmiteLasInexistentes()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearArea(cliente);
         var idActiva = await CrearEntidad(cliente, areaId);
         var idBaja = await CrearEntidad(cliente, areaId);
@@ -92,7 +92,7 @@ public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task ObtenerEntidadesDeAreaAsync_IncluyeLasDadasDeBajaYExcluyeLasDeOtraArea()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearArea(cliente);
         var (otraAreaId, _) = await CrearArea(cliente);
         var idActiva = await CrearEntidad(cliente, areaId);

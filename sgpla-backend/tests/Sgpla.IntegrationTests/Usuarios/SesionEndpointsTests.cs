@@ -48,7 +48,7 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task IniciarSesion_DgaaPorLdap_Responde200ConSuArea()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, claveArea) = await CrearAreaAsync(cliente);
         var correo = await CrearCuentaDgaaEnBaseAsync(areaId);
 
@@ -64,7 +64,7 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task IniciarSesion_EntidadAcademicaPorLdap_Responde200ConSuEntidad()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearAreaAsync(cliente);
         var (entidadId, claveEntidad) = await CrearEntidadAsync(cliente, areaId);
         var correo = await CrearCuentaEntidadAcademicaEnBaseAsync(entidadId);
@@ -80,7 +80,7 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task IniciarSesion_SinDominioEnElCorreo_SeCompletaConUvMx()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearAreaAsync(cliente);
         var correoCompleto = await CrearCuentaDgaaEnBaseAsync(areaId);
         var usuarioSinDominio = correoCompleto[..correoCompleto.IndexOf('@', StringComparison.Ordinal)];
@@ -124,7 +124,7 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task IniciarSesion_AreaDadaDeBaja_Responde401ConAmbitoInactivo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearAreaAsync(cliente);
         var correo = await CrearCuentaDgaaEnBaseAsync(areaId);
         await DarDeBajaAreaAsync(areaId);
@@ -154,7 +154,7 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task IniciarSesion_LdapConCredencialesInvalidas_Responde401()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearAreaAsync(cliente);
         var correo = await CrearCuentaDgaaEnBaseAsync(areaId);
 
@@ -169,7 +169,7 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task IniciarSesion_ConLdapCaido_Responde503()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, _) = await CrearAreaAsync(cliente);
         var correo = $"ldap-caido-{DatosUnicos.Correo("uv.mx")}";
         await RegistrarDgaaConCorreoAsync(correo, areaId);
@@ -345,8 +345,8 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task CambiarContrasena_ConCuentaUv_Responde409()
     {
-        using var clienteAnonimo = _api.CreateClient();
-        var (areaId, _) = await CrearAreaAsync(clienteAnonimo);
+        using var clienteSuperusuario = await _api.CrearClienteSuperusuarioAsync();
+        var (areaId, _) = await CrearAreaAsync(clienteSuperusuario);
         using var cliente = await _api.CrearClienteDgaaAsync(areaId);
 
         using var respuesta = await cliente.PostAsJsonAsync(

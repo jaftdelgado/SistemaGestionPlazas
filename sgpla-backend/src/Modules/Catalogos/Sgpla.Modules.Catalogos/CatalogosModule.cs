@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,8 +48,8 @@ public static class CatalogosModule
 
     public static IEndpointRouteBuilder MapCatalogosEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        var grupo = endpoints.MapGroup(Ruta);
-        // Autorización: cuando exista JWT (módulo Usuarios), las consultas quedan para cualquier usuario autenticado.
+        var grupo = endpoints.MapGroup(Ruta).RequireAuthorization(Politicas.Autenticado);
+        grupo.ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status403Forbidden);
 
         grupo.MapCatalogoFijo<GradoAcademico>("/grados-academicos", "Grados académicos");
         grupo.MapCatalogoFijo<TipoDocumentoExpediente>("/tipos-documento-expediente", "Tipos de documento de expediente");

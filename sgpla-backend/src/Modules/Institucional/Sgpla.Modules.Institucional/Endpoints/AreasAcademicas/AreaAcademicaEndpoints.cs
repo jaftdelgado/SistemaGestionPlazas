@@ -15,8 +15,6 @@ internal static class AreaAcademicaEndpoints
     public static RouteGroupBuilder MapAreaAcademicaEndpoints(this RouteGroupBuilder modulo)
     {
         var grupo = modulo.MapGroup("/areas-academicas").WithTags("Áreas académicas");
-        // Autorización: cuando exista JWT (módulo Usuarios), regiones, campus y áreas quedan para cualquier usuario
-        // autenticado, y la escritura es solo del Superusuario (Modulo_Institucional.md, decisión D7).
 
         grupo.MapGet("/", Listar).WithName("ListarAreasAcademicas")
             .WithSummary("Lista todas las áreas académicas activas, en orden de clave.");
@@ -25,14 +23,17 @@ internal static class AreaAcademicaEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapPost("/", Crear).WithName("CrearAreaAcademica")
             .WithSummary("Registra un área académica.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
         grupo.MapPut("/{id:int}", Modificar).WithName("ModificarAreaAcademica")
             .WithSummary("Modifica el nombre y los datos de contacto de un área académica.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapDelete("/{id:int}", DarDeBaja).WithName("DarDeBajaAreaAcademica")
             .WithSummary("Da de baja un área académica sin entidades académicas activas.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 

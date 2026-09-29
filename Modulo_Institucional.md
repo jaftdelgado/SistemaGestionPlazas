@@ -44,7 +44,7 @@ Fuera de alcance: restauración, autorización (llega con Usuarios) y las reglas
 | D4 | `DELETE` sobre un registro ya dado de baja responde **404**, no 204 | `ESTANDAR_MODULOS.md` §6 (baja idempotente) |
 | D5 | Una referencia a un área académica dada de baja se trata como inexistente: **400** con su campo, no 409 | `ESTANDAR_MODULOS.md` §9 (409 para "padres inactivos") |
 | D6 | Se posponen las reglas que dependen de OfertaEducativa y Usuarios (ver `pendientes.md`). Mientras tanto, el área académica de una entidad **siempre** puede cambiarse, y las bajas solo se bloquean por las reglas internas del módulo | `DATABASE.md` §9.1, §9.2 y §10 |
-| D7 | La lectura de entidades se filtrará por ámbito cuando exista Usuarios (DGAA: las entidades de su área; Entidad Académica: solo la suya). Regiones, campus y áreas serán visibles para cualquier usuario autenticado. La escritura será solo del Superusuario. Hoy no se implementa nada: cada grupo lleva el comentario de autorización del estándar | — |
+| D7 | La lectura de entidades se filtrará por ámbito cuando exista Usuarios (DGAA: las entidades de su área; Entidad Académica: solo la suya). Regiones, campus y áreas serán visibles para cualquier usuario autenticado. La escritura será solo del Superusuario. Hoy no se implementa nada: cada grupo lleva el comentario de autorización del estándar. Resuelta en Modulo_Usuarios.md (PR 3) | — |
 
 ## 3. Piezas compartidas nuevas
 

@@ -22,7 +22,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConDatosValidos_Responde201ConRespuestaAnidadaYValoresNormalizados()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var clave = DatosUnicos.ClaveAlfanumerica();
         var cuerpo = CuerpoValido(areaId, clave.ToLowerInvariant());
@@ -53,7 +53,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [InlineData("extension", "12A")]
     public async Task Crear_ConCampoInvalido_Responde400ConErrorEnElCampo(string campo, string valor)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var cuerpo = CuerpoValido(areaId);
         cuerpo[campo] = valor;
@@ -68,7 +68,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConCampusInexistente_Responde400ConErrorEnCampusId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var cuerpo = CuerpoValido(areaId);
         cuerpo["campusId"] = 999;
@@ -83,7 +83,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConAreaAcademicaInexistente_Responde400ConErrorEnAreaAcademicaId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var cuerpo = CuerpoValido(999);
 
         using var respuesta = await cliente.PostAsJsonAsync(Uri(), cuerpo, Cancelacion);
@@ -96,7 +96,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConAreaAcademicaDadaDeBaja_Responde400ConErrorEnAreaAcademicaId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         (await cliente.DeleteAsync(new Uri($"{RutaAreas}/{areaId}", UriKind.Relative), Cancelacion))
             .StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -112,7 +112,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConMunicipioInexistente_Responde400ConErrorEnMunicipioId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var cuerpo = CuerpoValido(areaId);
         cuerpo["municipioId"] = 999;
@@ -127,7 +127,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConClaveExistenteEnMinusculas_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var clave = await Crear(cliente, areaId);
 
@@ -142,7 +142,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Crear_ConClaveDeUnaEntidadDadaDeBaja_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, clave) = await CrearYObtener(cliente, areaId);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -158,7 +158,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Obtener_Existente_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, clave) = await CrearYObtener(cliente, areaId);
 
@@ -172,7 +172,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri($"/{int.MaxValue}"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -184,7 +184,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Obtener_DadaDeBaja_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, _) = await CrearYObtener(cliente, areaId);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -197,7 +197,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Modificar_Responde204YPermiteCambiarElArea()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var otraAreaId = await CrearArea(cliente);
         var (id, _) = await CrearYObtener(cliente, areaId);
@@ -228,7 +228,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Modificar_Inexistente_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
 
         using var respuesta = await cliente.PutAsJsonAsync(
@@ -253,7 +253,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Modificar_ConAreaAcademicaInexistente_Responde400ConErrorEnAreaAcademicaId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, _) = await CrearYObtener(cliente, areaId);
 
@@ -281,7 +281,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Modificar_ConMunicipioInexistente_Responde400ConErrorEnMunicipioId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, _) = await CrearYObtener(cliente, areaId);
 
@@ -309,7 +309,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task DarDeBaja_Activa_Responde204()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, _) = await CrearYObtener(cliente, areaId);
 
@@ -321,7 +321,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task DarDeBaja_YaDadaDeBaja_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (id, _) = await CrearYObtener(cliente, areaId);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -364,7 +364,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Listar_FiltraPorAreaAcademicaYExcluyeLasDadasDeBaja()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var (idActiva, _) = await CrearYObtener(cliente, areaId);
         var (idBaja, _) = await CrearYObtener(cliente, areaId);
@@ -382,7 +382,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Listar_ConBusquedaIgnoraMayusculasYAcentosYBuscaEnClaveYNombre()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var cuerpo = CuerpoValido(areaId);
         cuerpo["nombre"] = "Facultad de Música";
@@ -401,7 +401,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Listar_ConCalleColoniaCodigoPostalYTelefono_FiltraPorCadaUno()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         var cuerpo = CuerpoValido(areaId);
         cuerpo["calle"] = "Avenida Xalapa Única";
@@ -421,7 +421,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Listar_ConPaginacionInvalida_Responde400()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var pagina0 = await cliente.GetAsync(Uri("?pagina=0"), Cancelacion);
         using var tamanoExcesivo = await cliente.GetAsync(Uri("?tamanoPagina=101"), Cancelacion);
@@ -433,7 +433,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     [Fact]
     public async Task Listar_ConTamanoPaginaPersonalizado_DevuelveElTotalYLaPaginaCorrectos()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var areaId = await CrearArea(cliente);
         await CrearYObtener(cliente, areaId);
         await CrearYObtener(cliente, areaId);

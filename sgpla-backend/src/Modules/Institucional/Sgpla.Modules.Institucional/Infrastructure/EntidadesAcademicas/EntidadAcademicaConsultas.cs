@@ -11,7 +11,8 @@ using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Institucional.Infrastructure.EntidadesAcademicas;
 
-internal sealed class ObtenerEntidadAcademicaHandler(SgplaDbContext contexto, IMunicipios municipios)
+internal sealed class ObtenerEntidadAcademicaHandler(
+    SgplaDbContext contexto, IMunicipios municipios, ICurrentUser actual)
     : IQueryHandler<ObtenerEntidadAcademicaQuery, EntidadAcademicaResponse>
 {
     public async Task<Result<EntidadAcademicaResponse>> HandleAsync(
@@ -19,7 +20,8 @@ internal sealed class ObtenerEntidadAcademicaHandler(SgplaDbContext contexto, IM
         CancellationToken cancellationToken)
     {
         var encontrada = await EntidadAcademicaProyeccion
-            .Proyectar(contexto, contexto.Set<EntidadAcademica>().Where(e => e.Id == query.Id))
+            .Proyectar(
+                contexto, EntidadAcademicaAmbito.Aplicar(contexto.Set<EntidadAcademica>(), actual).Where(e => e.Id == query.Id))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (encontrada is null)
@@ -32,7 +34,8 @@ internal sealed class ObtenerEntidadAcademicaHandler(SgplaDbContext contexto, IM
     }
 }
 
-internal sealed class ListarEntidadesAcademicasHandler(SgplaDbContext contexto, IMunicipios municipios)
+internal sealed class ListarEntidadesAcademicasHandler(
+    SgplaDbContext contexto, IMunicipios municipios, ICurrentUser actual)
     : IQueryHandler<ListarEntidadesAcademicasQuery, Pagina<EntidadAcademicaResponse>>
 {
     public async Task<Result<Pagina<EntidadAcademicaResponse>>> HandleAsync(
@@ -40,7 +43,7 @@ internal sealed class ListarEntidadesAcademicasHandler(SgplaDbContext contexto, 
         CancellationToken cancellationToken)
     {
         var filtros = query.Filtros;
-        var entidades = contexto.Set<EntidadAcademica>().AsQueryable();
+        var entidades = EntidadAcademicaAmbito.Aplicar(contexto.Set<EntidadAcademica>(), actual);
 
         if (filtros.CampusId is not null)
         {
@@ -120,6 +123,18 @@ internal sealed class ListarEntidadesAcademicasHandler(SgplaDbContext contexto, 
     private static string? Recortar(string? valor) => NuloSiVacio(valor is null ? null : Normalizacion.Recortar(valor));
 
     private static string? NuloSiVacio(string? valor) => string.IsNullOrEmpty(valor) ? null : valor;
+}
+
+/// <summary>Restringe las entidades al ámbito del usuario en curso (Modulo_Usuarios.md, sección 10).</summary>
+internal static class EntidadAcademicaAmbito
+{
+    public static IQueryable<EntidadAcademica> Aplicar(IQueryable<EntidadAcademica> entidades, ICurrentUser actual) =>
+        actual.Rol switch
+        {
+            Rol.Dgaa => entidades.Where(e => e.AreaAcademicaId == actual.AreaAcademicaId),
+            Rol.EntidadAcademica => entidades.Where(e => e.Id == actual.EntidadAcademicaId),
+            _ => entidades,
+        };
 }
 
 internal sealed record EntidadAcademicaProyeccionIntermedia(

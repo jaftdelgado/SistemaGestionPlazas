@@ -17,7 +17,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Crear_ConNumeroNuevo_Responde201ConUbicacionYValoresNormalizados()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var numero = DatosUnicos.Numero();
 
         using var respuesta = await cliente.PostAsJsonAsync(
@@ -37,7 +37,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [InlineData("42", null, "descripcion")]
     public async Task Crear_SinNumeroODescripcion_Responde400ConErrorEnElCampo(string numero, string? descripcion, string campo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.PostAsJsonAsync(Uri(), new { numero, descripcion }, Cancelacion);
         var problema = await Leer(respuesta);
@@ -49,7 +49,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Crear_ConNumeroNoAscii_Responde400ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.PostAsJsonAsync(
             Uri(), new { numero = $"{DatosUnicos.Numero()} BÍS", descripcion = Descripcion }, Cancelacion);
@@ -62,7 +62,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Crear_ConNumeroEquivalenteTrasNormalizar_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var numero = DatosUnicos.Numero();
         await Crear(cliente, $"{numero} BIS");
 
@@ -77,7 +77,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Obtener_Existente_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, numero) = await Crear(cliente);
 
         using var respuesta = await cliente.GetAsync(Uri($"/{id}"), Cancelacion);
@@ -91,7 +91,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri($"/{int.MaxValue}"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -103,7 +103,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Listar_DevuelveUnArregloOrdenadoPorNumeroComoTexto()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var prefijo = DatosUnicos.Numero();
         var (id10, _) = await Crear(cliente, $"{prefijo} 10");
         var (id9, _) = await Crear(cliente, $"{prefijo} 9");
@@ -123,7 +123,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Modificar_NumeroYDescripcion_Responde204()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         var nuevoNumero = DatosUnicos.Numero();
 
@@ -140,7 +140,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Modificar_SinDescripcion_ConservaLaActual()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         var nuevoNumero = DatosUnicos.Numero();
 
@@ -154,7 +154,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Modificar_ConDescripcionVacia_Responde400()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, numero) = await Crear(cliente);
 
         using var respuesta = await cliente.PutAsJsonAsync(Uri($"/{id}"), new { numero, descripcion = "  " }, Cancelacion);
@@ -165,7 +165,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Modificar_ConNumeroDeOtroArticulo_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (_, existente) = await Crear(cliente);
         var (id, _) = await Crear(cliente);
 
@@ -180,7 +180,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Modificar_Inexistente_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.PutAsJsonAsync(
             Uri($"/{int.MaxValue}"), new { numero = "42", descripcion = Descripcion }, Cancelacion);
@@ -191,7 +191,7 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
     [Fact]
     public async Task Eliminar_NoExiste_Responde405()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
 
         using var respuesta = await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion);

@@ -17,7 +17,7 @@ public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : I
     [Fact]
     public async Task Listar_DevuelveLosCuatroGradosEnOrdenDeId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(), Cancelacion);
         var grados = await Leer(respuesta);
@@ -32,7 +32,7 @@ public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : I
     [Fact]
     public async Task Obtener_Existente_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/3"), Cancelacion);
         var grado = await Leer(respuesta);
@@ -45,7 +45,7 @@ public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : I
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/99"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -60,7 +60,7 @@ public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : I
     [InlineData("DELETE", "/1")]
     public async Task Escritura_NoExiste_Responde405(string metodo, string sufijo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), Uri(sufijo))
         {
             Content = JsonContent.Create(new { nombre = "Posdoctorado" }),

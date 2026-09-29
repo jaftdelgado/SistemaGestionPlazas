@@ -16,7 +16,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Crear_ConDatosValidos_Responde201ConUbicacionYValoresNormalizados()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var clave = DatosUnicos.ClaveEntera();
 
         using var respuesta = await cliente.PostAsJsonAsync(
@@ -42,7 +42,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     public async Task Crear_ConCampoInvalido_Responde400ConErrorEnElCampo(
         int clave, string nombre, string telefono, string? extension, string campo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.PostAsJsonAsync(Uri(), new { clave, nombre, telefono, extension }, Cancelacion);
         var problema = await Leer(respuesta);
@@ -54,7 +54,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Crear_ConClaveExistente_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (_, clave) = await Crear(cliente);
 
         using var respuesta = await cliente.PostAsJsonAsync(
@@ -68,7 +68,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Crear_ConClaveDeUnAreaDadaDeBaja_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, clave) = await Crear(cliente);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
@@ -83,7 +83,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Obtener_Existente_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, clave) = await Crear(cliente);
 
         using var respuesta = await cliente.GetAsync(Uri($"/{id}"), Cancelacion);
@@ -96,7 +96,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri($"/{int.MaxValue}"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -108,7 +108,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Obtener_DadaDeBaja_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
@@ -120,7 +120,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Listar_IncluyeLasCreadasEnOrdenDeClaveYExcluyeLasDadasDeBaja()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var baseClave = DatosUnicos.ClaveEntera() % 1_000_000 + 1;
         var (idMenor, claveMenor) = await Crear(cliente, baseClave);
         var (idMedia, claveMedia) = await Crear(cliente, baseClave + 1);
@@ -142,7 +142,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Modificar_Responde204YPersisteLosCambios()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
 
         using var respuesta = await cliente.PutAsJsonAsync(
@@ -159,7 +159,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Modificar_SinExtension_LaQuita()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente, extension: "11350");
 
         using var respuesta = await cliente.PutAsJsonAsync(
@@ -173,7 +173,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Modificar_Inexistente_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.PutAsJsonAsync(
             Uri($"/{int.MaxValue}"), new { nombre = "Facultad de Letras", telefono = "2288421700", extension = (string?)null }, Cancelacion);
@@ -184,7 +184,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task Modificar_DadaDeBaja_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
@@ -197,7 +197,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task DarDeBaja_Activa_Responde204()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
 
         using var respuesta = await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion);
@@ -208,7 +208,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task DarDeBaja_YaDadaDeBaja_Responde404()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         (await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
@@ -220,7 +220,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task DarDeBaja_ConEntidadesActivas_Responde409()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         await CrearEntidad(cliente, id);
 
@@ -234,7 +234,7 @@ public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IA
     [Fact]
     public async Task DarDeBaja_SiSusEntidadesEstanDadasDeBaja_Responde204()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (id, _) = await Crear(cliente);
         var entidadId = await CrearEntidad(cliente, id);
         (await cliente.DeleteAsync(

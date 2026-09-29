@@ -17,7 +17,7 @@ public sealed class RegionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Listar_DevuelveLasCincoRegionesEnOrdenDeClave()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(), Cancelacion);
         var regiones = await Leer(respuesta);
@@ -39,7 +39,7 @@ public sealed class RegionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Obtener_Existente_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/3"), Cancelacion);
         var region = await Leer(respuesta);
@@ -53,7 +53,7 @@ public sealed class RegionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/999"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -68,7 +68,7 @@ public sealed class RegionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [InlineData("DELETE", "/1")]
     public async Task Escritura_NoExiste_Responde405(string metodo, string sufijo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), Uri(sufijo))
         {
             Content = JsonContent.Create(new { clave = 6, nombre = "Región nueva" }),

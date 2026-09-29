@@ -17,7 +17,7 @@ public sealed class TratamientoAcademicoEndpointsTests(SqlServerFixture sqlServe
     [Fact]
     public async Task Listar_DevuelveLosCincoTratamientosConSuGradoEnOrdenDeId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(), Cancelacion);
         var tratamientos = await Leer(respuesta);
@@ -41,7 +41,7 @@ public sealed class TratamientoAcademicoEndpointsTests(SqlServerFixture sqlServe
     [InlineData(99, new int[0])]
     public async Task Listar_FiltradoPorGrado_DevuelveSoloLosDeEseGrado(int gradoAcademicoId, int[] esperados)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri($"?gradoAcademicoId={gradoAcademicoId}"), Cancelacion);
         var tratamientos = await Leer(respuesta);
@@ -55,7 +55,7 @@ public sealed class TratamientoAcademicoEndpointsTests(SqlServerFixture sqlServe
     [InlineData(-1)]
     public async Task Listar_ConGradoNoPositivo_Responde400ConElParametro(int gradoAcademicoId)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri($"?gradoAcademicoId={gradoAcademicoId}"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -67,7 +67,7 @@ public sealed class TratamientoAcademicoEndpointsTests(SqlServerFixture sqlServe
     [Fact]
     public async Task Obtener_Existente_Responde200ConSuGrado()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/3"), Cancelacion);
         var tratamiento = await Leer(respuesta);
@@ -79,7 +79,7 @@ public sealed class TratamientoAcademicoEndpointsTests(SqlServerFixture sqlServe
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/99"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -94,7 +94,7 @@ public sealed class TratamientoAcademicoEndpointsTests(SqlServerFixture sqlServe
     [InlineData("DELETE", "/1")]
     public async Task Escritura_NoExiste_Responde405(string metodo, string sufijo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), Uri(sufijo))
         {
             Content = JsonContent.Create(new { nombre = "Ing", gradoAcademicoId = 1 }),

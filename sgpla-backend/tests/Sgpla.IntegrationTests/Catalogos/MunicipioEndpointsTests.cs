@@ -20,7 +20,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Listar_SinParametros_Devuelve212EnOrdenAlfabetico()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(), Cancelacion);
         var pagina = await Leer(respuesta);
@@ -41,7 +41,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [InlineData("xálapa")]
     public async Task Listar_ConBusqueda_IgnoraMayusculasYAcentos(string busqueda)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri($"?busqueda={System.Uri.EscapeDataString(busqueda)}"), Cancelacion);
         var pagina = await Leer(respuesta);
@@ -57,7 +57,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Listar_ConBusquedaSinCoincidencias_DevuelveTotalCero()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("?busqueda=zzzznoexiste"), Cancelacion);
         var pagina = await Leer(respuesta);
@@ -72,7 +72,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [InlineData("?tamanoPagina=101")]
     public async Task Listar_ConPaginacionInvalida_Responde400(string queryString)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(queryString), Cancelacion);
 
@@ -82,7 +82,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Listar_ConBusquedaDemasiadoLarga_Responde400ConErrorEnBusqueda()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var busqueda = new string('a', 151);
 
         using var respuesta = await cliente.GetAsync(Uri($"?busqueda={busqueda}"), Cancelacion);
@@ -95,7 +95,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Listar_ConBusquedaDe150CaracteresTrasRecortar_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var busqueda = $" {new string('a', 150)} ";
 
         using var respuesta = await cliente.GetAsync(
@@ -107,7 +107,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Listar_ConEspaciosRepetidosEnBusqueda_EncuentraCoincidencia()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(
             Uri($"?busqueda={System.Uri.EscapeDataString("poza   rica")}"), Cancelacion);
@@ -121,7 +121,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Obtener_Existente_Responde200()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/87"), Cancelacion);
         var municipio = await Leer(respuesta);
@@ -134,7 +134,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/999"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -149,7 +149,7 @@ public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsync
     [InlineData("DELETE", "/1")]
     public async Task Escritura_NoExiste_Responde405(string metodo, string sufijo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), Uri(sufijo))
         {
             Content = JsonContent.Create(new { nombre = "Municipio nuevo" }),

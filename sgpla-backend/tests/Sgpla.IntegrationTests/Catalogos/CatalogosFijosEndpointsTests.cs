@@ -28,7 +28,7 @@ public sealed class CatalogosFijosEndpointsTests(SqlServerFixture sqlServer) : I
     public async Task Listar_SinValoresEnLaSemilla_DevuelveUnArregloVacio(string recurso, string entidad)
     {
         _ = entidad;
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(recurso), Cancelacion);
         var elementos = await Leer(respuesta);
@@ -42,7 +42,7 @@ public sealed class CatalogosFijosEndpointsTests(SqlServerFixture sqlServer) : I
     [MemberData(nameof(Catalogos))]
     public async Task Obtener_Inexistente_Responde404ConCodigo(string recurso, string entidad)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(recurso, "/1"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -56,7 +56,7 @@ public sealed class CatalogosFijosEndpointsTests(SqlServerFixture sqlServer) : I
     public async Task Escritura_NoExiste_Responde405(string recurso, string entidad)
     {
         _ = entidad;
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         foreach (var (metodo, sufijo) in new[] { ("POST", ""), ("PUT", "/1"), ("DELETE", "/1") })
         {

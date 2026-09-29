@@ -16,9 +16,6 @@ internal static class EntidadAcademicaEndpoints
     public static RouteGroupBuilder MapEntidadAcademicaEndpoints(this RouteGroupBuilder modulo)
     {
         var grupo = modulo.MapGroup("/entidades-academicas").WithTags("Entidades académicas");
-        // Autorización: cuando exista JWT (módulo Usuarios), la lectura se filtra por ámbito (DGAA: las de su
-        // área; Entidad Académica: solo la suya) y la escritura es solo del Superusuario (Modulo_Institucional.md,
-        // decisión D7).
 
         grupo.MapGet("/", Listar).WithName("ListarEntidadesAcademicas")
             .WithSummary("Lista las entidades académicas activas, paginadas y con filtros opcionales.")
@@ -28,14 +25,17 @@ internal static class EntidadAcademicaEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapPost("/", Crear).WithName("CrearEntidadAcademica")
             .WithSummary("Registra una entidad académica.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
         grupo.MapPut("/{id:int}", Modificar).WithName("ModificarEntidadAcademica")
             .WithSummary("Modifica los datos editables de una entidad académica; la clave y el campus no cambian.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapDelete("/{id:int}", DarDeBaja).WithName("DarDeBajaEntidadAcademica")
             .WithSummary("Da de baja una entidad académica.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return modulo;

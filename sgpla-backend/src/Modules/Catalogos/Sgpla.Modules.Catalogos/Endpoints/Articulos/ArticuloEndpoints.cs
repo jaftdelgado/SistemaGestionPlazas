@@ -15,17 +15,18 @@ internal static class ArticuloEndpoints
     public static RouteGroupBuilder MapArticuloEndpoints(this RouteGroupBuilder modulo)
     {
         var grupo = modulo.MapGroup("/articulos").WithTags("Artículos");
-        // Autorización: cuando exista JWT (módulo Usuarios), registrar y modificar quedan solo para el Superusuario.
 
         grupo.MapGet("/", Listar).WithName("ListarArticulos")
             .WithSummary("Lista todos los artículos, en orden alfabético del número.");
         grupo.MapGet("/{id:int}", Obtener).WithName(NombreRutaObtener).WithSummary("Obtiene un artículo.")
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapPost("/", Crear).WithName("CrearArticulo").WithSummary("Registra un artículo.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
         grupo.MapPut("/{id:int}", Modificar).WithName("ModificarArticulo")
             .WithSummary("Modifica el artículo: la descripción siempre; el número, solo mientras ningún Aviso lo use.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);

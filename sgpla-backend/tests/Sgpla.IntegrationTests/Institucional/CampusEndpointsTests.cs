@@ -17,7 +17,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Listar_DevuelveLos24CampusEnOrdenDeClave()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri(), Cancelacion);
         var campus = await Leer(respuesta);
@@ -32,7 +32,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Listar_ConRegionId_DevuelveSoloLosDeEsaRegion()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("?regionId=2"), Cancelacion);
         var campus = await Leer(respuesta);
@@ -46,7 +46,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Listar_ConRegionInexistente_DevuelveArregloVacio()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("?regionId=99"), Cancelacion);
         var campus = await Leer(respuesta);
@@ -58,7 +58,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Listar_ConRegionIdNoPositivo_Responde400ConErrorEnRegionId()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("?regionId=0"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -70,7 +70,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Obtener_Existente_Responde200ConLaRegionAnidada()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/1"), Cancelacion);
         var campus = await Leer(respuesta);
@@ -85,7 +85,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Obtener_Inexistente_Responde404ConCodigo()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(Uri("/999"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -100,7 +100,7 @@ public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [InlineData("DELETE", "/1")]
     public async Task Escritura_NoExiste_Responde405(string metodo, string sufijo)
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
         using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), Uri(sufijo))
         {
             Content = JsonContent.Create(new { clave = "Y", nombre = "Campus nuevo", regionId = 1 }),

@@ -671,17 +671,18 @@ internal static class ArticuloEndpoints
     public static RouteGroupBuilder MapArticuloEndpoints(this RouteGroupBuilder modulo)
     {
         var grupo = modulo.MapGroup("/articulos").WithTags("Artículos");
-        // Autorización: cuando exista JWT (módulo Usuarios), registrar y modificar quedan solo para el Superusuario.
 
         grupo.MapGet("/", Listar).WithName("ListarArticulos")
             .WithSummary("Lista todos los artículos, en orden alfabético del número.");
         grupo.MapGet("/{id:int}", Obtener).WithName(NombreRutaObtener).WithSummary("Obtiene un artículo.")
             .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapPost("/", Crear).WithName("CrearArticulo").WithSummary("Registra un artículo.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
         grupo.MapPut("/{id:int}", Modificar).WithName("ModificarArticulo")
             .WithSummary("Modifica el artículo: la descripción siempre; el número, solo mientras ningún Aviso lo use.")
+            .RequireAuthorization(Politicas.Superusuario)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -731,7 +732,7 @@ Reglas:
 - **Siempre `TypedResults` y tipos de retorno `Results<...>`,** para que OpenAPI documente cada respuesta. `ToOk()` y `ToNoContent()` traducen el `Result`; `ToProblem()` queda para las respuestas que esos helpers no cubren, como un 201 con `CreatedAtRoute`. Todo endpoint lleva `WithName` y `WithSummary`.
 - **Cada error de la tabla de operaciones se declara** con `ProducesValidationProblem()` (400) y `ProducesProblem(<código>)` (404, 409). `ProblemHttpResult` no publica sus códigos, así que sin esas llamadas OpenAPI no los muestra.
 - **Rutas con restricción de tipo:** `{id:int}`.
-- **Autorización:** se declara en el grupo del módulo, o del recurso si difiere, con `RequireAuthorization(<política>)`. Las políticas (`Superusuario`, `Dgaa`, `EntidadAcademica`) llegan con el módulo Usuarios. Hasta entonces, el grupo lleva un comentario en ese punto, sin otra solución provisional.
+- **Autorización:** se declara con `RequireAuthorization` y las constantes de `Politicas` (`SesionIniciada`, `Autenticado`, `Superusuario`), en el grupo del módulo o, cuando difiere, en la ruta o el grupo del recurso. El grupo del módulo declara además `ProducesProblem(401)` y `ProducesProblem(403)`, para que OpenAPI muestre esas respuestas.
 
 ### Operaciones estándar
 
@@ -869,8 +870,8 @@ public static class CatalogosModule
 
     public static IEndpointRouteBuilder MapCatalogosEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        var grupo = endpoints.MapGroup(Ruta);
-        // Autorización: cuando exista JWT (módulo Usuarios), las consultas quedan para cualquier usuario autenticado.
+        var grupo = endpoints.MapGroup(Ruta).RequireAuthorization(Politicas.Autenticado);
+        grupo.ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status403Forbidden);
 
         grupo.MapCatalogoFijo<GradoAcademico>("/grados-academicos", "Grados académicos");
         grupo.MapCatalogoFijo<TipoDocumentoExpediente>("/tipos-documento-expediente", "Tipos de documento de expediente");

@@ -18,7 +18,7 @@ public sealed partial class CorrelacionTests(SqlServerFixture sqlServer) : IAsyn
     [Fact]
     public async Task RespuestaDeError_ConRecursoInexistente_TraceIdApareceEnLosLogsDeLaPeticion()
     {
-        using var cliente = _api.CreateClient();
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
 
         using var respuesta = await cliente.GetAsync(
             new Uri($"/api/v1/catalogos/grados-academicos/{int.MaxValue}", UriKind.Relative),
