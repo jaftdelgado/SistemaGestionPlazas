@@ -82,6 +82,21 @@ public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IA
     }
 
     [Fact]
+    public async Task ObtenerEntidadesAsync_DevuelveElAreaAcademicaDeCadaEntidad()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var (areaId, _) = await CrearArea(cliente);
+        var (otraAreaId, _) = await CrearArea(cliente);
+        var idEnArea = await CrearEntidad(cliente, areaId);
+        var idEnOtraArea = await CrearEntidad(cliente, otraAreaId);
+
+        var resumenes = await ConAmbitosAsync(a => a.ObtenerEntidadesAsync([idEnArea, idEnOtraArea], Cancelacion));
+
+        resumenes[idEnArea].AreaAcademicaId.ShouldBe(areaId);
+        resumenes[idEnOtraArea].AreaAcademicaId.ShouldBe(otraAreaId);
+    }
+
+    [Fact]
     public async Task ObtenerEntidadesAsync_ConColeccionVacia_DevuelveDiccionarioVacio()
     {
         var resumenes = await ConAmbitosAsync(a => a.ObtenerEntidadesAsync([], Cancelacion));

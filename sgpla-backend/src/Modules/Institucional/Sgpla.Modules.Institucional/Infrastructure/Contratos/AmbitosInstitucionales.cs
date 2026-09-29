@@ -44,7 +44,7 @@ internal sealed class AmbitosInstitucionales(SgplaDbContext contexto) : IAmbitos
             .IgnoreQueryFilters([FiltrosConsulta.BajaLogica])
             .AsNoTracking()
             .Where(e => ids.Contains(e.Id))
-            .Select(e => new EntidadAcademicaResumen(e.Id, e.Clave, e.Nombre))
+            .Select(e => new EntidadAcademicaResumen(e.Id, e.Clave, e.Nombre, e.AreaAcademicaId))
             .ToDictionaryAsync(resumen => resumen.Id, cancellationToken);
     }
 

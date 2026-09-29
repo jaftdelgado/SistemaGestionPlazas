@@ -23,4 +23,4 @@ public interface IAmbitosInstitucionales
 
 public sealed record AreaAcademicaResumen(int Id, int Clave, string Nombre);
 
-public sealed record EntidadAcademicaResumen(int Id, string Clave, string Nombre);
+public sealed record EntidadAcademicaResumen(int Id, string Clave, string Nombre, int AreaAcademicaId);
