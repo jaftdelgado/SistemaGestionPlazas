@@ -98,7 +98,11 @@ public static class UsuariosModule
             .AddPolicy(Politicas.Superusuario, politica => politica
                 .RequireAuthenticatedUser()
                 .AddRequirements(new SinCambioPendienteRequirement())
-                .RequireClaim("rol", ((byte)Rol.Superusuario).ToString(CultureInfo.InvariantCulture)));
+                .RequireClaim("rol", ((byte)Rol.Superusuario).ToString(CultureInfo.InvariantCulture)))
+            .AddPolicy(Politicas.Dgaa, politica => politica
+                .RequireAuthenticatedUser()
+                .AddRequirements(new SinCambioPendienteRequirement())
+                .RequireClaim("rol", ((byte)Rol.Dgaa).ToString(CultureInfo.InvariantCulture)));
 
         services.AddSingleton<IAuthorizationHandler, SinCambioPendienteHandler>();
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, AutorizacionResultHandler>();

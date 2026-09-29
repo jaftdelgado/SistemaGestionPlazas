@@ -27,4 +27,7 @@ public static class Politicas
 
     /// <summary><see cref="Autenticado"/> con el rol Superusuario.</summary>
     public const string Superusuario = nameof(Superusuario);
+
+    /// <summary><see cref="Autenticado"/> con el rol DGAA.</summary>
+    public const string Dgaa = nameof(Dgaa);
 }
