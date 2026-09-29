@@ -505,7 +505,7 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
         var dgaaId = await CrearDgaaAsync(cliente, areaId);
         var entidadAcademicaCuentaId = await CrearEntidadAcademicaAsync(cliente, entidadId);
 
-        // El rol se combina con el área de la prueba: solo el rol 2 solo se acota a la base compartida.
+        // Solo con rolId=2 el resultado dependería de toda la base compartida; se acota al área de la prueba.
         await VerificaFiltroExacto(cliente, $"rolId=2&areaAcademicaId={areaId}", dgaaId);
         await VerificaFiltroExacto(cliente, $"areaAcademicaId={areaId}", dgaaId, entidadAcademicaCuentaId);
         await VerificaFiltroExacto(cliente, $"entidadAcademicaId={entidadId}", entidadAcademicaCuentaId);
@@ -518,13 +518,16 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
         // solo tildes: por eso el nombre de prueba no lleva ñ (verificado contra SQL Server 2022 real).
         using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var correo = DatosUnicos.Correo("gmail.com");
+        var nombre = DatosUnicos.Nombre("María Pérez");
         using var respuesta = await cliente.PostAsJsonAsync(
             Uri(),
-            new { correo, nombre = "María Pérez", rolId = 1, areaAcademicaId = (int?)null, entidadAcademicaId = (int?)null },
+            new { correo, nombre, rolId = 1, areaAcademicaId = (int?)null, entidadAcademicaId = (int?)null },
             Cancelacion);
         var id = (await Leer(respuesta)).GetProperty("cuenta").GetProperty("id").GetInt32();
 
-        await VerificaFiltro(cliente, $"busqueda={System.Uri.EscapeDataString("maria perez")}", id);
+        // El mismo sufijo único del nombre, sin tildes y en minúsculas: acota la búsqueda a la cuenta de la prueba.
+        var busqueda = nombre.Replace("María Pérez", "maria perez", StringComparison.Ordinal);
+        await VerificaFiltroExacto(cliente, $"busqueda={System.Uri.EscapeDataString(busqueda)}", id);
     }
 
     [Fact]
@@ -718,18 +721,5 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
         respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
         var ids = pagina.GetProperty("elementos").EnumerateArray().Select(e => e.GetProperty("id").GetInt32()).ToList();
         ids.ShouldBe(idsEsperados, ignoreOrder: true);
-    }
-
-    private static async Task VerificaFiltro(HttpClient cliente, string queryString, params int[] idsEsperados)
-    {
-        using var respuesta = await cliente.GetAsync(Uri($"?{queryString}"), Cancelacion);
-        var pagina = await Leer(respuesta);
-
-        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var ids = pagina.GetProperty("elementos").EnumerateArray().Select(e => e.GetProperty("id").GetInt32()).ToList();
-        foreach (var idEsperado in idsEsperados)
-        {
-            ids.ShouldContain(idEsperado);
-        }
     }
 }
