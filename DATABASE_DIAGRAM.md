@@ -22,7 +22,6 @@ erDiagram
     ACADEMICO_SISTEMA_EDUCATIVO ||--o{ ACADEMICO_PROGRAMA_EDUCATIVO : clasifica
     ACADEMICO_NIVEL_FORMACION ||--o{ ACADEMICO_PROGRAMA_EDUCATIVO : clasifica
     ACADEMICO_PROGRAMA_EDUCATIVO ||--o{ ACADEMICO_PLAN_ESTUDIOS : contiene
-    ACADEMICO_ARCHIVO_PLAN_ESTUDIOS ||--o| ACADEMICO_PLAN_ESTUDIOS : adjunta
     ACADEMICO_PLAN_ESTUDIOS ||--o{ ACADEMICO_EXPERIENCIA_EDUCATIVA : contiene
     ACADEMICO_AREA_FORMACION ||--o{ ACADEMICO_EXPERIENCIA_EDUCATIVA : clasifica
     ACADEMICO_EXPERIENCIA_EDUCATIVA ||--o{ ACADEMICO_PROGRAMACION_ACADEMICA : oferta
@@ -37,7 +36,6 @@ erDiagram
     USUARIOS_USUARIO ||--o| USUARIOS_CREDENCIAL_SUPERUSUARIO : autentica
     USUARIOS_USUARIO ||--o| USUARIOS_USUARIO_DGAA : delimita
     USUARIOS_USUARIO ||--o| USUARIOS_USUARIO_ENTIDAD_ACADEMICA : delimita
-    USUARIOS_USUARIO ||--o{ ACADEMICO_ARCHIVO_PLAN_ESTUDIOS : carga
     USUARIOS_USUARIO ||--o{ ACADEMICO_SOLICITUD_APERTURA : crea
     USUARIOS_USUARIO o|--o{ ACADEMICO_SOLICITUD_APERTURA : actualiza
     USUARIOS_USUARIO o|--o{ ACADEMICO_SOLICITUD_APERTURA : resuelve
@@ -169,14 +167,12 @@ erDiagram
     ACADEMICO_SISTEMA_EDUCATIVO {
         int id PK
         nvarchar nombre UK
-        datetime2 fecha_eliminacion
     }
 
     ACADEMICO_NIVEL_FORMACION {
         int id PK
         varchar clave UK
         nvarchar nombre UK
-        datetime2 fecha_eliminacion
     }
 
     ACADEMICO_PROGRAMA_EDUCATIVO {
@@ -188,22 +184,10 @@ erDiagram
         datetime2 fecha_eliminacion
     }
 
-    ACADEMICO_ARCHIVO_PLAN_ESTUDIOS {
-        int id PK
-        nvarchar nombre
-        varchar mime
-        bigint tamano
-        binary checksum_sha256
-        nvarchar clave_almacenamiento UK
-        datetime2 cargado_en
-        int cargado_por_usuario_id FK
-    }
-
     ACADEMICO_PLAN_ESTUDIOS {
         int id PK
         varchar codigo
         int programa_educativo_id FK
-        int archivo_plan_estudios_id FK
         datetime2 fecha_eliminacion
     }
 
@@ -211,7 +195,6 @@ erDiagram
         int id PK
         varchar clave UK
         nvarchar nombre
-        datetime2 fecha_eliminacion
     }
 
     ACADEMICO_EXPERIENCIA_EDUCATIVA {

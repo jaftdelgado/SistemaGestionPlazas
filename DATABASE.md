@@ -138,6 +138,7 @@ Excepciones deliberadas:
 - `integracion.sincronizacion_planea` es una bitácora append-only, usa marcas temporales propias y no tiene `fecha_eliminacion`.
 - `academico.municipio` es un catálogo fijo de los municipios de Veracruz, no administrable y sin baja lógica.
 - `academico.region` y `academico.campus` son catálogos fijos de la semilla, no administrables y sin baja lógica (Modulo_Institucional.md, decisión D1).
+- `academico.sistema_educativo`, `academico.nivel_formacion` y `academico.area_formacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica (Modulo_OfertaEducativa.md, decisión D1).
 - `usuarios.rol` es un catálogo fijo, no administrable y sin baja lógica.
 - `academico.grado_academico`, `academico.tipo_documento_expediente`, `plazas.tratamiento_academico`, `plazas.modalidad_recepcion`, `plazas.tipo_plaza` y `plazas.tipo_contratacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica.
 - Los perfiles `usuarios.usuario_dgaa` y `usuarios.usuario_entidad_academica` dependen del ciclo de vida de `usuarios.usuario` y no tienen `fecha_eliminacion` propia.
@@ -273,13 +274,12 @@ La entidad pertenece a un solo campus y tiene exactamente un municipio, un domic
 
 ### 6.6 `academico.sistema_educativo`
 
-Catálogo global sin clave institucional. Su `id` es la identidad técnica y su nombre es la identidad de negocio.
+Catálogo fijo de solo lectura; valores de la semilla. Sin clave institucional: su `id` es la identidad técnica y su nombre es la identidad de negocio.
 
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
 | `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
-| `nombre` | `nvarchar(200) COLLATE Modern_Spanish_100_CI_AI` | `NOT NULL` | Nombre globalmente único y editable |
-| `fecha_eliminacion` | `datetime2(0)` | `NULL` | Baja lógica UTC |
+| `nombre` | `nvarchar(200) COLLATE Modern_Spanish_100_CI_AI` | `NOT NULL` | Nombre globalmente único |
 
 Restricciones:
 
@@ -290,14 +290,13 @@ Nombres equivalentes por mayúsculas o acentos representan el mismo sistema educ
 
 ### 6.7 `academico.nivel_formacion`
 
-Catálogo global de niveles a los que pueden pertenecer los programas educativos.
+Catálogo fijo de solo lectura; valores de la semilla. Niveles a los que pueden pertenecer los programas educativos.
 
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
 | `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
-| `clave` | `varchar(50)` | `NOT NULL` | Alfanumérica, mayúsculas, globalmente única e inmutable |
-| `nombre` | `nvarchar(200) COLLATE Modern_Spanish_100_CI_AI` | `NOT NULL` | Globalmente único y editable |
-| `fecha_eliminacion` | `datetime2(0)` | `NULL` | Baja lógica UTC |
+| `clave` | `varchar(50)` | `NOT NULL` | Alfanumérica, mayúsculas, globalmente única |
+| `nombre` | `nvarchar(200) COLLATE Modern_Spanish_100_CI_AI` | `NOT NULL` | Globalmente único |
 
 Restricciones:
 
@@ -305,7 +304,7 @@ Restricciones:
 - `uq_nivel_formacion__nombre (nombre)`.
 - `ck_nivel_formacion__clave_formato` y `ck_nivel_formacion__nombre_no_vacio`.
 
-Ejemplos: TSU, Licenciatura, Maestría y Doctorado. Tanto la clave como el nombre conservan su unicidad aunque la fila esté dada de baja.
+Ejemplos: TSU, Licenciatura, Maestría y Doctorado.
 
 ### 6.8 `academico.programa_educativo`
 
@@ -339,47 +338,25 @@ La región y el área académica del programa siempre se derivan desde `entidad_
 | `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
 | `codigo` | `varchar(50)` | `NOT NULL` | Código opaco, mayúsculas, inmutable; puede contener guiones |
 | `programa_educativo_id` | `int` | `NOT NULL` | FK inmutable a `academico.programa_educativo` |
-| `archivo_plan_estudios_id` | `int` | `NOT NULL` | FK única a `academico.archivo_plan_estudios` |
 | `fecha_eliminacion` | `datetime2(0)` | `NULL` | Baja lógica UTC |
 
 Restricciones:
 
 - `uq_plan_estudios__programa_educativo_id_codigo (programa_educativo_id, codigo)`.
 - `fk_plan_estudios__programa_educativo (programa_educativo_id)`.
-- `fk_plan_estudios__archivo_plan_estudios (archivo_plan_estudios_id)`.
-- `uq_plan_estudios__archivo_plan_estudios (archivo_plan_estudios_id)`.
 - `ck_plan_estudios__codigo_no_vacio`.
 
-Un código como `ISOF-18-ECR` puede repetirse en programas diferentes, pero no dentro del mismo programa. Cada plan requiere exactamente un archivo vigente. El archivo puede reemplazarse creando otro registro; no se conserva historial de versiones y el binario anterior se elimina del almacenamiento externo cuando queda sin referencias. El plan no tiene estado ni fechas de vigencia; deja de utilizarse cuando sus EE ya no son programadas.
+Un código como `ISOF-18-ECR` puede repetirse en programas diferentes, pero no dentro del mismo programa. El plan no tiene archivo: la base es la única fuente de verdad y sus EE se importan desde el Excel de la UV interpretado por el front (Modulo_OfertaEducativa.md, decisiones D5 y D6). El plan no tiene estado ni fechas de vigencia; deja de utilizarse cuando sus EE ya no son programadas.
 
-#### `academico.archivo_plan_estudios`
-
-Archivo único asociado al Plan de Estudios. Sus metadatos se almacenan en SQL Server y el contenido binario permanece en almacenamiento externo.
-
-| Columna | Tipo | Nulabilidad | Notas |
-|---|---|---|---|
-| `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
-| `nombre` | `nvarchar(260)` | `NOT NULL` | Nombre del archivo |
-| `mime` | `varchar(255)` | `NOT NULL` | MIME recibido, sin lista cerrada de formatos |
-| `tamano` | `bigint` | `NOT NULL` | Tamaño positivo en bytes |
-| `checksum_sha256` | `binary(32)` | `NOT NULL` | Integridad del contenido |
-| `clave_almacenamiento` | `nvarchar(500)` | `NOT NULL` | Clave única del almacenamiento externo |
-| `cargado_en` | `datetime2(0)` | `NOT NULL` | UTC |
-| `cargado_por_usuario_id` | `int` | `NOT NULL` | FK a `usuarios.usuario` |
-
-Restricciones:
-
-- `uq_archivo_plan_estudios__clave_almacenamiento`.
-- `ck_archivo_plan_estudios__tamano_positivo`.
-- La fila se elimina físicamente cuando ningún plan la referencia y el objeto externo fue eliminado.
 ### 6.10 `academico.area_formacion`
 
+Catálogo fijo de solo lectura; valores de la semilla: claves `111` (Área de Formación Básica), `112` (Área de Formación Disciplinaria) y `113` (Área de Formación Terminal), las que usa la UV en sus planes (`CODE_AREA_F`).
+
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
 | `id` | `int IDENTITY(1,1)` | `NOT NULL` | PK |
-| `clave` | `varchar(50)` | `NOT NULL` | Alfanumérica, mayúsculas, única e inmutable |
-| `nombre` | `nvarchar(200)` | `NOT NULL` | Editable; no necesita ser único |
-| `fecha_eliminacion` | `datetime2(0)` | `NULL` | Baja lógica UTC |
+| `clave` | `varchar(50)` | `NOT NULL` | Alfanumérica, mayúsculas, única |
+| `nombre` | `nvarchar(200)` | `NOT NULL` | No necesita ser único |
 
 Restricciones:
 
@@ -645,7 +622,6 @@ Las cardinalidades del proceso de plazas vacantes se detallan en el diagrama y l
 | `region` | `campus` | Una región tiene cero o muchos campus; cada campus tiene exactamente una región |
 | `campus` | `entidad_academica` | Un campus tiene cero o muchas entidades; cada entidad tiene exactamente un campus |
 | `area_academica` | `entidad_academica` | Un área clasifica cero o muchas entidades; cada entidad tiene exactamente un área |
-| `plan_estudios` | `archivo_plan_estudios` | Cada plan tiene exactamente un archivo; un archivo pertenece a cero o un plan |
 | `municipio` | `entidad_academica` | Un municipio localiza cero o muchas entidades; cada entidad tiene exactamente un municipio |
 | `entidad_academica` | `programa_educativo` | Una entidad ofrece cero o muchos programas; cada programa tiene exactamente una entidad |
 | `sistema_educativo` | `programa_educativo` | Un sistema educativo clasifica cero o muchos programas; cada programa tiene exactamente un sistema educativo |
@@ -689,7 +665,6 @@ Las PK serán agrupadas. Las restricciones únicas crearán índices únicos y c
 - `ix_entidad_academica__codigo_postal`;
 - `ix_entidad_academica__telefono`;
 - `ix_area_academica__telefono (telefono)`;
-- `ix_plan_estudios__archivo_plan_estudios_id (archivo_plan_estudios_id)`;
 - `ix_docente__num_personal (num_personal)`;
 - `ix_formacion_docente__docente_id (docente_id)`;
 - `ix_documento_docente__docente_id (docente_id)`;
@@ -714,9 +689,9 @@ Estas son las reglas generales del modelo académico y de usuarios. El esquema `
 
 La base protege la estructura con PK, FK, UNIQUE y CHECK. La aplicación implementa las reglas dinámicas dentro de una transacción.
 
-### 9.1 Baja en cascada por propiedad
+### 9.1 Baja bloqueada por hijos activos
 
-Región y campus son de solo lectura y no se dan de baja (Modulo_Institucional.md, decisión D1), así que la cascada empieza en `entidad_academica`:
+Región y campus son de solo lectura y no se dan de baja (Modulo_Institucional.md, decisión D1). En el resto de la jerarquía de propiedad no hay cascada: la baja de un padre se bloquea mientras tenga hijos activos (Modulo_OfertaEducativa.md, decisiones D10 y D11):
 
 ```text
 entidad_academica
@@ -726,15 +701,15 @@ entidad_academica
         -> programacion_academica
 ```
 
-También se propaga de:
+- una entidad académica no se da de baja con programas activos;
+- un programa no se da de baja con planes activos;
+- una EE no se da de baja con programaciones activas;
+- excepción: la baja de un plan da de baja el plan y todas sus EE activas con el mismo instante UTC, y se bloquea si alguna EE tiene programaciones activas;
+- un periodo escolar no se da de baja si tiene cualquier programación, incluidas las dadas de baja, ni si otro módulo lo referencia.
 
-```text
-periodo_escolar -> programacion_academica
-```
+`horario_programacion` es una excepción de ciclo de vida: sus sesiones se eliminan físicamente cuando Integracion da de baja una programación. Las bitácoras de `integracion.sincronizacion_planea` se conservan.
 
-`horario_programacion` es una excepción de ciclo de vida: al dar de baja una programación, una EE, un plan, un programa o un periodo, las sesiones afectadas se eliminan físicamente dentro de la misma operación. Las bitácoras de `integracion.sincronizacion_planea` se conservan.
-
-La operación debe:
+Toda baja debe:
 
 1. ejecutarse en una sola transacción;
 2. usar el mismo instante UTC para todos los registros afectados;
@@ -746,8 +721,7 @@ La operación debe:
 `area_academica`, `area_formacion`, `sistema_educativo`, `nivel_formacion`, `grado_academico` y `tipo_documento_expediente` no son relaciones de propiedad:
 
 - la baja de un área académica se bloquea mientras tenga entidades académicas activas;
-- la baja de un área de formación se bloquea mientras tenga EE activas;
-- la baja de un sistema educativo o nivel se bloquea mientras tenga programas activos;
+- `area_formacion`, `sistema_educativo` y `nivel_formacion` son catálogos fijos (§6.6, §6.7 y §6.10), sin baja lógica;
 - `grado_academico` y `tipo_documento_expediente` son catálogos fijos (§6.21 y §6.22), sin baja lógica;
 - la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos (`Modulo_Usuarios.md`, sección 9);
 - la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos (`Modulo_Usuarios.md`, sección 9);
@@ -755,9 +729,9 @@ La operación debe:
 
 ### 9.3 Restauración
 
-Área y entidad académica no se restauran (Modulo_Institucional.md, decisión D3): un registro dado de baja no existe para la API de Institucional y `DELETE` sobre él responde 404, no 204. La restauración general de este apartado aplica al resto del modelo.
+Área y entidad académica no se restauran (Modulo_Institucional.md, decisión D3): un registro dado de baja no existe para la API de Institucional y `DELETE` sobre él responde 404, no 204. OfertaEducativa tampoco restaura (Modulo_OfertaEducativa.md, decisión D4): un programa, plan, EE, programación o periodo dado de baja no existe para la API. La restauración deja de aplicar a todo el modelo académico.
 
-La restauración es selectiva, nunca en cascada:
+Si en el futuro se agregara una restauración, sería selectiva, nunca en cascada:
 
 - se reactiva un registro estableciendo `fecha_eliminacion = NULL`;
 - todos sus padres obligatorios deben estar activos;
@@ -780,7 +754,6 @@ Son inmutables desde la creación:
 - `campus.region_id`;
 - `entidad_academica.campus_id`;
 - `programa_educativo.entidad_academica_id`;
-- `plan_estudios.archivo_plan_estudios_id` puede cambiar únicamente mediante reemplazo transaccional del archivo y limpieza posterior del archivo sin referencias;
 - `plan_estudios.programa_educativo_id`;
 - `experiencia_educativa.plan_estudios_id`.
 
@@ -789,10 +762,10 @@ Reglas adicionales:
 - `entidad_academica.area_academica_id` puede cambiar únicamente mientras la entidad no tenga programas educativos.
 - `programa_educativo.sistema_educativo_id` y `nivel_formacion_id` pueden cambiar únicamente si el programa nunca ha tenido un plan de estudios, incluyendo planes dados de baja.
 - Desde la creación del primer plan, sistema educativo y nivel quedan inmutables. Cambiar el sistema educativo antes de ese momento debe volver a validar la unicidad del programa.
-- Restaurar o crear un programa requiere que su sistema educativo y nivel de formación estén activos.
-- Antes de la primera programación de una EE pueden cambiar sus horas, créditos y área de formación.
-- Después de la primera programación solo pueden cambiar `experiencia_educativa.nombre`, `perfil_docente` y los cupos; cualquier cambio de cupo se valida con las reglas de no negatividad y orden.
-- Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio`, `rol`, `grado_academico`, `tipo_documento_expediente`, `tratamiento_academico`, `modalidad_recepcion`, `tipo_plaza` y `tipo_contratacion` son catálogos fijos.
+- Crear un programa requiere que su sistema educativo y nivel de formación existan.
+- Si la EE nunca tuvo una programación, incluidas las dadas de baja, pueden cambiar sus horas, créditos y área de formación (Modulo_OfertaEducativa.md, decisión D13).
+- Si la EE tuvo alguna programación, incluidas las dadas de baja, solo pueden cambiar `experiencia_educativa.nombre`, `perfil_docente` y los cupos; cualquier cambio de cupo se valida con las reglas de no negatividad y orden.
+- Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio`, `rol`, `sistema_educativo`, `nivel_formacion`, `area_formacion`, `grado_academico`, `tipo_documento_expediente`, `tratamiento_academico`, `modalidad_recepcion`, `tipo_plaza` y `tipo_contratacion` son catálogos fijos.
 - `entidad_academica.calle`, `numero_exterior`, `colonia`, `codigo_postal` y `municipio_id` son editables y representan únicamente el domicilio vigente; los valores anteriores no se conservan.
 - `entidad_academica.telefono` y `extension` son editables y representan únicamente los datos de contacto vigentes; los valores anteriores no se conservan.
 - El domicilio es independiente de `campus_id`: no se valida que el municipio o código postal correspondan con el campus y una modificación de domicilio no cambia esa relación inmutable.
@@ -895,9 +868,11 @@ oferta
 
 Los metadatos de documentos y revisiones se consultan por el Aviso o Acta correspondiente; el binario se recupera del almacenamiento externo mediante `clave_almacenamiento`.
 
-Para consultar los documentos del Plan se navega desde `plan_estudios.archivo_plan_estudios_id`; para Docentes se consultan directamente sus formaciones y cabeceras documentales versionadas. No se deben agregar columnas redundantes para acortar estas rutas sin un análisis posterior de rendimiento y consistencia.
+Para Docentes se consultan directamente sus formaciones y cabeceras documentales versionadas. No se deben agregar columnas redundantes para acortar estas rutas sin un análisis posterior de rendimiento y consistencia.
 
 ## 12. Integración de horarios con PLANEA
+
+> Pendiente de revisión contra el payload real de PLANEA (`pendientes.md`, P9).
 
 ### 12.1 Fuente y alcance
 
@@ -1112,24 +1087,22 @@ Estos eventos se emiten hoy como logs estructurados con `[LoggerMessage]` y `Eve
 - Rechazar el cambio de área académica después de crear su primer programa.
 - Permitir cambiar sistema educativo o nivel de un programa que nunca ha tenido planes.
 - Rechazar ese cambio después de crear cualquier plan, incluso si todos los planes están dados de baja.
-- Congelar los atributos curriculares de una EE después de su primera programación.
-- Permitir reemplazar el archivo de un Plan sin conservar versiones históricas y eliminar el anterior solo cuando quede sin referencias.
+- Congelar los atributos curriculares de una EE después de su primera programación, incluidas las dadas de baja.
+- Verificar que el plan de estudios no tiene archivo: sus EE se importan y la descarga se genera desde la base.
 - Crear Docentes desde PLANEA con puesto nulo y conservar sin historial sus datos y formaciones.
 - Versionar únicamente los archivos de Docentes.
 - Copiar perfil y grados del Aspirante al crear un Docente designado, sin copiar sus archivos.
 
 ### Baja y restauración
 
-Los casos de restauración no aplican a área ni a entidad académica: ninguna de las dos se restaura (Modulo_Institucional.md, decisión D3). Tampoco aplican a las cuentas de usuario, que siguen la misma regla (Modulo_Usuarios.md, decisión D3).
+Los casos de restauración no aplican a ninguna entidad del modelo académico: ni área, entidad, programa, plan, EE, programación o periodo se restauran (Modulo_Institucional.md, decisión D3; Modulo_OfertaEducativa.md, decisión D4). Tampoco aplican a las cuentas de usuario, que siguen la misma regla (Modulo_Usuarios.md, decisión D3).
 
-- Propagar correctamente la baja por la jerarquía de propiedad.
-- Propagar la baja de un periodo a sus programaciones.
-- Bloquear la baja de áreas con clasificaciones activas.
-- Bloquear la baja de sistemas educativos o niveles con programas activos.
-- Requerir sistema educativo y nivel activos al crear o restaurar un programa.
+- Bloquear la baja de un padre con hijos activos (entidad, programa y EE), sin cascada.
+- Dar de baja un plan junto con todas sus EE activas con el mismo instante UTC, y bloquearlo si alguna EE tiene programaciones activas.
+- Bloquear la baja de un periodo con cualquier programación, incluidas las dadas de baja.
+- Bloquear la baja de áreas académicas con entidades activas.
+- Verificar que sistema educativo, nivel de formación y área de formación no tienen baja lógica.
 - Impedir nuevas referencias a registros desactivados.
-- Verificar que restaurar un padre no restaure automáticamente sus descendientes.
-- Rechazar la restauración de un hijo cuyo padre continúe desactivado.
 
 ### Horarios y sincronización
 
@@ -1657,8 +1630,7 @@ Además de PK y FK:
 - Índice único filtrado de Oferta abierta por (`programacion_academica_id`, `clave_plaza`) donde `cerrada_en IS NULL`.
 - `uq_aviso_oferta__aviso_oferta` y unicidad filtrada de intento abierto por Oferta.
 - Índices de Aviso por entidad, periodo, sistema, artículo y estado.
-- Índices de ArchivoPlanEstudios y Docente por sus claves de relación.
-- Unicidad del archivo directo asociado a cada Plan.
+- Índices de Docente por sus claves de relación.
 - CHECK de `aviso.tipo_comunicado` y consistencia conjunta de sus datos de cancelación y archivado.
 - Índices de horarios de recepción por Aviso y fecha.
 - Unicidad de versiones y una versión vigente por padre y tipo documental.
@@ -1704,7 +1676,6 @@ Además de PK y FK:
 - Conservar todas las versiones de documentos y vincular cada revisión con el original evaluado.
 - Rechazar devolución sin comentarios y una segunda revisión abierta.
 - Verificar que los binarios no se almacenen en SQL Server y que SHA-256 detecte alteraciones.
-- Crear y reemplazar el archivo obligatorio de un Plan sin conservar versiones anteriores.
 - Crear un Docente con puesto nulo desde PLANEA, agregar grados y versionar sus archivos.
 - Copiar perfil y grados al designar un Aspirante sin copiar sus archivos.
 
@@ -1823,7 +1794,7 @@ No existen decisiones funcionales pendientes para implementar este modelo base. 
 - implementación del adaptador y la sincronización atómica con PLANEA, incluidos Docentes y asignaciones iniciales;
 - implementación del bootstrap, autenticación LDAP y verificación local de Superusuarios;
 - implementación transaccional de los ciclos de Aviso y Acta, revisiones, votación, designación y republicación;
-- definición del almacenamiento externo de binarios y del proceso seguro para confirmar o compensar cargas;
+- definición del almacenamiento externo de binarios (Avisos, Actas, Docentes y Solicitudes de Apertura; el plan de estudios no tiene archivo) y del proceso seguro para confirmar o compensar cargas;
 - confirmación institucional de si se requiere criptografía FIPS antes de implementar el hash local;
 - pruebas de integración contra SQL Server;
 - revisión de índices con datos y consultas representativas.

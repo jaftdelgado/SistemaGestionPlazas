@@ -26,7 +26,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `Program.cs` mínimo con OpenAPI y Scalar, ProblemDetails, health check `/health` (incluye SQL Server), CORS por configuración y el registro de módulos.
   - `appsettings*.json` con la cadena de conexión local.
   - Sin autenticación todavía.
-- **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un baseline, `Baseline/baseline.sql` (los cuatro esquemas y las 55 tablas de `DATABASE.md`) y `Baseline/seed.sql` (datos iniciales de los catálogos). `Scripts/` queda vacía para las migraciones.
+- **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un baseline, `Baseline/baseline.sql` (los cuatro esquemas y las 54 tablas de `DATABASE.md`) y `Baseline/seed.sql` (datos iniciales de los catálogos). `Scripts/` queda vacía para las migraciones.
 - **`src/BuildingBlocks`:**
   - `Sgpla.SharedKernel` vacío, con solo lo mínimo para compilar.
   - `Sgpla.BuildingBlocks.Infrastructure` con un `SgplaDbContext` sin entidades, que aplica las configuraciones de los módulos registrados.
@@ -60,8 +60,8 @@ Refinamiento 1 (acordado con el usuario):
 | Módulo | Tablas (esquema) | Operaciones |
 |---|---|---|
 | **Institucional** | region, campus, area_academica, entidad_academica (`academico`) | CRUD y baja lógica, sin restauración; `region` y `campus` son de solo lectura (semilla) |
-| **OfertaEducativa** | sistema_educativo, nivel_formacion, programa_educativo, plan_estudios, archivo_plan_estudios, area_formacion, experiencia_educativa, periodo_escolar, programacion_academica, horario_programacion (`academico`) | CRUD + baja en cascada; `horario_programacion` solo lectura; el archivo del plan se reemplaza, no se edita |
-| **Catalogos** | grado_academico, tipo_documento_expediente, municipio (`academico`); tratamiento_academico, articulo, modalidad_recepcion, tipo_plaza, tipo_contratacion (`plazas`) | Catálogos fijos, precargados en la semilla y de solo lectura (listar/obtener): grado_academico, tipo_documento_expediente, municipio, tratamiento_academico, modalidad_recepcion, tipo_plaza, tipo_contratacion. `articulo` es administrable por el Superusuario: alta, consulta y corrección (el número solo mientras ningún Aviso lo use; la descripción siempre); sin baja |
+| **OfertaEducativa** | programa_educativo, plan_estudios, experiencia_educativa, periodo_escolar, programacion_academica, horario_programacion (`academico`) | CRUD con baja bloqueada por hijos activos, sin restauración; importación del plan en JSON y exportación a Excel; programación y horario de solo lectura |
+| **Catalogos** | grado_academico, tipo_documento_expediente, municipio, sistema_educativo, nivel_formacion, area_formacion (`academico`); tratamiento_academico, articulo, modalidad_recepcion, tipo_plaza, tipo_contratacion (`plazas`) | Catálogos fijos, precargados en la semilla y de solo lectura (listar/obtener): grado_academico, tipo_documento_expediente, municipio, sistema_educativo, nivel_formacion, area_formacion, tratamiento_academico, modalidad_recepcion, tipo_plaza, tipo_contratacion. `articulo` es administrable por el Superusuario: alta, consulta y corrección (el número solo mientras ningún Aviso lo use; la descripción siempre); sin baja |
 | **Docentes** | docente, formacion_docente, documento_docente, version_documento_docente, asignacion_docente (`academico`) | CRUD de docente y formaciones; documentos versionados; asignaciones sin CRUD directo (se derivan de PLANEA o del aval de un Acta) |
 | **Usuarios** | rol, usuario, usuario_dgaa, usuario_entidad_academica, credencial_superusuario (`usuarios`) | Alta/consulta/edición de nombre/baja, sin restauración; `rol` es fijo; login LDAP y local, cambio/restablecimiento de contraseña, comando de bootstrap |
 | **Integracion** | sincronizacion_planea (`integracion`) | Sin CRUD: disparar sincronización y consultar la bitácora |
@@ -162,7 +162,7 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 - `src/Sgpla.Database/Baseline/baseline.sql` construye la base completa y `src/Sgpla.Database/Scripts/####__descripcion.sql` contiene las migraciones posteriores; ambos son recursos embebidos. La bitácora va en `dbo.schema_versions`.
 - `DatabaseMigrator.Migrate(connectionString)` es reutilizable: la CLI (`dotnet run --project src/Sgpla.Database -- --connection "..."`) y el fixture de integración lo usan. `EnsureDatabase` solo se aplica en Development/tests.
 - La API **no** migra al arrancar.
-- `baseline.sql` no es una migración: crea los esquemas `academico`, `usuarios`, `integracion` y `plazas` y las 55 tablas de `DATABASE.md` con sus PK, FK, UNIQUE, CHECK e índices, sin datos. `DatabaseMigrator` solo lo ejecuta sobre una base vacía y lo registra como `baseline`; si la base ya tiene tablas sin ese registro, falla sin tocarla.
+- `baseline.sql` no es una migración: crea los esquemas `academico`, `usuarios`, `integracion` y `plazas` y las 54 tablas de `DATABASE.md` con sus PK, FK, UNIQUE, CHECK e índices, sin datos. `DatabaseMigrator` solo lo ejecuta sobre una base vacía y lo registra como `baseline`; si la base ya tiene tablas sin ese registro, falla sin tocarla.
 - `seed.sql` se ejecuta junto con el baseline, en la misma transacción, y queda registrado como `baseline-seed`. Carga `usuarios.rol`, `municipio`, `sistema_educativo`, `nivel_formacion`, `area_formacion`, `region` y `campus`. `area_academica`, `entidad_academica` y `periodo_escolar` los registra el Superusuario.
 - Cualquier cambio posterior de esquema o de datos va en migraciones de `Scripts/`, a partir de `0001`.
 
