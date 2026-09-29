@@ -10,7 +10,7 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [InlineData("academico.municipio", 212)]
     [InlineData("academico.sistema_educativo", 6)]
     [InlineData("academico.nivel_formacion", 6)]
-    [InlineData("academico.area_formacion", 5)]
+    [InlineData("academico.area_formacion", 3)]
     [InlineData("academico.region", 5)]
     [InlineData("academico.campus", 24)]
     [InlineData("academico.grado_academico", 4)]

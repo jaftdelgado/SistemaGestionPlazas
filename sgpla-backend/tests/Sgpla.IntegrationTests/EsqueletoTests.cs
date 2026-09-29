@@ -65,11 +65,39 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
 
         tablasPorEsquema.ShouldBe(new Dictionary<string, int>
         {
-            ["academico"] = 24,
+            ["academico"] = 23,
             ["integracion"] = 1,
             ["plazas"] = 25,
             ["usuarios"] = 5,
         }, ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task Migraciones_NoCreanArchivoDelPlanNiBajaEnClasificaciones()
+    {
+        // Modulo_OfertaEducativa.md, D1 y D5: el plan no tiene archivo y las tres clasificaciones no tienen baja lógica.
+        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await conexion.OpenAsync(TestContext.Current.CancellationToken);
+        await using var comando = new SqlCommand(
+            """
+            SELECT t.name + N'.' + c.name
+            FROM sys.columns AS c
+            JOIN sys.tables AS t ON t.object_id = c.object_id
+            JOIN sys.schemas AS s ON s.schema_id = t.schema_id
+            WHERE s.name = N'academico'
+              AND ((t.name = N'plan_estudios' AND c.name = N'archivo_plan_estudios_id')
+                OR (t.name IN (N'sistema_educativo', N'nivel_formacion', N'area_formacion') AND c.name = N'fecha_eliminacion'))
+            """,
+            conexion);
+
+        var columnas = new List<string>();
+        await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        while (await lector.ReadAsync(TestContext.Current.CancellationToken))
+        {
+            columnas.Add(lector.GetString(0));
+        }
+
+        columnas.ShouldBeEmpty();
     }
 
     [Fact]

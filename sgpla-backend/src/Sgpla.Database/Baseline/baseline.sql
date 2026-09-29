@@ -176,7 +176,6 @@ CREATE TABLE academico.sistema_educativo
 (
     id                int IDENTITY(1,1) NOT NULL,
     nombre            nvarchar(200) COLLATE Modern_Spanish_100_CI_AI NOT NULL,
-    fecha_eliminacion datetime2(0)      NULL,
     CONSTRAINT pk_sistema_educativo PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_sistema_educativo__nombre UNIQUE (nombre),
     CONSTRAINT ck_sistema_educativo__nombre_no_vacio CHECK (LEN(TRIM(nombre)) > 0)
@@ -187,7 +186,6 @@ CREATE TABLE academico.nivel_formacion
     id                int IDENTITY(1,1) NOT NULL,
     clave             varchar(50)       NOT NULL,
     nombre            nvarchar(200) COLLATE Modern_Spanish_100_CI_AI NOT NULL,
-    fecha_eliminacion datetime2(0)      NULL,
     CONSTRAINT pk_nivel_formacion PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_nivel_formacion__clave UNIQUE (clave),
     CONSTRAINT uq_nivel_formacion__nombre UNIQUE (nombre),
@@ -217,38 +215,15 @@ CREATE TABLE academico.programa_educativo
 CREATE INDEX ix_programa_educativo__sistema_educativo_id ON academico.programa_educativo (sistema_educativo_id);
 CREATE INDEX ix_programa_educativo__nivel_formacion_id ON academico.programa_educativo (nivel_formacion_id);
 
-CREATE TABLE academico.archivo_plan_estudios
-(
-    id                     int IDENTITY(1,1) NOT NULL,
-    nombre                 nvarchar(260)     NOT NULL,
-    mime                   varchar(255)      NOT NULL,
-    tamano                 bigint            NOT NULL,
-    checksum_sha256        binary(32)        NOT NULL,
-    clave_almacenamiento   nvarchar(500)     NOT NULL,
-    cargado_en             datetime2(0)      NOT NULL,
-    cargado_por_usuario_id int               NOT NULL,
-    CONSTRAINT pk_archivo_plan_estudios PRIMARY KEY CLUSTERED (id),
-    CONSTRAINT uq_archivo_plan_estudios__clave_almacenamiento UNIQUE (clave_almacenamiento),
-    CONSTRAINT fk_archivo_plan_estudios__usuario FOREIGN KEY (cargado_por_usuario_id) REFERENCES usuarios.usuario (id),
-    CONSTRAINT ck_archivo_plan_estudios__tamano_positivo CHECK (tamano > 0),
-    CONSTRAINT ck_archivo_plan_estudios__nombre_no_vacio CHECK (LEN(TRIM(nombre)) > 0),
-    CONSTRAINT ck_archivo_plan_estudios__mime_no_vacio CHECK (LEN(TRIM(mime)) > 0),
-    CONSTRAINT ck_archivo_plan_estudios__clave_almacenamiento_no_vacia CHECK (LEN(TRIM(clave_almacenamiento)) > 0)
-);
-
 CREATE TABLE academico.plan_estudios
 (
     id                       int IDENTITY(1,1) NOT NULL,
     codigo                   varchar(50)       NOT NULL,
     programa_educativo_id    int               NOT NULL,
-    archivo_plan_estudios_id int               NOT NULL,
     fecha_eliminacion        datetime2(0)      NULL,
     CONSTRAINT pk_plan_estudios PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_plan_estudios__programa_educativo_id_codigo UNIQUE (programa_educativo_id, codigo),
-    -- Sirve también como ix_plan_estudios__archivo_plan_estudios_id (§8).
-    CONSTRAINT uq_plan_estudios__archivo_plan_estudios UNIQUE (archivo_plan_estudios_id),
     CONSTRAINT fk_plan_estudios__programa_educativo FOREIGN KEY (programa_educativo_id) REFERENCES academico.programa_educativo (id),
-    CONSTRAINT fk_plan_estudios__archivo_plan_estudios FOREIGN KEY (archivo_plan_estudios_id) REFERENCES academico.archivo_plan_estudios (id),
     CONSTRAINT ck_plan_estudios__codigo_no_vacio CHECK (LEN(codigo) > 0 AND DATALENGTH(codigo) = LEN(codigo)),
     -- Admite guiones, p. ej. ISOF-18-ECR.
     CONSTRAINT ck_plan_estudios__codigo_formato CHECK (codigo COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^A-Z0-9-]%')
@@ -259,7 +234,6 @@ CREATE TABLE academico.area_formacion
     id                int IDENTITY(1,1) NOT NULL,
     clave             varchar(50)       NOT NULL,
     nombre            nvarchar(200)     NOT NULL,
-    fecha_eliminacion datetime2(0)      NULL,
     CONSTRAINT pk_area_formacion PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_area_formacion__clave UNIQUE (clave),
     CONSTRAINT ck_area_formacion__clave_formato CHECK (

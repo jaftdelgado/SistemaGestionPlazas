@@ -268,16 +268,14 @@ VALUES (1, 'TEC', N'Técnico'),
 SET IDENTITY_INSERT academico.nivel_formacion OFF;
 
 -- 5. academico.area_formacion
--- Áreas del Modelo Educativo Integral y Flexible; clave = sigla oficial.
+-- Áreas de formación de los planes de la UV; clave = CODE_AREA_F del formato de plan de estudios.
 
 SET IDENTITY_INSERT academico.area_formacion ON;
 
 INSERT INTO academico.area_formacion (id, clave, nombre)
-VALUES (1, 'AFBG', N'Área de Formación Básica General'),
-       (2, 'AID',  N'Área de Iniciación a la Disciplina'),
-       (3, 'AFD',  N'Área de Formación Disciplinar'),
-       (4, 'AFT',  N'Área de Formación Terminal'),
-       (5, 'AFEL', N'Área de Formación de Elección Libre');
+VALUES (1, '111', N'Área de Formación Básica'),
+       (2, '112', N'Área de Formación Disciplinaria'),
+       (3, '113', N'Área de Formación Terminal');
 
 SET IDENTITY_INSERT academico.area_formacion OFF;
 
