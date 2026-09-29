@@ -10,6 +10,7 @@ public sealed class ModificarEntidadAcademicaHandlerTests
 
     private readonly EntidadAcademicaRepositoryFalso _repositorio = new();
     private readonly MunicipiosFalso _municipios = new();
+    private readonly ProgramasDeEntidadAcademicaFalso _programas = new();
     private readonly UnitOfWorkFalso _unidadDeTrabajo = new();
     private readonly EntidadAcademica _entidad = EntidadAcademica.Crear(
         "FLX1", "Facultad de Letras", "Calle", null, "Colonia", "91020", "2288421700", null, 1, 3, 87).Value;
@@ -79,7 +80,61 @@ public sealed class ModificarEntidadAcademicaHandlerTests
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
 
-    private ModificarEntidadAcademicaHandler Handler() => new(_repositorio, _municipios, _unidadDeTrabajo);
+    [Fact]
+    public async Task HandleAsync_CambiandoElAreaConProgramas_FallaConAreaAcademicaInmutableSinTocarLaEntidadNiGuardar()
+    {
+        _repositorio.AreasAcademicasActivas.Add(5);
+        _programas.TieneProgramas = true;
+
+        var resultado = await Handler().HandleAsync(
+            Comando(nombre: "Otro nombre", areaAcademicaId: 5), TestContext.Current.CancellationToken);
+
+        resultado.Error.ShouldBe(EntidadAcademicaErrors.AreaAcademicaInmutable);
+        _entidad.AreaAcademicaId.ShouldBe(3);
+        _entidad.Nombre.ShouldBe("Facultad de Letras");
+        _unidadDeTrabajo.Guardados.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SinCambiarElAreaConProgramas_ModificaSinConsultarLosProgramas()
+    {
+        _programas.TieneProgramas = true;
+
+        var resultado = await Handler().HandleAsync(Comando(), TestContext.Current.CancellationToken);
+
+        resultado.IsSuccess.ShouldBeTrue();
+        _programas.ConsultasDeTodos.ShouldBe(0);
+        _unidadDeTrabajo.Guardados.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task HandleAsync_CambiandoElAreaSinProgramas_ModificaYGuarda()
+    {
+        _repositorio.AreasAcademicasActivas.Add(5);
+        _programas.TieneProgramas = false;
+
+        var resultado = await Handler().HandleAsync(Comando(areaAcademicaId: 5), TestContext.Current.CancellationToken);
+
+        resultado.IsSuccess.ShouldBeTrue();
+        _programas.ConsultasDeTodos.ShouldBe(1);
+        _entidad.AreaAcademicaId.ShouldBe(5);
+        _unidadDeTrabajo.Guardados.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task HandleAsync_CambiandoElAreaConProgramasSoloDadosDeBaja_FallaConAreaAcademicaInmutable()
+    {
+        _repositorio.AreasAcademicasActivas.Add(5);
+        _programas.TieneProgramasActivos = false;
+        _programas.TieneProgramas = true;
+
+        var resultado = await Handler().HandleAsync(Comando(areaAcademicaId: 5), TestContext.Current.CancellationToken);
+
+        resultado.Error.ShouldBe(EntidadAcademicaErrors.AreaAcademicaInmutable);
+        _programas.ConsultasDeActivos.ShouldBe(0);
+    }
+
+    private ModificarEntidadAcademicaHandler Handler() => new(_repositorio, _municipios, [_programas], _unidadDeTrabajo);
 
     private static ModificarEntidadAcademicaCommand Comando(
         string nombre = "Facultad de Letras Españolas", int areaAcademicaId = 3, int municipioId = 87) =>

@@ -7,10 +7,14 @@ namespace Sgpla.Modules.Institucional.Application.EntidadesAcademicas;
 
 internal sealed record DarDeBajaEntidadAcademicaCommand(int Id);
 
-/// <summary>Sin cascada todavía (Modulo_Institucional.md, decisión D6; pendientes.md, P1).</summary>
+/// <summary>
+/// Sin cascada: la baja se bloquea con usuarios activos o con programas educativos activos (Modulo_OfertaEducativa.md,
+/// decisión D10).
+/// </summary>
 internal sealed class DarDeBajaEntidadAcademicaHandler(
     IEntidadAcademicaRepository repositorio,
     IEnumerable<IUsuariosDeEntidadAcademica> usuarios,
+    IEnumerable<IProgramasDeEntidadAcademica> programas,
     IUnitOfWork unidadDeTrabajo,
     TimeProvider reloj) : ICommandHandler<DarDeBajaEntidadAcademicaCommand>
 {
@@ -27,6 +31,14 @@ internal sealed class DarDeBajaEntidadAcademicaHandler(
             if (await contrato.TieneUsuariosActivosAsync(entidad.Id, cancellationToken))
             {
                 return EntidadAcademicaErrors.TieneUsuariosActivos;
+            }
+        }
+
+        foreach (var contrato in programas)
+        {
+            if (await contrato.TieneProgramasActivosAsync(entidad.Id, cancellationToken))
+            {
+                return EntidadAcademicaErrors.TieneProgramasActivos;
             }
         }
 

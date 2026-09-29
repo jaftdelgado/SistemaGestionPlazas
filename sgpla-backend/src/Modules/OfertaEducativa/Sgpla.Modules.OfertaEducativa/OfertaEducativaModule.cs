@@ -6,12 +6,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
+using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.Ambito;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
 using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Endpoints.PeriodosEscolares;
 using Sgpla.Modules.OfertaEducativa.Endpoints.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.Ambito;
+using Sgpla.Modules.OfertaEducativa.Infrastructure.Contratos;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.PeriodosEscolares;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.ProgramasEducativos;
 
@@ -33,6 +35,9 @@ public static class OfertaEducativaModule
         services.AddScoped<IAmbitoOfertaEducativa, AmbitoOfertaEducativa>();
         services.AddScoped<IPeriodoEscolarRepository, PeriodoEscolarRepository>();
         services.AddScoped<IProgramaEducativoRepository, ProgramaEducativoRepository>();
+
+        // Contratos para otros módulos (Institucional). IReferenciasPeriodoEscolar lo registra cada módulo que lo implementa.
+        services.AddScoped<IProgramasDeEntidadAcademica, ProgramasDeEntidadAcademica>();
 
         return services;
     }

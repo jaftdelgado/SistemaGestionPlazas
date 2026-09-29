@@ -86,6 +86,33 @@ internal sealed class UsuariosDeEntidadAcademicaFalso : IUsuariosDeEntidadAcadem
         Task.FromResult(TieneUsuariosActivos);
 }
 
+/// <summary>
+/// Responde según <see cref="TieneProgramasActivos"/> y <see cref="TieneProgramas"/> (este último incluye los dados
+/// de baja) y cuenta las consultas de cada método.
+/// </summary>
+internal sealed class ProgramasDeEntidadAcademicaFalso : IProgramasDeEntidadAcademica
+{
+    public bool TieneProgramasActivos { get; set; }
+
+    public bool TieneProgramas { get; set; }
+
+    public int ConsultasDeActivos { get; private set; }
+
+    public int ConsultasDeTodos { get; private set; }
+
+    public Task<bool> TieneProgramasActivosAsync(int entidadAcademicaId, CancellationToken cancellationToken)
+    {
+        ConsultasDeActivos++;
+        return Task.FromResult(TieneProgramasActivos);
+    }
+
+    public Task<bool> TieneProgramasAsync(int entidadAcademicaId, CancellationToken cancellationToken)
+    {
+        ConsultasDeTodos++;
+        return Task.FromResult(TieneProgramas);
+    }
+}
+
 /// <summary>Municipios en memoria: los ids en <see cref="Existentes"/> existen y tienen el nombre indicado.</summary>
 internal sealed class MunicipiosFalso : IMunicipios
 {

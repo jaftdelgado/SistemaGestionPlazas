@@ -91,6 +91,13 @@ internal static class EntidadAcademicaErrors
     public static readonly Error TieneUsuariosActivos = Error.Conflict(
         "EntidadAcademica.TieneUsuariosActivos", "La entidad académica tiene usuarios activos.");
 
+    public static readonly Error TieneProgramasActivos = Error.Conflict(
+        "EntidadAcademica.TieneProgramasActivos", "La entidad académica tiene programas educativos activos.");
+
+    public static readonly Error AreaAcademicaInmutable = Error.Conflict(
+        "EntidadAcademica.AreaAcademicaInmutable",
+        "El área académica no cambia una vez que la entidad tiene programas educativos.");
+
     public static Error NoEncontrado(int id) => Error.NotFound(
         "EntidadAcademica.NoEncontrado", $"No existe la entidad académica {id}.");
 }

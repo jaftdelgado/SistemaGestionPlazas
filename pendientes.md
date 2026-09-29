@@ -4,26 +4,6 @@ Reglas del modelo que todavía no se implementan porque dependen de un módulo q
 
 Cuando se implemente el módulo que la desbloquea, la entrada se resuelve en el mismo PR y se borra de este archivo.
 
-## Institucional
-
-Contexto: `Modulo_Institucional.md`, decisión D6. Institucional no puede depender de OfertaEducativa, porque este depende de él. Las reglas que cruzan hacia él se resuelven con contratos en `Institucional.Application.Contracts` que implementa el módulo dependiente (inversión de dependencias, como `IReferenciasArticulo` en Catalogos; `ESTANDAR_MODULOS.md` §5).
-
-### P1. La entidad académica no se da de baja con programas activos
-
-- **Origen:** `DATABASE.md` §9.1, modificado por `Modulo_OfertaEducativa.md` D10: no hay cascada; la baja se bloquea con hijos activos.
-- **Lo desbloquea:** OfertaEducativa.
-- **Resolución prevista:** contrato `IProgramasDeEntidadAcademica.TieneProgramasActivosAsync`, que implementa OfertaEducativa. `DarDeBajaEntidadAcademicaHandler` lo consulta después de los usuarios activos y responde 409 `EntidadAcademica.TieneProgramasActivos`.
-- **Mientras tanto:** la baja de una entidad solo se bloquea por usuarios activos.
-- **Se resuelve en:** `Modulo_OfertaEducativa.md`, PR 2.
-
-### P2. El área académica de una entidad se congela cuando tiene programas
-
-- **Origen:** `DATABASE.md` §6.5 y §10. `entidad_academica.area_academica_id` puede cambiar solo mientras la entidad no tenga programas educativos, incluidos los dados de baja (`Modulo_OfertaEducativa.md` D14).
-- **Lo desbloquea:** OfertaEducativa.
-- **Resolución prevista:** `IProgramasDeEntidadAcademica.TieneProgramasAsync` (mismo contrato que P1), que cuenta también los programas dados de baja. `ModificarEntidadAcademicaHandler` lo consulta solo si cambia el área, y responde 409 `EntidadAcademica.AreaAcademicaInmutable`.
-- **Mientras tanto:** el área siempre puede cambiarse.
-- **Se resuelve en:** `Modulo_OfertaEducativa.md`, PR 2.
-
 ## OfertaEducativa
 
 Contexto: `Modulo_OfertaEducativa.md`, sección 12. OfertaEducativa declara en su `Application.Contracts` los contratos de referencias; los implementan los módulos que dependen de él, y los handlers los consultan como `IEnumerable<...>`, vacío hasta entonces.

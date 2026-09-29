@@ -43,7 +43,7 @@ Fuera de alcance: restauración, autorización (llega con Usuarios) y las reglas
 | D3 | Área y entidad académica **no se restauran**. Un registro dado de baja no existe para la API: `GET`, `PUT` y `DELETE` sobre él responden 404. No hay parámetro `incluirEliminados`. La excepción aplica **solo a Institucional**; el resto del modelo conserva la restauración | `DATABASE.md` §9.3 y §14 ("Baja y restauración"), `ESTANDAR_MODULOS.md` §9 (operaciones Restaurar y `incluirEliminados`) |
 | D4 | `DELETE` sobre un registro ya dado de baja responde **404**, no 204 | `ESTANDAR_MODULOS.md` §6 (baja idempotente) |
 | D5 | Una referencia a un área académica dada de baja se trata como inexistente: **400** con su campo, no 409 | `ESTANDAR_MODULOS.md` §9 (409 para "padres inactivos") |
-| D6 | Se posponen las reglas que dependen de OfertaEducativa y Usuarios (ver `pendientes.md`). Mientras tanto, el área académica de una entidad **siempre** puede cambiarse, y las bajas solo se bloquean por las reglas internas del módulo | `DATABASE.md` §9.1, §9.2 y §10 |
+| D6 | Se posponen las reglas que dependen de OfertaEducativa y Usuarios (ver `pendientes.md`). Mientras tanto, el área académica de una entidad **siempre** puede cambiarse, y las bajas solo se bloquean por las reglas internas del módulo. P1 y P2 resueltas en `Modulo_OfertaEducativa.md` (PR 2) | `DATABASE.md` §9.1, §9.2 y §10 |
 | D7 | Resuelta en Modulo_Usuarios.md (PR 3): la lectura de entidades se filtra por ámbito (DGAA: las entidades de su área; Entidad Académica: solo la suya). Regiones, campus y áreas son visibles para cualquier usuario autenticado. La escritura es solo del Superusuario. | — |
 
 ## 3. Piezas compartidas nuevas
@@ -479,6 +479,8 @@ Métodos:
 | `EntidadAcademica.MunicipioInexistente` | Validation | `MunicipioId` | No existe el municipio indicado. |
 | `EntidadAcademica.ClaveDuplicada` | Conflict | — | Ya existe una entidad académica con esa clave. |
 | `EntidadAcademica.TieneUsuariosActivos` | Conflict | — | La entidad académica tiene usuarios activos. |
+| `EntidadAcademica.TieneProgramasActivos` | Conflict | — | La entidad académica tiene programas educativos activos. |
+| `EntidadAcademica.AreaAcademicaInmutable` | Conflict | — | El área académica no cambia una vez que la entidad tiene programas educativos. |
 | `EntidadAcademica.NoEncontrado(int id)` | NotFound | — | No existe la entidad académica {id}. |
 
 `CampusInexistente`, `AreaAcademicaInexistente` y `MunicipioInexistente` son errores de validación con campo. Como no son reglas de forma, los devuelve el handler, no la fábrica; `ToProblem` los reporta en `errors` igual.

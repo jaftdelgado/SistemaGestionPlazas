@@ -10,6 +10,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
 {
     private const string Ruta = "/api/v1/institucional/entidades-academicas";
     private const string RutaAreas = "/api/v1/institucional/areas-academicas";
+    private const string RutaProgramas = "/api/v1/oferta-educativa/programas-educativos";
 
     // Xalapa: campus id 1 (clave "X") y municipio id 87, cargados por la semilla.
     private const int CampusId = 1;
@@ -362,6 +363,79 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     }
 
     [Fact]
+    public async Task DarDeBaja_ConProgramasActivos_Responde409()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearArea(cliente);
+        var (id, _) = await CrearYObtener(cliente, areaId);
+        using var dgaa = await _api.CrearClienteDgaaAsync(areaId);
+        await CrearPrograma(dgaa, id);
+
+        using var respuesta = await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        problema.GetProperty("codigo").GetString().ShouldBe("EntidadAcademica.TieneProgramasActivos");
+    }
+
+    [Fact]
+    public async Task DarDeBaja_ConProgramasDadosDeBaja_Responde204()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearArea(cliente);
+        var (id, _) = await CrearYObtener(cliente, areaId);
+        using var dgaa = await _api.CrearClienteDgaaAsync(areaId);
+        await DarDeBajaPrograma(dgaa, await CrearPrograma(dgaa, id));
+
+        using var respuesta = await cliente.DeleteAsync(Uri($"/{id}"), Cancelacion);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Modificar_CambiandoAreaConProgramas_Responde409(bool programaDadoDeBaja)
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearArea(cliente);
+        var otraAreaId = await CrearArea(cliente);
+        var (id, _) = await CrearYObtener(cliente, areaId);
+        using var dgaa = await _api.CrearClienteDgaaAsync(areaId);
+        var programaId = await CrearPrograma(dgaa, id);
+        if (programaDadoDeBaja)
+        {
+            await DarDeBajaPrograma(dgaa, programaId);
+        }
+
+        using var respuesta = await cliente.PutAsJsonAsync(Uri($"/{id}"), CuerpoDeModificacion(otraAreaId), Cancelacion);
+        var problema = await Leer(respuesta);
+        using var consulta = await cliente.GetAsync(Uri($"/{id}"), Cancelacion);
+        var entidad = await Leer(consulta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        problema.GetProperty("codigo").GetString().ShouldBe("EntidadAcademica.AreaAcademicaInmutable");
+        entidad.GetProperty("areaAcademica").GetProperty("id").GetInt32().ShouldBe(areaId);
+        entidad.GetProperty("nombre").GetString().ShouldBe("Facultad de Letras");
+    }
+
+    [Fact]
+    public async Task Modificar_SinCambiarAreaConProgramas_Responde204()
+    {
+        using var cliente = await _api.CrearClienteSuperusuarioAsync();
+        var areaId = await CrearArea(cliente);
+        var (id, _) = await CrearYObtener(cliente, areaId);
+        using var dgaa = await _api.CrearClienteDgaaAsync(areaId);
+        await CrearPrograma(dgaa, id);
+
+        using var respuesta = await cliente.PutAsJsonAsync(Uri($"/{id}"), CuerpoDeModificacion(areaId), Cancelacion);
+        using var consulta = await cliente.GetAsync(Uri($"/{id}"), Cancelacion);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await Leer(consulta)).GetProperty("nombre").GetString().ShouldBe("Facultad Modificada");
+    }
+
+    [Fact]
     public async Task Listar_FiltraPorAreaAcademicaYExcluyeLasDadasDeBaja()
     {
         using var cliente = await _api.CrearClienteSuperusuarioAsync();
@@ -487,6 +561,41 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
         var (_, clave) = await CrearYObtener(cliente, areaAcademicaId);
         return clave;
     }
+
+    private static object CuerpoDeModificacion(int areaAcademicaId) => new
+    {
+        nombre = "Facultad Modificada",
+        calle = "Nueva calle",
+        numeroExterior = (string?)null,
+        colonia = "Nueva colonia",
+        codigoPostal = "91021",
+        telefono = "2288421701",
+        extension = (string?)null,
+        areaAcademicaId,
+        municipioId = MunicipioId,
+    };
+
+    /// <summary>Crea un programa por la API con el DGAA del área de la entidad (sistema 1 y nivel 3 de la semilla).</summary>
+    private static async Task<int> CrearPrograma(HttpClient dgaa, int entidadAcademicaId)
+    {
+        using var respuesta = await dgaa.PostAsJsonAsync(
+            new Uri(RutaProgramas, UriKind.Relative),
+            new
+            {
+                nombre = DatosUnicos.Nombre("Programa"),
+                entidadAcademicaId,
+                sistemaEducativoId = 1,
+                nivelFormacionId = 3,
+            },
+            Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
+
+        return (await Leer(respuesta)).GetProperty("id").GetInt32();
+    }
+
+    private static async Task DarDeBajaPrograma(HttpClient dgaa, int programaId) =>
+        (await dgaa.DeleteAsync(new Uri($"{RutaProgramas}/{programaId}", UriKind.Relative), Cancelacion))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
     private static async Task<int> CrearCuentaEntidadAcademica(HttpClient cliente, int entidadAcademicaId)
     {

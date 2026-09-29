@@ -1,5 +1,6 @@
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.Modules.Catalogos.Application.Contracts;
+using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.Institucional.Domain.EntidadesAcademicas;
 using Sgpla.SharedKernel;
 
@@ -17,10 +18,14 @@ internal sealed record ModificarEntidadAcademicaCommand(
     int AreaAcademicaId,
     int MunicipioId);
 
-/// <summary>El área siempre puede cambiar (Modulo_Institucional.md, decisión D6; ver pendientes.md).</summary>
+/// <summary>
+/// El área solo cambia mientras la entidad no tenga programas educativos, incluidos los dados de baja
+/// (Modulo_OfertaEducativa.md, decisión D14). Se comprueba antes de modificar, para no tocar la entidad.
+/// </summary>
 internal sealed class ModificarEntidadAcademicaHandler(
     IEntidadAcademicaRepository repositorio,
     IMunicipios municipios,
+    IEnumerable<IProgramasDeEntidadAcademica> programas,
     IUnitOfWork unidadDeTrabajo) : ICommandHandler<ModificarEntidadAcademicaCommand>
 {
     public async Task<Result> HandleAsync(ModificarEntidadAcademicaCommand command, CancellationToken cancellationToken)
@@ -29,6 +34,17 @@ internal sealed class ModificarEntidadAcademicaHandler(
         if (entidad is null)
         {
             return EntidadAcademicaErrors.NoEncontrado(command.Id);
+        }
+
+        if (command.AreaAcademicaId != entidad.AreaAcademicaId)
+        {
+            foreach (var contrato in programas)
+            {
+                if (await contrato.TieneProgramasAsync(entidad.Id, cancellationToken))
+                {
+                    return EntidadAcademicaErrors.AreaAcademicaInmutable;
+                }
+            }
         }
 
         var modificada = entidad.Modificar(
