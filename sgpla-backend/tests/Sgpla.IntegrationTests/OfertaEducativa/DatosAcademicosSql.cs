@@ -81,6 +81,30 @@ internal static class DatosAcademicosSql
         return (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
     }
 
+    /// <summary>
+    /// Inserta solo la programación de una experiencia educativa que ya existe, activa o dada de baja, con un NRC único.
+    /// Devuelve el id de la programación.
+    /// </summary>
+    public static async Task<int> InsertarProgramacionDeExperienciaAsync(
+        string cadenaConexion, int periodoEscolarId, int experienciaEducativaId, bool dadaDeBaja = false)
+    {
+        await using var conexion = new SqlConnection(cadenaConexion);
+        await conexion.OpenAsync(Cancelacion);
+        await using var comando = new SqlCommand(
+            """
+            INSERT INTO academico.programacion_academica (nrc, periodo_escolar_id, experiencia_educativa_id, fecha_eliminacion)
+            OUTPUT INSERTED.id
+            VALUES (@nrc, @periodoId, @experienciaId, CASE WHEN @dadaDeBaja = 1 THEN SYSUTCDATETIME() ELSE NULL END);
+            """,
+            conexion);
+        comando.Parameters.AddWithValue("@nrc", Nrc());
+        comando.Parameters.AddWithValue("@periodoId", periodoEscolarId);
+        comando.Parameters.AddWithValue("@experienciaId", experienciaEducativaId);
+        comando.Parameters.AddWithValue("@dadaDeBaja", dadaDeBaja);
+
+        return (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
+    }
+
     /// <summary>Código de plan válido (A-Z, 0-9 y guion) y único: <c>PLAN-</c> y 20 hexadecimales en mayúsculas.</summary>
     private static string CodigoUnico() => $"PLAN-{DatosUnicos.ClaveAlfanumerica()}";
 

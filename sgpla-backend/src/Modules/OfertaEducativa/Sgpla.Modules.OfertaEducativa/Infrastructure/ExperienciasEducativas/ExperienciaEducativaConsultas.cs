@@ -1,0 +1,120 @@
+using Microsoft.EntityFrameworkCore;
+using Sgpla.BuildingBlocks.Application;
+using Sgpla.BuildingBlocks.Infrastructure.Persistence;
+using Sgpla.Modules.Catalogos.Application.Contracts;
+using Sgpla.Modules.OfertaEducativa.Application.Ambito;
+using Sgpla.Modules.OfertaEducativa.Application.ExperienciasEducativas;
+using Sgpla.Modules.OfertaEducativa.Domain.PlanesEstudio;
+using Sgpla.Modules.OfertaEducativa.Domain.Programaciones;
+using Sgpla.Modules.OfertaEducativa.Domain.ProgramasEducativos;
+using Sgpla.Modules.OfertaEducativa.Infrastructure.ProgramasEducativos;
+using Sgpla.SharedKernel;
+
+namespace Sgpla.Modules.OfertaEducativa.Infrastructure.ExperienciasEducativas;
+
+internal sealed class ListarExperienciasEducativasDePlanHandler(
+    SgplaDbContext contexto,
+    IAmbitoOfertaEducativa ambito,
+    IClasificacionesAcademicas clasificaciones)
+    : IQueryHandler<ListarExperienciasEducativasDePlanQuery, IReadOnlyList<ExperienciaEducativaResponse>>
+{
+    public async Task<Result<IReadOnlyList<ExperienciaEducativaResponse>>> HandleAsync(
+        ListarExperienciasEducativasDePlanQuery query,
+        CancellationToken cancellationToken)
+    {
+        var programas = await ProgramaEducativoAmbito.AplicarAsync(
+            contexto.Set<ProgramaEducativo>().AsNoTracking(), ambito, cancellationToken);
+
+        var plan = await (
+            from p in contexto.Set<PlanEstudios>().AsNoTracking()
+            join programa in programas on p.ProgramaEducativoId equals programa.Id
+            where p.Id == query.PlanEstudiosId
+            select new PlanEstudiosResumenResponse(p.Id, p.Codigo))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (plan is null)
+        {
+            return PlanEstudiosErrors.NoEncontrado(query.PlanEstudiosId);
+        }
+
+        var experiencias = await ExperienciaEducativaIntermedia
+            .Proyectar(
+                contexto,
+                contexto.Set<ExperienciaEducativa>()
+                    .AsNoTracking()
+                    .Where(e => e.PlanEstudiosId == plan.Id)
+                    .OrderBy(e => e.Materia)
+                    .ThenBy(e => e.Curso)
+                    .ThenBy(e => e.Id))
+            .ToListAsync(cancellationToken);
+
+        return Result.Success<IReadOnlyList<ExperienciaEducativaResponse>>(
+            await ExperienciaEducativaIntermedia.ArmarRespuestasAsync(experiencias, plan, clasificaciones, cancellationToken));
+    }
+}
+
+/// <summary>EE con solo el id del área; el nombre del área se resuelve con una llamada por contrato, sobre toda la lista.</summary>
+internal sealed record ExperienciaEducativaIntermedia(
+    int Id,
+    string Nombre,
+    string Materia,
+    string Curso,
+    int HorasTeoricas,
+    int HorasPracticas,
+    int Creditos,
+    int? CupoMinimo,
+    int? CupoMaximo,
+    string? PerfilDocente,
+    int AreaFormacionId,
+    bool TuvoProgramaciones)
+{
+    /// <summary><c>TuvoProgramaciones</c> cuenta también las programaciones dadas de baja (decisión D13).</summary>
+    public static IQueryable<ExperienciaEducativaIntermedia> Proyectar(
+        SgplaDbContext contexto,
+        IQueryable<ExperienciaEducativa> experiencias) =>
+        experiencias.Select(e => new ExperienciaEducativaIntermedia(
+            e.Id,
+            e.Nombre,
+            e.Materia,
+            e.Curso,
+            e.HorasTeoricas,
+            e.HorasPracticas,
+            e.Creditos,
+            e.CupoMinimo,
+            e.CupoMaximo,
+            e.PerfilDocente,
+            e.AreaFormacionId,
+            contexto.Set<ProgramacionAcademica>()
+                .IgnoreQueryFilters([FiltrosConsulta.BajaLogica])
+                .Any(p => p.ExperienciaEducativaId == e.Id)));
+
+    public static async Task<List<ExperienciaEducativaResponse>> ArmarRespuestasAsync(
+        IReadOnlyList<ExperienciaEducativaIntermedia> experiencias,
+        PlanEstudiosResumenResponse plan,
+        IClasificacionesAcademicas clasificaciones,
+        CancellationToken cancellationToken)
+    {
+        var areas = await clasificaciones.ObtenerAreasFormacionAsync(
+            experiencias.Select(e => e.AreaFormacionId).Distinct().ToList(), cancellationToken);
+
+        return experiencias.Select(e =>
+        {
+            var area = areas[e.AreaFormacionId];
+
+            return new ExperienciaEducativaResponse(
+                e.Id,
+                e.Nombre,
+                e.Materia,
+                e.Curso,
+                e.HorasTeoricas,
+                e.HorasPracticas,
+                e.Creditos,
+                e.CupoMinimo,
+                e.CupoMaximo,
+                e.PerfilDocente,
+                new AreaFormacionResponse(area.Id, area.Clave, area.Nombre),
+                plan,
+                e.TuvoProgramaciones);
+        }).ToList();
+    }
+}

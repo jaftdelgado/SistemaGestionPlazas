@@ -9,12 +9,15 @@ using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.Ambito;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Application.PlanesEstudio;
 using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Endpoints.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Endpoints.PlanesEstudio;
 using Sgpla.Modules.OfertaEducativa.Endpoints.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.Ambito;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.Contratos;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Infrastructure.PlanesEstudio;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.ProgramasEducativos;
 
 namespace Sgpla.Modules.OfertaEducativa;
@@ -35,8 +38,10 @@ public static class OfertaEducativaModule
         services.AddScoped<IAmbitoOfertaEducativa, AmbitoOfertaEducativa>();
         services.AddScoped<IPeriodoEscolarRepository, PeriodoEscolarRepository>();
         services.AddScoped<IProgramaEducativoRepository, ProgramaEducativoRepository>();
+        services.AddScoped<IPlanEstudiosRepository, PlanEstudiosRepository>();
 
-        // Contratos para otros módulos (Institucional). IReferenciasPeriodoEscolar lo registra cada módulo que lo implementa.
+        // Contratos para otros módulos (Institucional). IReferenciasPeriodoEscolar e IReferenciasExperienciaEducativa los
+        // registra cada módulo que los implementa.
         services.AddScoped<IProgramasDeEntidadAcademica, ProgramasDeEntidadAcademica>();
 
         return services;
@@ -49,6 +54,7 @@ public static class OfertaEducativaModule
 
         grupo.MapPeriodoEscolarEndpoints();
         grupo.MapProgramaEducativoEndpoints();
+        grupo.MapPlanEstudiosEndpoints();
 
         return endpoints;
     }

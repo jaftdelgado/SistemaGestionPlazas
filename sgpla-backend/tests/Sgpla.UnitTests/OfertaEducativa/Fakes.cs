@@ -4,8 +4,10 @@ using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.Ambito;
 using Sgpla.Modules.OfertaEducativa.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Application.PlanesEstudio;
 using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Domain.PeriodosEscolares;
+using Sgpla.Modules.OfertaEducativa.Domain.PlanesEstudio;
 using Sgpla.Modules.OfertaEducativa.Domain.ProgramasEducativos;
 using Sgpla.SharedKernel;
 
@@ -114,6 +116,9 @@ internal sealed class ClasificacionesAcademicasFalso : IClasificacionesAcademica
 
     public HashSet<int> Areas { get; } = [];
 
+    /// <summary>Cuántas veces se consultaron las áreas de formación.</summary>
+    public int ConsultasDeAreas { get; private set; }
+
     public Task<IReadOnlyDictionary<int, SistemaEducativoResumen>> ObtenerSistemasEducativosAsync(
         IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyDictionary<int, SistemaEducativoResumen>>(ids
@@ -129,11 +134,14 @@ internal sealed class ClasificacionesAcademicasFalso : IClasificacionesAcademica
             .ToDictionary(id => id, id => new NivelFormacionResumen(id, $"N{id}", $"Nivel {id}")));
 
     public Task<IReadOnlyDictionary<int, AreaFormacionResumen>> ObtenerAreasFormacionAsync(
-        IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyDictionary<int, AreaFormacionResumen>>(ids
+        IReadOnlyCollection<int> ids, CancellationToken cancellationToken)
+    {
+        ConsultasDeAreas++;
+        return Task.FromResult<IReadOnlyDictionary<int, AreaFormacionResumen>>(ids
             .Where(Areas.Contains)
             .Distinct()
             .ToDictionary(id => id, id => new AreaFormacionResumen(id, $"A{id}", $"Área {id}")));
+    }
 }
 
 /// <summary>
@@ -178,4 +186,58 @@ internal sealed class ProgramaEducativoRepositoryFalso : IProgramaEducativoRepos
         Task.FromResult(TienePlanesActivos);
 
     public void Agregar(ProgramaEducativo programaEducativo) => Agregados.Add(programaEducativo);
+}
+
+/// <summary>
+/// Repositorio en memoria de planes de estudio. Cada plan se registra con la entidad de su programa; la unicidad del
+/// código se simula con los pares programa-código registrados.
+/// </summary>
+internal sealed class PlanEstudiosRepositoryFalso : IPlanEstudiosRepository
+{
+    private readonly Dictionary<int, (PlanEstudios Plan, int EntidadAcademicaId)> _porId = [];
+
+    public List<PlanEstudios> Agregados { get; } = [];
+
+    /// <summary>Programa activo → entidad académica. Un programa ausente no existe o está dado de baja.</summary>
+    public Dictionary<int, int> EntidadesDeProgramasActivos { get; } = [];
+
+    public HashSet<(int ProgramaEducativoId, string Codigo)> CodigosExistentes { get; } = [];
+
+    public bool TieneExperienciasConProgramacionesActivas { get; set; }
+
+    public void Registrar(int id, PlanEstudios plan, int entidadAcademicaId) => _porId[id] = (plan, entidadAcademicaId);
+
+    public Task<PlanEstudios?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
+        Task.FromResult(_porId.TryGetValue(id, out var registro) ? registro.Plan : null);
+
+    public Task<PlanEstudios?> ObtenerConExperienciasAsync(int id, CancellationToken cancellationToken) =>
+        ObtenerPorIdAsync(id, cancellationToken);
+
+    public Task<bool> ExisteCodigoAsync(int programaEducativoId, string codigo, CancellationToken cancellationToken) =>
+        Task.FromResult(CodigosExistentes.Contains((programaEducativoId, codigo)));
+
+    public Task<int?> ObtenerEntidadDeProgramaActivoAsync(int programaEducativoId, CancellationToken cancellationToken) =>
+        Task.FromResult<int?>(EntidadesDeProgramasActivos.TryGetValue(programaEducativoId, out var entidadId) ? entidadId : null);
+
+    public Task<int> ObtenerEntidadDelPlanAsync(int planEstudiosId, CancellationToken cancellationToken) =>
+        Task.FromResult(_porId[planEstudiosId].EntidadAcademicaId);
+
+    public Task<bool> TieneExperienciasConProgramacionesActivasAsync(int planEstudiosId, CancellationToken cancellationToken) =>
+        Task.FromResult(TieneExperienciasConProgramacionesActivas);
+
+    public void Agregar(PlanEstudios planEstudios) => Agregados.Add(planEstudios);
+}
+
+/// <summary>Responde según <paramref name="tieneReferencias"/> y guarda los ids de las EE que recibe.</summary>
+internal sealed class ReferenciasExperienciaEducativaFalsas(bool tieneReferencias) : IReferenciasExperienciaEducativa
+{
+    public List<IReadOnlyCollection<int>> Consultas { get; } = [];
+
+    public Task<bool> TieneReferenciasAsync(
+        IReadOnlyCollection<int> experienciaEducativaIds,
+        CancellationToken cancellationToken)
+    {
+        Consultas.Add(experienciaEducativaIds);
+        return Task.FromResult(tieneReferencias);
+    }
 }
