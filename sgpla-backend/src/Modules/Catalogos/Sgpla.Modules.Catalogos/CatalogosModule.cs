@@ -42,8 +42,9 @@ public static class CatalogosModule
         // Artículos. IReferenciasArticulo lo registra cada módulo que lo implementa (Publicacion).
         services.AddScoped<IArticuloRepository, ArticuloRepository>();
 
-        // Contratos para otros módulos (Institucional).
+        // Contratos para otros módulos (Institucional, OfertaEducativa).
         services.AddScoped<IMunicipios, Municipios>();
+        services.AddScoped<IClasificacionesAcademicas, ClasificacionesAcademicas>();
 
         return services;
     }
