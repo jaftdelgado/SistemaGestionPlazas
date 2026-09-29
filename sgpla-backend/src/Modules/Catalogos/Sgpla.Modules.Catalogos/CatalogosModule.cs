@@ -31,8 +31,10 @@ public static class CatalogosModule
         services.AddHandlersModulo(ensamblado);
 
         // Catálogos fijos que solo tienen nombre: handlers genéricos. Los demás se registran por escaneo,
-        // incluidos Municipio, TratamientoAcademico y ModalidadRecepcion, que tienen consultas propias.
+        // incluidos Municipio, TratamientoAcademico, ModalidadRecepcion, NivelFormacion y AreaFormacion,
+        // que tienen consultas propias.
         services.AddCatalogoFijo<GradoAcademico>();
+        services.AddCatalogoFijo<SistemaEducativo>();
         services.AddCatalogoFijo<TipoDocumentoExpediente>();
         services.AddCatalogoFijo<TipoPlaza>();
         services.AddCatalogoFijo<TipoContratacion>();
@@ -53,6 +55,9 @@ public static class CatalogosModule
 
         grupo.MapCatalogoFijo<GradoAcademico>("/grados-academicos", "Grados académicos");
         grupo.MapCatalogoFijo<TipoDocumentoExpediente>("/tipos-documento-expediente", "Tipos de documento de expediente");
+        grupo.MapCatalogoFijo<SistemaEducativo>("/sistemas-educativos", "Sistemas educativos");
+        grupo.MapNivelFormacionEndpoints();
+        grupo.MapAreaFormacionEndpoints();
         grupo.MapCatalogoFijo<TipoPlaza>("/tipos-plaza", "Tipos de plaza");
         grupo.MapCatalogoFijo<TipoContratacion>("/tipos-contratacion", "Tipos de contratación");
         grupo.MapMunicipioEndpoints();

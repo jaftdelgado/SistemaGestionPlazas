@@ -53,6 +53,43 @@ public sealed class AutorizacionTests(SqlServerFixture sqlServer) : IAsyncDispos
         }
     }
 
+    [Theory]
+    [InlineData("/api/v1/catalogos/sistemas-educativos")]
+    [InlineData("/api/v1/catalogos/niveles-formacion")]
+    [InlineData("/api/v1/catalogos/areas-formacion")]
+    public async Task ConsultarClasificacionesAcademicas_SinToken_Responde401ConNoAutenticado(string ruta)
+    {
+        using var cliente = _api.CreateClient();
+
+        using var respuesta = await cliente.GetAsync(new Uri(ruta, UriKind.Relative), Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        problema.GetProperty("codigo").GetString().ShouldBe("Autenticacion.NoAutenticado");
+    }
+
+    [Theory]
+    [InlineData("dgaa")]
+    [InlineData("entidad")]
+    public async Task ConsultarClasificacionesAcademicas_ConTokenDeUsuarioDeAmbito_Responde200(string rol)
+    {
+        using var clienteSuperusuario = await _api.CrearClienteSuperusuarioAsync();
+        var (areaId, entidadId) = await CrearAreaConEntidadAsync(clienteSuperusuario);
+        using var cliente = await CrearClienteDeAmbitoAsync(rol, areaId, entidadId);
+
+        foreach (var ruta in new[]
+        {
+            "/api/v1/catalogos/sistemas-educativos",
+            "/api/v1/catalogos/niveles-formacion",
+            "/api/v1/catalogos/areas-formacion",
+        })
+        {
+            using var respuesta = await cliente.GetAsync(new Uri(ruta, UriKind.Relative), Cancelacion);
+
+            respuesta.StatusCode.ShouldBe(HttpStatusCode.OK, ruta);
+        }
+    }
+
     public static TheoryData<string, string> Escrituras()
     {
         var datos = new TheoryData<string, string>();

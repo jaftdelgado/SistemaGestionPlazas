@@ -30,6 +30,15 @@ internal sealed class TipoDocumentoExpedienteConfiguration()
     : CatalogoFijoConfiguration<TipoDocumentoExpediente>(
         "academico", "tipo_documento_expediente", TipoDocumentoExpediente.LongitudMaximaNombre);
 
+internal sealed class SistemaEducativoConfiguration()
+    : CatalogoFijoConfiguration<SistemaEducativo>("academico", "sistema_educativo", SistemaEducativo.LongitudMaximaNombre);
+
+internal sealed class NivelFormacionConfiguration()
+    : CatalogoFijoConfiguration<NivelFormacion>("academico", "nivel_formacion", NivelFormacion.LongitudMaximaNombre);
+
+internal sealed class AreaFormacionConfiguration()
+    : CatalogoFijoConfiguration<AreaFormacion>("academico", "area_formacion", AreaFormacion.LongitudMaximaNombre);
+
 internal sealed class TipoPlazaConfiguration()
     : CatalogoFijoConfiguration<TipoPlaza>("plazas", "tipo_plaza", TipoPlaza.LongitudMaximaNombre);
 
