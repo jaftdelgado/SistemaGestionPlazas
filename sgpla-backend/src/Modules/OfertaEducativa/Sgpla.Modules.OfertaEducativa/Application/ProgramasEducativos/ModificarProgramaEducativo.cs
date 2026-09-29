@@ -48,7 +48,7 @@ internal sealed class ModificarProgramaEducativoHandler(
         }
 
         if (await repositorio.ExisteNombreAsync(
-                programa.EntidadAcademicaId, programa.Nombre, programa.SistemaEducativoId, programa.Id, cancellationToken))
+                programa.EntidadAcademicaId, programa.Nombre, programa.SistemaEducativoId, command.Id, cancellationToken))
         {
             return ProgramaEducativoErrors.NombreDuplicado;
         }
