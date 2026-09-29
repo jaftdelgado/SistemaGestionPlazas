@@ -133,7 +133,8 @@ internal static class EntidadAcademicaAmbito
         {
             Rol.Dgaa => entidades.Where(e => e.AreaAcademicaId == actual.AreaAcademicaId),
             Rol.EntidadAcademica => entidades.Where(e => e.Id == actual.EntidadAcademicaId),
-            _ => entidades,
+            Rol.Superusuario => entidades,
+            _ => entidades.Where(_ => false),
         };
 }
 

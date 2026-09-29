@@ -53,33 +53,57 @@ public sealed class AutorizacionTests(SqlServerFixture sqlServer) : IAsyncDispos
         }
     }
 
+    public static TheoryData<string, string> Escrituras()
+    {
+        var datos = new TheoryData<string, string>();
+        foreach (var rol in new[] { "dgaa", "entidad" })
+        {
+            foreach (var operacion in new[]
+            {
+                "POST area", "PUT area", "DELETE area",
+                "POST entidad", "PUT entidad", "DELETE entidad",
+                "POST articulo", "PUT articulo",
+            })
+            {
+                datos.Add(rol, operacion);
+            }
+        }
+
+        return datos;
+    }
+
     [Theory]
-    [InlineData("dgaa")]
-    [InlineData("entidad")]
-    public async Task Escribir_ConTokenDeUsuarioDeAmbito_Responde403ConSinPermiso(string rol)
+    [MemberData(nameof(Escrituras))]
+    public async Task Escribir_ConTokenDeUsuarioDeAmbito_Responde403ConSinPermiso(string rol, string operacion)
     {
         using var clienteSuperusuario = await _api.CrearClienteSuperusuarioAsync();
         var (areaId, entidadId) = await CrearAreaConEntidadAsync(clienteSuperusuario);
+        var articuloId = await CrearArticuloAsync(clienteSuperusuario);
         using var cliente = await CrearClienteDeAmbitoAsync(rol, areaId, entidadId);
 
-        using var crearArea = await cliente.PostAsJsonAsync(
-            new Uri(RutaAreas, UriKind.Relative),
-            new { clave = DatosUnicos.ClaveEntera(), nombre = "Área de prueba", telefono = "2288421700", extension = (string?)null },
-            Cancelacion);
-        using var crearEntidad = await cliente.PostAsJsonAsync(
-            new Uri(RutaEntidades, UriKind.Relative), CuerpoEntidad(areaId), Cancelacion);
-        using var crearArticulo = await cliente.PostAsJsonAsync(
-            new Uri(RutaArticulos, UriKind.Relative),
-            new { numero = DatosUnicos.Numero(), descripcion = "Fundamento de prueba." },
-            Cancelacion);
-
-        foreach (var respuesta in new[] { crearArea, crearEntidad, crearArticulo })
+        var (metodo, ruta, cuerpo) = operacion switch
         {
-            var problema = await Leer(respuesta);
-
-            respuesta.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-            problema.GetProperty("codigo").GetString().ShouldBe("Autorizacion.SinPermiso");
+            "POST area" => (HttpMethod.Post, RutaAreas, CuerpoArea()),
+            "PUT area" => (HttpMethod.Put, $"{RutaAreas}/{areaId}", CuerpoArea()),
+            "DELETE area" => (HttpMethod.Delete, $"{RutaAreas}/{areaId}", null),
+            "POST entidad" => (HttpMethod.Post, RutaEntidades, CuerpoEntidad(areaId)),
+            "PUT entidad" => (HttpMethod.Put, $"{RutaEntidades}/{entidadId}", CuerpoEntidad(areaId)),
+            "DELETE entidad" => (HttpMethod.Delete, $"{RutaEntidades}/{entidadId}", null),
+            "POST articulo" => (HttpMethod.Post, RutaArticulos, CuerpoArticulo()),
+            "PUT articulo" => (HttpMethod.Put, $"{RutaArticulos}/{articuloId}", CuerpoArticulo()),
+            _ => throw new ArgumentOutOfRangeException(nameof(operacion), operacion, null),
+        };
+        using var solicitud = new HttpRequestMessage(metodo, new Uri(ruta, UriKind.Relative));
+        if (cuerpo is not null)
+        {
+            solicitud.Content = JsonContent.Create(cuerpo);
         }
+
+        using var respuesta = await cliente.SendAsync(solicitud, Cancelacion);
+        var problema = await Leer(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        problema.GetProperty("codigo").GetString().ShouldBe("Autorizacion.SinPermiso");
     }
 
     [Fact]
@@ -176,9 +200,7 @@ public sealed class AutorizacionTests(SqlServerFixture sqlServer) : IAsyncDispos
     private static async Task<int> CrearAreaAsync(HttpClient cliente)
     {
         using var respuesta = await cliente.PostAsJsonAsync(
-            new Uri(RutaAreas, UriKind.Relative),
-            new { clave = DatosUnicos.ClaveEntera(), nombre = "Facultad de Prueba", telefono = "2288421700", extension = (string?)null },
-            Cancelacion);
+            new Uri(RutaAreas, UriKind.Relative), CuerpoArea(), Cancelacion);
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
 
         return (await Leer(respuesta)).GetProperty("id").GetInt32();
@@ -192,6 +214,25 @@ public sealed class AutorizacionTests(SqlServerFixture sqlServer) : IAsyncDispos
 
         return (await Leer(respuesta)).GetProperty("id").GetInt32();
     }
+
+    private static async Task<int> CrearArticuloAsync(HttpClient cliente)
+    {
+        using var respuesta = await cliente.PostAsJsonAsync(
+            new Uri(RutaArticulos, UriKind.Relative), CuerpoArticulo(), Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
+
+        return (await Leer(respuesta)).GetProperty("id").GetInt32();
+    }
+
+    private static object CuerpoArea() => new
+    {
+        clave = DatosUnicos.ClaveEntera(),
+        nombre = "Facultad de Prueba",
+        telefono = "2288421700",
+        extension = (string?)null,
+    };
+
+    private static object CuerpoArticulo() => new { numero = DatosUnicos.Numero(), descripcion = "Fundamento de prueba." };
 
     private static object CuerpoEntidad(int areaAcademicaId) => new
     {
