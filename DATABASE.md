@@ -36,7 +36,7 @@ El modelo cubre:
 - usuarios, roles y ámbitos de autorización;
 - docentes y asignaciones docentes vinculadas con la programación académica;
 - ofertas vacantes, Avisos, Aspirantes, Solicitudes y sesiones del Consejo Técnico;
-- solicitudes de apertura de grupos académicos y su vinculación posterior con una Programación Académica;
+- solicitudes de apertura de grupos académicos;
 - autenticación institucional mediante LDAP y autenticación local de Superusuarios.
 
 Quedan fuera de este modelo:
@@ -1700,7 +1700,7 @@ La aplicación recibe desde configuración externa una pareja global de periodo 
 | periodo_escolar_id | int | NOT NULL | FK al periodo objetivo |
 | seccion | varchar(20) | NOT NULL | Código de letras y dígitos ASCII, normalizado a mayúsculas |
 | cantidad_estudiantes | int | NOT NULL | Entero positivo |
-| justificacion | nvarchar(max) | NOT NULL | Texto no vacío |
+| justificacion | nvarchar(max) | NOT NULL | Texto no vacío; hasta 2000 caracteres en la aplicación |
 | oficio_respaldo_id | int | NOT NULL | FK única a academico.archivo_solicitud_apertura |
 | estado | varchar(20) | NOT NULL | PENDIENTE, ACEPTADA, RECHAZADA o CANCELADA |
 | creada_en | datetime2(0) | NOT NULL | UTC |
@@ -1709,13 +1709,11 @@ La aplicación recibe desde configuración externa una pareja global de periodo 
 | actualizada_por_usuario_id | int | NULL | Usuario EA de la última edición |
 | resuelta_en | datetime2(0) | NULL | UTC de aceptación o rechazo |
 | resuelta_por_usuario_id | int | NULL | Usuario DGAA que resolvió |
-| comentarios_resolucion | nvarchar(max) | NULL | Obligatorios para rechazo; opcionales para aceptación |
+| comentarios_resolucion | nvarchar(max) | NULL | Obligatorios para rechazo; opcionales para aceptación; hasta 2000 caracteres en la aplicación |
 | cancelada_en | datetime2(0) | NULL | UTC de cancelación |
 | cancelada_por_usuario_id | int | NULL | Usuario EA que canceló |
 | motivo_cancelacion | nvarchar(1000) | NULL | Obligatorio al cancelar |
-| programacion_academica_id | int | NULL | Vinculación posterior, FK única filtrada |
-| vinculada_en | datetime2(0) | NULL | UTC del vínculo |
-| vinculada_por_usuario_id | int | NULL | Usuario EA que vinculó |
+| version | rowversion | NOT NULL | Control de concurrencia optimista |
 
 No tiene fecha_eliminacion: los estados terminales conservan la petición y su oficio.
 
@@ -1726,16 +1724,14 @@ Restricciones:
 - ck_solicitud_apertura__cantidad_positiva.
 - ck_solicitud_apertura__justificacion_no_vacia.
 - Los campos de actor y fecha se informan conjuntamente.
-- PENDIENTE no tiene resolución, cancelación ni programación vinculada.
-- ACEPTADA tiene resolución y puede tener, opcionalmente, una vinculación completa.
-- RECHAZADA tiene resolución y comentarios no vacíos, sin cancelación ni programación.
-- CANCELADA tiene cancelación y motivo no vacío, sin resolución ni programación.
-- Una vinculación siempre ocurre después de la resolución y sus tres campos se informan conjuntamente.
+- PENDIENTE no tiene resolución ni cancelación.
+- ACEPTADA tiene resolución y no está cancelada.
+- RECHAZADA tiene resolución y comentarios no vacíos, sin cancelación.
+- CANCELADA tiene cancelación, motivo no vacío y no tiene resolución ni comentarios.
 
 Índices y unicidad:
 
 - Índice único filtrado (experiencia_educativa_id, periodo_escolar_id, seccion) WHERE estado = 'PENDIENTE'.
-- Índice único filtrado programacion_academica_id WHERE programacion_academica_id IS NOT NULL.
 - Índices por Experiencia/estado, periodo/estado y usuarios actores.
 
 ### 16.3 academico.archivo_solicitud_apertura
@@ -1746,8 +1742,8 @@ Es el archivo único del oficio de respaldo. El contenido binario vive en almace
 |---|---|---|---|
 | id | int IDENTITY(1,1) | NOT NULL | PK |
 | nombre | nvarchar(260) | NOT NULL | Nombre no vacío |
-| mime | varchar(255) | NOT NULL | Debe ser application/pdf |
-| tamano | bigint | NOT NULL | Mayor que cero; sin máximo fijo |
+| mime | varchar(255) | NOT NULL | Debe ser application/pdf; el contenido empieza con `%PDF-` |
+| tamano | bigint | NOT NULL | Mayor que cero; el máximo lo fija la configuración (10 MB por omisión) |
 | checksum_sha256 | binary(32) | NOT NULL | Integridad del binario |
 | clave_almacenamiento | nvarchar(500) | NOT NULL | Única |
 | cargado_en | datetime2(0) | NOT NULL | UTC |
@@ -1757,7 +1753,7 @@ Cada solicitud tiene exactamente un oficio. Al reemplazarlo en una solicitud pen
 
 ### 16.4 Autorización y ciclo de vida
 
-Solo un usuario EA activo cuya entidad coincida con la Entidad derivada de la EE puede crear, editar, cancelar o vincular.
+Solo un usuario EA activo cuya entidad coincida con la Entidad derivada de la EE puede crear, editar o cancelar.
 
 Cualquier usuario EA activo de la misma entidad puede editar mientras la solicitud esté pendiente. Solo pueden cambiar cantidad_estudiantes, justificacion y oficio_respaldo_id; cada edición actualiza actualizada_en y actualizada_por_usuario_id.
 
@@ -1769,21 +1765,13 @@ PENDIENTE -> CANCELADA
 
 Cualquier DGAA activa del Área Académica derivada puede aceptar o rechazar. Aceptar exige que ambos cupos vigentes de la EE existan y que la cantidad esté dentro del intervalo inclusivo. Crear, editar y aceptar usan los cupos vigentes; si un cambio de cupos deja una pendiente fuera de rango, la aceptación queda bloqueada hasta corregirla.
 
-Cancelar solo está permitido desde PENDIENTE, requiere motivo y es ejecutado por un usuario EA del mismo ámbito. ACEPTADA, RECHAZADA y CANCELADA no se editan ni revierten. El Superusuario no tiene acceso a este proceso.
+Cancelar solo está permitido desde PENDIENTE, requiere motivo y es ejecutado por un usuario EA del mismo ámbito. ACEPTADA, RECHAZADA y CANCELADA no se editan ni revierten. El Superusuario consulta las solicitudes, pero no descarga el oficio ni escribe (`Modulo_SolicitudesApertura.md`, D12).
 
-### 16.5 Vinculación posterior
+### 16.5 Bajas e integridad de padres
 
-Una solicitud ACEPTADA puede vincularse con una academico.programacion_academica activa. La programación debe corresponder a la misma EE y periodo; la existencia de otros NRC no bloquea la solicitud.
+La baja de una EE o de un plan se bloquea mientras exista una Solicitud de Apertura PENDIENTE o ACEPTADA de sus EE; el programa y la entidad quedan cubiertos, porque su baja exige hijos dados de baja. La baja de un periodo se bloquea con cualquier Solicitud de Apertura, en cualquier estado (`DECISIONES.md`, OFE-D11).
 
-La relación es uno a uno en ambos sentidos, se registra con usuario y fecha, y es inmutable. No crea ni modifica la Programación Académica, no agrega seccion a esa tabla y no vuelve a validar cupos.
-
-La baja de una Programación vinculada está bloqueada.
-
-### 16.6 Bajas e integridad de padres
-
-La baja de una EE, Plan, Programa, Entidad o Periodo se bloquea mientras exista una Solicitud de Apertura PENDIENTE o ACEPTADA. Para una solicitud aceptada la prohibición permanece incluso después de vincular la Programación.
-
-Las solicitudes RECHAZADAS y CANCELADAS no impiden la baja. Las operaciones de creación, edición, resolución, cancelación, vinculación y baja se ejecutan transaccionalmente cuando afectan varias filas o validaciones cruzadas.
+Las solicitudes RECHAZADAS y CANCELADAS no impiden la baja de la EE ni del plan. Las operaciones de creación, edición, resolución, cancelación y baja se ejecutan transaccionalmente cuando afectan varias filas o validaciones cruzadas.
 
 ## 17. Decisiones pendientes
 
@@ -1794,7 +1782,7 @@ No existen decisiones funcionales pendientes para implementar este modelo base. 
 - implementación del adaptador y la sincronización atómica con PLANEA, incluidos Docentes y asignaciones iniciales;
 - implementación del bootstrap, autenticación LDAP y verificación local de Superusuarios;
 - implementación transaccional de los ciclos de Aviso y Acta, revisiones, votación, designación y republicación;
-- definición del almacenamiento externo de binarios (Avisos, Actas, Docentes y Solicitudes de Apertura; el plan de estudios no tiene archivo) y del proceso seguro para confirmar o compensar cargas;
+- definición del proveedor definitivo del almacenamiento externo de binarios (Avisos, Actas, Docentes y Solicitudes de Apertura; el plan de estudios no tiene archivo). Hoy se usa el sistema de archivos local, con compensación de cargas fallidas (`Modulo_SolicitudesApertura.md`, D3 y D4);
 - confirmación institucional de si se requiere criptografía FIPS antes de implementar el hash local;
 - pruebas de integración contra SQL Server;
 - revisión de índices con datos y consultas representativas.

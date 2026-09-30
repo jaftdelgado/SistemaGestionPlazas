@@ -14,6 +14,10 @@ public sealed class SqlServerFixture : IAsyncLifetime
 {
     private const string NombreBaseDatos = "sgpla-bd";
 
+    public const string ClavePeriodoActual = "999800";
+
+    public const string ClavePeriodoSiguiente = "999801";
+
     private readonly MsSqlContainer _contenedor = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
 
     public string CadenaConexion { get; private set; } = string.Empty;
@@ -32,6 +36,19 @@ public sealed class SqlServerFixture : IAsyncLifetime
         {
             throw new InvalidOperationException("No se pudieron aplicar las migraciones.", resultado.Error);
         }
+
+        await using var conexion = new SqlConnection(CadenaConexion);
+        await conexion.OpenAsync();
+        await using var comando = conexion.CreateCommand();
+        comando.CommandText = """
+            IF NOT EXISTS (SELECT 1 FROM academico.periodo_escolar WHERE clave = '999800')
+                INSERT INTO academico.periodo_escolar (clave, fecha_inicio, fecha_fin)
+                VALUES ('999800', '2026-02-02', '2026-07-10');
+            IF NOT EXISTS (SELECT 1 FROM academico.periodo_escolar WHERE clave = '999801')
+                INSERT INTO academico.periodo_escolar (clave, fecha_inicio, fecha_fin)
+                VALUES ('999801', '2026-08-10', '2027-01-22');
+            """;
+        await comando.ExecuteNonQueryAsync();
     }
 
     public ValueTask DisposeAsync() => _contenedor.DisposeAsync();

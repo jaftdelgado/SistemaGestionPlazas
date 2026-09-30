@@ -1,5 +1,6 @@
 using Scalar.AspNetCore;
 using Sgpla.Api;
+using Sgpla.BuildingBlocks.Infrastructure.Archivos;
 using Sgpla.BuildingBlocks.Infrastructure.Http;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Aspirantes;
@@ -32,6 +33,7 @@ builder.Services.AddCors(options => options.AddPolicy(PoliticaCors, policy => po
     .AllowAnyMethod()));
 
 builder.Services.AddPersistenciaSgpla(builder.Configuration);
+builder.Services.AddAlmacenamientoArchivos(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<SgplaDbContext>("sqlserver");
 

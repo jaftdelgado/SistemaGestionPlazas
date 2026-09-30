@@ -20,6 +20,9 @@ namespace Sgpla.IntegrationTests.Infraestructura;
 /// <summary>Host de la API en memoria apuntando a la base de datos del contenedor.</summary>
 public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplicationFactory<Program>
 {
+    private readonly string _rutaAlmacenamiento = Path.Combine(
+        Path.GetTempPath(), "sgpla-archivos", Guid.NewGuid().ToString("N"));
+
     /// <summary>Contraseña conocida de <see cref="CrearSuperusuarioAsync"/>, para las pruebas de inicio de sesión.</summary>
     public const string ContrasenaConocidaSuperusuario = "Temp0ral!Conocida";
 
@@ -40,6 +43,9 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         // Jwt:Clave y Ldap:Servidor son obligatorios y nunca van en appsettings*.json.
         builder.UseSetting("Jwt:Clave", ClaveJwtDePrueba);
         builder.UseSetting("Ldap:Servidor", "ldap-de-pruebas.invalido");
+        builder.UseSetting("SolicitudesApertura:PeriodoActual", SqlServerFixture.ClavePeriodoActual);
+        builder.UseSetting("SolicitudesApertura:PeriodoSiguiente", SqlServerFixture.ClavePeriodoSiguiente);
+        builder.UseSetting("Almacenamiento:RutaBase", _rutaAlmacenamiento);
 
         // Para BootstrapTests: la base compartida siempre tiene Superusuarios, así que el bootstrap nunca los crea.
         builder.UseSetting("SGPLA_BOOTSTRAP_CORREO", CorreoDeBootstrap);
@@ -153,5 +159,14 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         var cliente = CreateClient();
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
         return cliente;
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        if (Directory.Exists(_rutaAlmacenamiento))
+        {
+            Directory.Delete(_rutaAlmacenamiento, recursive: true);
+        }
     }
 }

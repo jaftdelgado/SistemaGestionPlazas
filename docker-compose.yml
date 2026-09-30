@@ -51,11 +51,17 @@ services:
       Ldap__Seguridad: "${SGPLA_LDAP_SEGURIDAD:-SinTls}"
       SGPLA_BOOTSTRAP_CORREO: "${SGPLA_BOOTSTRAP_CORREO:-}"
       SGPLA_BOOTSTRAP_NOMBRE: "${SGPLA_BOOTSTRAP_NOMBRE:-}"
+      SolicitudesApertura__PeriodoActual: "${SGPLA_PERIODO_ACTUAL:-202601}"
+      SolicitudesApertura__PeriodoSiguiente: "${SGPLA_PERIODO_SIGUIENTE:-202651}"
+      Almacenamiento__RutaBase: "/var/lib/sgpla/archivos"
     ports:
       - "${SGPLA_API_PORT:-8180}:8080"
+    volumes:
+      - archivos-data:/var/lib/sgpla/archivos
     depends_on:
       migraciones:
         condition: service_completed_successfully
 
 volumes:
   sqlserver-data:
+  archivos-data:

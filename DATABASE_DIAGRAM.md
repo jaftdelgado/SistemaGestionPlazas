@@ -40,7 +40,6 @@ erDiagram
     USUARIOS_USUARIO o|--o{ ACADEMICO_SOLICITUD_APERTURA : actualiza
     USUARIOS_USUARIO o|--o{ ACADEMICO_SOLICITUD_APERTURA : resuelve
     USUARIOS_USUARIO o|--o{ ACADEMICO_SOLICITUD_APERTURA : cancela
-    USUARIOS_USUARIO o|--o{ ACADEMICO_SOLICITUD_APERTURA : vincula
     USUARIOS_USUARIO ||--o{ ACADEMICO_ARCHIVO_SOLICITUD_APERTURA : carga
     ACADEMICO_AREA_ACADEMICA ||--o{ USUARIOS_USUARIO_DGAA : autoriza
     ACADEMICO_ENTIDAD_ACADEMICA ||--o{ USUARIOS_USUARIO_ENTIDAD_ACADEMICA : autoriza
@@ -53,7 +52,6 @@ erDiagram
     ACADEMICO_DOCUMENTO_DOCENTE ||--o{ ACADEMICO_VERSION_DOCUMENTO_DOCENTE : versiona
     ACADEMICO_ARCHIVO_SOLICITUD_APERTURA ||--o| ACADEMICO_SOLICITUD_APERTURA : respalda
     ACADEMICO_PROGRAMACION_ACADEMICA ||--o{ ACADEMICO_ASIGNACION_DOCENTE : recibe
-    ACADEMICO_PROGRAMACION_ACADEMICA o|--o| ACADEMICO_SOLICITUD_APERTURA : materializa
     INTEGRACION_SINCRONIZACION_PLANEA o|--o{ ACADEMICO_ASIGNACION_DOCENTE : detecta
     PLAZAS_ACTA_OFERTA o|--o| ACADEMICO_ASIGNACION_DOCENTE : formaliza
 
@@ -243,9 +241,7 @@ erDiagram
         datetime2 cancelada_en "nullable"
         int cancelada_por_usuario_id FK "nullable"
         nvarchar motivo_cancelacion "nullable"
-        int programacion_academica_id FK "nullable, UK filtrada"
-        datetime2 vinculada_en "nullable"
-        int vinculada_por_usuario_id FK "nullable"
+        rowversion version
     }
 
     ACADEMICO_PERIODO_ESCOLAR {
@@ -655,9 +651,8 @@ El diagrama muestra la estructura relacional, pero las siguientes reglas no pued
 - una Oferta puede participar en varios Avisos históricos, pero solo en un `aviso_oferta` abierto;
 - SolicitudApertura almacena la EE y el periodo; Plan, Programa, Entidad y modalidad se derivan de la cadena académica;
 - solo puede existir una SolicitudApertura PENDIENTE por EE, periodo y sección; puede haber múltiples aceptadas, rechazadas o canceladas;
-- una SolicitudApertura ACEPTADA puede vincularse una sola vez con una Programación compatible y el vínculo es inmutable;
 - los cupos se validan con los valores vigentes al crear, editar y aceptar;
-- el periodo siguiente se obtiene de configuración externa global y el Superusuario no participa en este proceso;
+- el periodo siguiente se obtiene de configuración externa global y el Superusuario solo consulta;
 - cada `aviso_oferta` puede tener como máximo un `acta_oferta` activo;
 - la Solicitud designada debe pertenecer al mismo `aviso_oferta` que el `acta_oferta`;
 - las versiones vigentes de perfiles y documentos se controlan con restricciones únicas filtradas;

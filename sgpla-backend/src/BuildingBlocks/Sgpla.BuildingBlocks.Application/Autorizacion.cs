@@ -30,4 +30,10 @@ public static class Politicas
 
     /// <summary><see cref="Autenticado"/> con el rol DGAA.</summary>
     public const string Dgaa = nameof(Dgaa);
+
+    /// <summary><see cref="Autenticado"/> con el rol Entidad Académica.</summary>
+    public const string EntidadAcademica = nameof(EntidadAcademica);
+
+    /// <summary><see cref="Autenticado"/> con el rol DGAA o Entidad Académica.</summary>
+    public const string DgaaOEntidadAcademica = nameof(DgaaOEntidadAcademica);
 }

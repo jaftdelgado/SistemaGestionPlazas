@@ -15,6 +15,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libldap2 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
+RUN mkdir -p /var/lib/sgpla/archivos && chown $APP_UID /var/lib/sgpla/archivos
 USER $APP_UID
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Sgpla.Api.dll"]

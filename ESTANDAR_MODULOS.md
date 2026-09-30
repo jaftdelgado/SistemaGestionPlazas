@@ -63,8 +63,8 @@ Viven en `src/BuildingBlocks` y se construyen junto con el primer módulo que la
 | Proyecto | Contenido |
 |---|---|
 | `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`, `IEliminable` (baja lógica: `FechaEliminacion`, `null` significa activa), `Rol` (roles fijos de `usuarios.rol`), `Normalizacion` (texto, recorte y dígitos ASCII) |
-| `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación, `ICurrentUser` y `Politicas` (nombres de las políticas de autorización) |
-| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409), `FiltrosConsulta` (nombres de los filtros de consulta globales de EF Core; hoy solo `BajaLogica`, que oculta las filas con `fecha_eliminacion`) |
+| `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación, `ICurrentUser`, `Politicas` (nombres de las políticas de autorización), `IAlmacenamientoArchivos`, `ArchivoGuardado` y `ArchivoRecibido` |
+| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`, `ComoArchivoRecibido`), almacenamiento local de archivos (`AddAlmacenamientoArchivos`), manejador global de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409), `FiltrosConsulta` (nombres de los filtros de consulta globales de EF Core; hoy solo `BajaLogica`, que oculta las filas con `fecha_eliminacion`) |
 
 Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime.UtcNow` directamente. Para los logs se usa `ILogger<T>` de .NET; no se crea una abstracción propia (sección 11).
 
@@ -172,6 +172,8 @@ Hay dos formas de colaborar entre módulos, siempre a través de `Contracts`:
 | Un módulo necesita saber algo de los módulos que dependen de él | El módulo que pregunta, en su `Contracts` | Cada módulo dependiente (inversión de dependencias) | Catalogos pregunta si un artículo tiene referencias; responde Publicacion, por sus Avisos |
 
 En el segundo caso, el consumidor recibe `IEnumerable<IReferenciasArticulo>` y consulta todas las implementaciones registradas. Así puede aparecer un módulo nuevo que referencie artículos sin modificar Catalogos.
+
+Un contrato de consulta también puede devolver `IQueryable<int>` de ids para que quien lo consume componga su filtro en SQL con datos del otro módulo. El contrato no expone entidades ni consultas de tipos internos.
 
 Las pruebas de arquitectura exigen estas reglas: ningún tipo público fuera de las dos excepciones y ninguna dependencia hacia otro módulo fuera de su `Contracts`.
 
@@ -570,7 +572,7 @@ internal sealed class ArticuloConfiguration : IEntityTypeConfiguration<Articulo>
 Reglas:
 - Tabla y esquema explícitos con `ToTable`. Los nombres de columna salen de la convención snake_case.
 - Longitudes con las constantes de la entidad.
-- Los estados se guardan como texto con `HasConversion<string>()`.
+- Los estados se guardan como texto con `HasConversion<string>()`; si un `CHECK` exige mayúsculas, se usa un convertidor explícito que escribe el nombre en mayúsculas.
 - Una entidad `IEliminable` declara el filtro con nombre de baja lógica:
 
   ```csharp
@@ -733,7 +735,16 @@ Reglas:
 - **Siempre `TypedResults` y tipos de retorno `Results<...>`,** para que OpenAPI documente cada respuesta. `ToOk()` y `ToNoContent()` traducen el `Result`; `ToProblem()` queda para las respuestas que esos helpers no cubren, como un 201 con `CreatedAtRoute`. Todo endpoint lleva `WithName` y `WithSummary`.
 - **Cada error de la tabla de operaciones se declara** con `ProducesValidationProblem()` (400) y `ProducesProblem(<código>)` (404, 409). `ProblemHttpResult` no publica sus códigos, así que sin esas llamadas OpenAPI no los muestra.
 - **Rutas con restricción de tipo:** `{id:int}`.
-- **Autorización:** se declara con `RequireAuthorization` y las constantes de `Politicas` (`SesionIniciada`, `Autenticado`, `Superusuario`, `Dgaa`), en el grupo del módulo o, cuando difiere, en la ruta o el grupo del recurso. El grupo del módulo declara además `ProducesProblem(401)` y `ProducesProblem(403)`, para que OpenAPI muestre esas respuestas.
+- **Autorización:** se declara con `RequireAuthorization` y las constantes de `Politicas` (`SesionIniciada`, `Autenticado`, `Superusuario`, `Dgaa`, `EntidadAcademica`, `DgaaOEntidadAcademica`), en el grupo del módulo o, cuando difiere, en la ruta o el grupo del recurso. El grupo del módulo declara además `ProducesProblem(401)` y `ProducesProblem(403)`, para que OpenAPI muestre esas respuestas.
+
+### Archivos
+
+- Los campos multipart se enlazan como parámetros con `[FromForm(Name = "…")]` e `IFormFile`; `ComoArchivoRecibido()` los convierte al contrato de Application.
+- Las rutas multipart usan `.DisableAntiforgery()` cuando la API recibe credenciales bearer y no usa cookies, con un comentario que enuncia esa regla.
+- El dominio valida nombre, tamaño, tipo declarado y firma antes de que Application guarde el binario.
+- Si guardar la base falla después de escribir el binario, Application intenta eliminar el archivo recién guardado y vuelve a lanzar la excepción.
+- Al reemplazar un archivo, la fila anterior se elimina en la misma confirmación de la base y el binario anterior se intenta eliminar después de confirmar.
+- La descarga devuelve `TypedResults.File` con nombre y tipo de contenido explícitos.
 
 ### Operaciones estándar
 
@@ -1049,7 +1060,7 @@ Un módulo o recurso está terminado cuando:
 - [ ] No hay tipos públicos fuera de `<Modulo>Module` y `Application/Contracts`.
 - [ ] Los endpoints aparecen documentados en `/scalar/v1` con nombre, resumen y respuestas.
 - [ ] Los logs siguen la sección 11: solo `[LoggerMessage]` y sin datos personales ni secretos. La correlación por `traceId` la verifica `CorrelacionTests` y no requiere revisión manual.
-- [ ] Los cambios de esquema están en una migración nueva y `baseline.sql` no se editó. `seed.sql` solo cambia para cargar un catálogo fijo.
+- [ ] Los cambios de esquema están en una migración nueva y `baseline.sql` no se edita, salvo una excepción explícita en la especificación viva del módulo. `seed.sql` solo cambia para cargar un catálogo fijo.
 - [ ] Ningún comentario, `Justification` ni script SQL cita un documento markdown (sección 16).
 - [ ] Si cambió una regla del estándar, este documento se actualizó en el mismo PR.
 - [ ] Los commits y el PR siguen la convención del repositorio.
