@@ -1,0 +1,38 @@
+name: agents-ci
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - ".agents/**"
+      - ".claude/skills/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - ".github/scripts/check-skills.sh"
+      - ".github/workflows/agents-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - ".agents/**"
+      - ".claude/skills/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - ".github/scripts/check-skills.sh"
+      - ".github/workflows/agents-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: agents-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  skills:
+    name: Skills y envoltorios
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validar skills y envoltorios
+        run: bash .github/scripts/check-skills.sh
