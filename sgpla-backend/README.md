@@ -43,6 +43,8 @@ Hay 10 módulos: Institucional, Catalogos, Usuarios, OfertaEducativa, Docentes, 
 3. Copiar `.env.example` a `.env` en la raíz del monorepo. `docker compose` exige `SGPLA_JWT_CLAVE`.
 4. Comprobar el entorno con `sgpla-backend/scripts/verify.sh` (ver "Verificación").
 
+Las instrucciones para los agentes de IA y las skills del equipo están en `../AGENTS.md` y `../.agents/skills/`.
+
 ## Uso con Docker (solo requiere Docker)
 
 Desde la raíz del monorepo:
