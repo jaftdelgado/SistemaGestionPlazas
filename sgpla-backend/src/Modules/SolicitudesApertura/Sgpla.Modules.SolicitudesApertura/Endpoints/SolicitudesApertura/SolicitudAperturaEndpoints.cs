@@ -45,7 +45,7 @@ internal static class SolicitudAperturaEndpoints
         CancellationToken cancellationToken)
     {
         var query = new ListarSolicitudesAperturaQuery(
-            new Paginacion(request.Pagina, request.TamanoPagina),
+            request.ComoPaginacion(),
             new FiltrosSolicitudesApertura(
                 request.Estado,
                 request.PeriodoEscolarId,
@@ -96,23 +96,14 @@ internal static class SolicitudAperturaEndpoints
     }
 }
 
-internal sealed class ListarSolicitudesAperturaRequest
+internal sealed record ListarSolicitudesAperturaRequest(
+    [FromQuery(Name = "pagina")] int? Pagina,
+    [FromQuery(Name = "tamanoPagina")] int? TamanoPagina,
+    [FromQuery(Name = "estado")] string? Estado,
+    [FromQuery(Name = "periodoEscolarId")] int? PeriodoEscolarId,
+    [FromQuery(Name = "experienciaEducativaId")] int? ExperienciaEducativaId,
+    [FromQuery(Name = "entidadAcademicaId")] int? EntidadAcademicaId)
 {
-    [FromQuery(Name = "pagina")]
-    public int Pagina { get; init; } = 1;
-
-    [FromQuery(Name = "tamanoPagina")]
-    public int TamanoPagina { get; init; } = Paginacion.TamanoPorOmision;
-
-    [FromQuery(Name = "estado")]
-    public string? Estado { get; init; }
-
-    [FromQuery(Name = "periodoEscolarId")]
-    public int? PeriodoEscolarId { get; init; }
-
-    [FromQuery(Name = "experienciaEducativaId")]
-    public int? ExperienciaEducativaId { get; init; }
-
-    [FromQuery(Name = "entidadAcademicaId")]
-    public int? EntidadAcademicaId { get; init; }
+    public Paginacion ComoPaginacion() =>
+        new(Pagina ?? 1, TamanoPagina ?? Paginacion.TamanoPorOmision);
 }
