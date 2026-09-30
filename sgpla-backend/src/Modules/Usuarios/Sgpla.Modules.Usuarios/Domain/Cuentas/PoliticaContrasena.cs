@@ -2,7 +2,7 @@ using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Usuarios.Domain.Cuentas;
 
-/// <summary>Política de contraseñas locales de Superusuario (DATABASE.md §13.4). No normaliza: los espacios cuentan.</summary>
+/// <summary>Política de contraseñas locales de Superusuario. No normaliza: los espacios cuentan.</summary>
 internal static class PoliticaContrasena
 {
     public const int LongitudMinima = 8;

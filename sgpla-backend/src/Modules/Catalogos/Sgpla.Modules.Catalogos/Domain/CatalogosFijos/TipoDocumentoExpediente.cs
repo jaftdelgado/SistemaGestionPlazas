@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.Catalogos.Domain.CatalogosFijos;
 
-/// <summary>Tipos de documento del expediente (DATABASE.md §6.22).</summary>
+/// <summary>Tipos de documento del expediente.</summary>
 internal sealed class TipoDocumentoExpediente : CatalogoFijo
 {
     public const int LongitudMaximaNombre = 150;

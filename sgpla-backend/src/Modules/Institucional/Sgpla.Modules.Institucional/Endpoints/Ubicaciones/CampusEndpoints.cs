@@ -9,7 +9,7 @@ using Sgpla.Modules.Institucional.Application.Ubicaciones;
 
 namespace Sgpla.Modules.Institucional.Endpoints.Ubicaciones;
 
-/// <summary>Campus de solo lectura: los valores los carga la semilla (Modulo_Institucional.md §6, D1).</summary>
+/// <summary>Campus de solo lectura: los valores los carga la semilla.</summary>
 internal static class CampusEndpoints
 {
     public static RouteGroupBuilder MapCampusEndpoints(this RouteGroupBuilder modulo)

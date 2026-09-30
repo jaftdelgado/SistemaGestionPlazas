@@ -129,7 +129,7 @@ internal sealed class ListarHorariosHandler(SgplaDbContext contexto, IAmbitoOfer
             return ProgramacionAcademicaErrors.NoEncontrado(query.ProgramacionAcademicaId);
         }
 
-        // Todas las filas: la tabla solo guarda el snapshot vigente de PLANEA (DATABASE.md §5).
+        // Todas las filas: la tabla solo guarda el snapshot vigente de PLANEA.
         var horarios = await contexto.Set<HorarioProgramacion>()
             .AsNoTracking()
             .Where(h => h.ProgramacionAcademicaId == query.ProgramacionAcademicaId)

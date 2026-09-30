@@ -6,7 +6,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests.Catalogos;
 
 /// <summary>
-/// Catálogo fijo: los 212 municipios de Veracruz, con el id de la clave municipal del INEGI (DATABASE.md §6.4).
+/// Catálogo fijo: los 212 municipios de Veracruz, con el id de la clave municipal del INEGI.
 /// Paginado y con búsqueda por nombre, porque el frontend lo usa en un Select.
 /// </summary>
 public sealed class MunicipioEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable

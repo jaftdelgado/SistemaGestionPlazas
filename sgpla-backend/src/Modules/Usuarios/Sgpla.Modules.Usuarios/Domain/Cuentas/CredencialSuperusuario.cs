@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.Usuarios.Domain.Cuentas;
 
-/// <summary>Credencial 1:1 del agregado <see cref="Usuario"/> exclusiva del rol <c>Superusuario</c> (DATABASE.md §6.20).</summary>
+/// <summary>Credencial 1:1 del agregado <see cref="Usuario"/> exclusiva del rol <c>Superusuario</c>.</summary>
 internal sealed class CredencialSuperusuario
 {
     public const int LongitudMaximaContrasena = 500;

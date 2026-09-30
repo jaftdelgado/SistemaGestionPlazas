@@ -3,8 +3,8 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.Institucional.Domain.EntidadesAcademicas;
 
 /// <summary>
-/// Unidad académica de un campus (DATABASE.md §6.5), clasificada por un área y localizada en un municipio. Con
-/// baja lógica y sin restauración (Modulo_Institucional.md, decisión D3).
+/// Unidad académica de un campus, clasificada por un área y localizada en un municipio. Con
+/// baja lógica y sin restauración.
 /// </summary>
 internal sealed class EntidadAcademica : Entity, IEliminable
 {

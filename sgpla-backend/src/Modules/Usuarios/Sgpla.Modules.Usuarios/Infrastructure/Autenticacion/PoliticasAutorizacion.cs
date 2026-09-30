@@ -29,7 +29,7 @@ internal sealed class SinCambioPendienteHandler : AuthorizationHandler<SinCambio
 
 /// <summary>
 /// Responde el 403 con <c>ProblemDetails</c>: distingue <see cref="SinCambioPendienteRequirement"/> de cualquier
-/// otra falla, y delega el resto al manejador por omisión (Modulo_Usuarios.md, sección 6).
+/// otra falla, y delega el resto al manejador por omisión.
 /// </summary>
 internal sealed class AutorizacionResultHandler : IAuthorizationMiddlewareResultHandler
 {

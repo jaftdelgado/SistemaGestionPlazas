@@ -7,7 +7,7 @@ using Sgpla.Modules.Usuarios.Application.Autenticacion;
 
 namespace Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
 
-/// <summary>Bind directo con el correo como identidad, igual que el sistema anterior de la UV (Modulo_Usuarios.md, decisión D2).</summary>
+/// <summary>Bind directo con el correo como identidad, igual que el sistema anterior de la UV.</summary>
 internal sealed class LdapAutenticador(IOptions<LdapOptions> opciones, ILogger<LdapAutenticador> logger) : ILdapAutenticador
 {
     private const int CodigoCredencialesInvalidas = 49;

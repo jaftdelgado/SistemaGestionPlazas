@@ -17,7 +17,7 @@ const string PoliticaCors = "Frontend";
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Correlación (ESTANDAR_MODULOS.md, sección 11): los scopes de log llevan el TraceId que devuelve ProblemDetails.
+// Correlación: los scopes de log llevan el TraceId que devuelve ProblemDetails.
 builder.Logging.Configure(options =>
     options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId | ActivityTrackingOptions.SpanId);
 

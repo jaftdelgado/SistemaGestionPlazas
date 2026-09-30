@@ -2,7 +2,7 @@ using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Institucional.Domain.AreasAcademicas;
 
-/// <summary>Área académica de la UV (DATABASE.md §6.3). Catálogo global administrable, con baja lógica y sin restauración (Modulo_Institucional.md, decisión D3).</summary>
+/// <summary>Área académica de la UV. Catálogo global administrable, con baja lógica y sin restauración.</summary>
 internal sealed class AreaAcademica : Entity, IEliminable
 {
     public const int LongitudMaximaNombre = 200;

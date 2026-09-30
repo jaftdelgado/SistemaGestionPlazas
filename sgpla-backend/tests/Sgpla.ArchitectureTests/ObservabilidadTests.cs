@@ -5,7 +5,6 @@ namespace Sgpla.ArchitectureTests;
 
 /// <summary>
 /// Los logs de un módulo solo llevan identificadores y valores no personales.
-/// Ver ESTANDAR_MODULOS.md, sección 11.
 /// </summary>
 public class ObservabilidadTests
 {

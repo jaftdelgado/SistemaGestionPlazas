@@ -4,7 +4,7 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.Catalogos.Domain.Articulos;
 
 /// <summary>
-/// Artículo que fundamenta un Aviso (DATABASE.md §15.2). El número es una referencia opaca (<c>42</c>, <c>42 BIS</c>)
+/// Artículo que fundamenta un Aviso. El número es una referencia opaca (<c>42</c>, <c>42 BIS</c>)
 /// que queda inmutable cuando un Aviso usa el artículo; la descripción es obligatoria y siempre editable.
 /// </summary>
 internal sealed partial class Articulo : Entity

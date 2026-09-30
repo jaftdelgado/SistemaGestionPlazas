@@ -3,8 +3,8 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Domain.Programaciones;
 
 /// <summary>
-/// Sesión semanal de una programación (DATABASE.md §6.15). Solo guarda el snapshot vigente de PLANEA, sin baja lógica.
-/// Solo lectura: la crea y la reemplaza la sincronización (Modulo_OfertaEducativa.md, decisión D12).
+/// Sesión semanal de una programación. Solo guarda el snapshot vigente de PLANEA, sin baja lógica.
+/// Solo lectura: la crea y la reemplaza la sincronización.
 /// </summary>
 internal sealed class HorarioProgramacion : Entity
 {

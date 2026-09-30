@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.Usuarios.Domain.Cuentas;
 
-/// <summary>Parte 1:1 del agregado <see cref="Usuario"/> exclusiva del rol <c>Dgaa</c> (DATABASE.md §6.18).</summary>
+/// <summary>Parte 1:1 del agregado <see cref="Usuario"/> exclusiva del rol <c>Dgaa</c>.</summary>
 internal sealed class PerfilDgaa
 {
     private PerfilDgaa()

@@ -20,7 +20,7 @@ internal sealed record ModificarExperienciaEducativaCommand(
 
 /// <summary>
 /// Nombre, perfil y cupos cambian siempre; las horas, los créditos y el área, solo si la EE nunca tuvo una programación,
-/// incluidas las dadas de baja (Modulo_OfertaEducativa.md, D13). Una EE fuera del ámbito del DGAA responde
+/// incluidas las dadas de baja. Una EE fuera del ámbito del DGAA responde
 /// <c>NoEncontrado</c> (D15). Si algo falla después de <see cref="ExperienciaEducativa.Modificar"/>, no se guarda.
 /// </summary>
 internal sealed class ModificarExperienciaEducativaHandler(

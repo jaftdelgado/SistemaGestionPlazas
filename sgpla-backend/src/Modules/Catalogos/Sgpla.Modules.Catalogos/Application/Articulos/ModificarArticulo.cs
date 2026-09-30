@@ -10,7 +10,7 @@ internal sealed record ModificarArticuloCommand(int Id, string Numero, string? D
 
 /// <summary>
 /// Modifica número y descripción. La descripción siempre puede cambiar; el número solo mientras ningún Aviso use el
-/// artículo (DATABASE.md §15.2). Las referencias están en otros módulos, así que se consulta a todas las
+/// artículo. Las referencias están en otros módulos, así que se consulta a todas las
 /// implementaciones de <see cref="IReferenciasArticulo"/>.
 /// </summary>
 internal sealed class ModificarArticuloHandler(

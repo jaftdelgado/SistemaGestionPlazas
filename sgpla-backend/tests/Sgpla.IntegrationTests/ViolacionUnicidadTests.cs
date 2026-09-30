@@ -15,7 +15,7 @@ namespace Sgpla.IntegrationTests;
 
 /// <summary>
 /// La última defensa ante dos altas simultáneas: una violación de unicidad de SQL Server se responde como 409 y
-/// solo se registra el nombre de la restricción, nunca el valor duplicado (ESTANDAR_MODULOS.md, sección 11).
+/// solo se registra el nombre de la restricción, nunca el valor duplicado.
 /// La carrera real no es reproducible por HTTP, así que la prueba provoca la violación directamente en la base
 /// y se la entrega al manejador registrado en el host.
 /// </summary>

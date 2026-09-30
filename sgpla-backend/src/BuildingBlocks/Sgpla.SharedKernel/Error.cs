@@ -13,7 +13,7 @@ public enum ErrorType
 }
 
 /// <summary>Error de negocio: un código estable, un mensaje en español para el usuario y su categoría.</summary>
-[SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Nombre fijado por ESTANDAR_MODULOS.md; solo se consume desde C#.")]
+[SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Nombre del tipo de error común a todos los módulos; solo se consume desde C#.")]
 public record Error(string Code, string Message, ErrorType Type)
 {
     /// <summary>

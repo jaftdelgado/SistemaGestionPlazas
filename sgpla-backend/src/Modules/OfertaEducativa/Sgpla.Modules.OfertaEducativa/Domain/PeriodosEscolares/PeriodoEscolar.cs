@@ -3,8 +3,8 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Domain.PeriodosEscolares;
 
 /// <summary>
-/// Periodo al que pertenecen las programaciones (DATABASE.md §6.12). La clave es inmutable; las fechas cambian en
-/// cualquier momento (Modulo_OfertaEducativa.md, decisión D11). Con baja lógica y sin restauración.
+/// Periodo al que pertenecen las programaciones. La clave es inmutable; las fechas cambian en
+/// cualquier momento. Con baja lógica y sin restauración.
 /// </summary>
 internal sealed class PeriodoEscolar : Entity, IEliminable
 {

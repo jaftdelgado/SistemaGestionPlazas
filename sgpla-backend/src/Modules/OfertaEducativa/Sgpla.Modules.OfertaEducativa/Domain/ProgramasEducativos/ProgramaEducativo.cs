@@ -3,9 +3,9 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Domain.ProgramasEducativos;
 
 /// <summary>
-/// Programa que ofrece una entidad académica, con un sistema educativo y un nivel de formación (DATABASE.md §6.8). La
+/// Programa que ofrece una entidad académica, con un sistema educativo y un nivel de formación. La
 /// entidad no cambia; el sistema y el nivel solo cambian mientras el programa nunca haya tenido un plan de estudios.
-/// Con baja lógica y sin restauración (Modulo_OfertaEducativa.md, decisión D4).
+/// Con baja lógica y sin restauración.
 /// </summary>
 internal sealed class ProgramaEducativo : Entity, IEliminable
 {

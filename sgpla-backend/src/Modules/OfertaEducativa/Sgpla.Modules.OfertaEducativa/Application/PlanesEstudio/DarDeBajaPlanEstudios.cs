@@ -9,8 +9,8 @@ namespace Sgpla.Modules.OfertaEducativa.Application.PlanesEstudio;
 internal sealed record DarDeBajaPlanEstudiosCommand(int Id);
 
 /// <summary>
-/// Da de baja el plan y todas sus EE activas con el mismo instante (Modulo_OfertaEducativa.md, D10). Se bloquea si alguna
-/// EE tiene programaciones activas o referencias de otros módulos (pendientes.md, P7).
+/// Da de baja el plan y todas sus EE activas con el mismo instante. Se bloquea si alguna
+/// EE tiene programaciones activas o referencias de otros módulos.
 /// </summary>
 internal sealed class DarDeBajaPlanEstudiosHandler(
     IPlanEstudiosRepository repositorio,

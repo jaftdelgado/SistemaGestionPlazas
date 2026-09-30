@@ -2,7 +2,7 @@ using Sgpla.SharedKernel;
 
 namespace Sgpla.BuildingBlocks.Application;
 
-/// <summary>Usuario de la petición en curso, ya verificado contra la base (Modulo_Usuarios.md, sección 6).</summary>
+/// <summary>Usuario de la petición en curso, ya verificado contra la base.</summary>
 public interface ICurrentUser
 {
     int Id { get; }

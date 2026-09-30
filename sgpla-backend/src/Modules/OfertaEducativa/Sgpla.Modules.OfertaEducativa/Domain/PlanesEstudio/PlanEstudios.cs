@@ -3,9 +3,9 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Domain.PlanesEstudio;
 
 /// <summary>
-/// Plan de un programa educativo, identificado por un código opaco (DATABASE.md §6.9). No tiene archivo ni campos
+/// Plan de un programa educativo, identificado por un código opaco. No tiene archivo ni campos
 /// editables: el código y el programa son inmutables. Es el agregado que crea las EE: una EE solo nace dentro de su plan.
-/// Con baja lógica y sin restauración (Modulo_OfertaEducativa.md, decisiones D4, D5 y D8).
+/// Con baja lógica y sin restauración.
 /// </summary>
 internal sealed class PlanEstudios : Entity, IEliminable
 {

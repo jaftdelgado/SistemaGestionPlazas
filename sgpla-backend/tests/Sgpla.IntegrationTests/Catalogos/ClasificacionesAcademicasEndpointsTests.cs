@@ -6,7 +6,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests.Catalogos;
 
 /// <summary>
-/// Sistemas educativos, niveles y áreas de formación (Modulo_OfertaEducativa.md, sección 5): catálogos fijos de solo
+/// Sistemas educativos, niveles y áreas de formación: catálogos fijos de solo
 /// lectura con los valores de la semilla.
 /// </summary>
 public sealed class ClasificacionesAcademicasEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable

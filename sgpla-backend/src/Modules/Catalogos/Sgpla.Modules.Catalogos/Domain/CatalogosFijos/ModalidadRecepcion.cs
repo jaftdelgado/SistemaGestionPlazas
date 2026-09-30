@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.Catalogos.Domain.CatalogosFijos;
 
-/// <summary>Modalidades de recepción de documentos (DATABASE.md §15.2).</summary>
+/// <summary>Modalidades de recepción de documentos.</summary>
 internal sealed class ModalidadRecepcion : CatalogoFijo
 {
     public const int LongitudMaximaNombre = 100;

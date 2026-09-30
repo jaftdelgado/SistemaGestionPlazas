@@ -119,7 +119,7 @@ public static class UsuariosModule
         return endpoints;
     }
 
-    /// <summary>Subcomando <c>bootstrap-superusuario</c> de la imagen de la API (Modulo_Usuarios.md, sección 8).</summary>
+    /// <summary>Subcomando <c>bootstrap-superusuario</c> de la imagen de la API.</summary>
     public static async Task<int> EjecutarBootstrapAsync(IServiceProvider servicios, TextWriter salida, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(servicios);

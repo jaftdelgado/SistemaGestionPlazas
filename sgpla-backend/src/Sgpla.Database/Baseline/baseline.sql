@@ -1,9 +1,9 @@
 -- SGPLa: baseline de la base de datos.
--- Crea los esquemas y las 55 tablas de DATABASE.md, sin datos (los catálogos
+-- Crea los esquemas y las 55 tablas del modelo, sin datos (los catálogos
 -- se cargan en seed.sql). Solo se ejecuta sobre una base vacía; los cambios de
 -- esquema posteriores van en Scripts/, no aquí.
 --
--- Nombres (DATABASE.md §5): pk_, fk_<hija>__<padre>, uq_, ck_, ix_ y ux_ para
+-- Nombres: pk_, fk_<hija>__<padre>, uq_, ck_, ix_ y ux_ para
 -- índices únicos filtrados. Varias FK a usuarios.usuario: fk_<hija>__usuario__<papel>.
 -- En los CHECK, LEN(x) = DATALENGTH(x) impide espacios finales en un varchar.
 -- Las reglas entre tablas y de estado se validan en la aplicación.

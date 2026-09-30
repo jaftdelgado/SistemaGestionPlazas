@@ -3,7 +3,7 @@ using Sgpla.Modules.Usuarios.Application.Autenticacion;
 
 namespace Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
 
-/// <summary>12 caracteres sin ambigüedad visual, con al menos uno de cada alfabeto (Modulo_Usuarios.md, sección 6).</summary>
+/// <summary>12 caracteres sin ambigüedad visual, con al menos uno de cada alfabeto.</summary>
 internal sealed class GeneradorContrasenas : IGeneradorContrasenas
 {
     private const int Longitud = 12;

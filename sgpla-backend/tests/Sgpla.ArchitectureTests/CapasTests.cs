@@ -5,7 +5,6 @@ namespace Sgpla.ArchitectureTests;
 /// <summary>
 /// Reglas de Clean Architecture dentro de cada módulo. Las capas son carpetas
 /// (y por tanto namespaces) del mismo proyecto: Domain, Application, Infrastructure y Endpoints.
-/// Ver ESTANDAR_MODULOS.md, sección 2.
 /// </summary>
 public class CapasTests
 {

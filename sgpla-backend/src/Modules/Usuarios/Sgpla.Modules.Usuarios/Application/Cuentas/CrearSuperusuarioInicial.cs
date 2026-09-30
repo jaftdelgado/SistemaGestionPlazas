@@ -11,7 +11,7 @@ internal sealed record CrearSuperusuarioInicialCommand(string Correo, string Nom
 /// <summary>La temporal es <c>null</c> para DGAA y Entidad Académica (sección 7); aquí siempre trae valor.</summary>
 internal sealed record CuentaCreada(int Id, string? ContrasenaTemporal);
 
-/// <summary>Usado por el subcomando <c>bootstrap-superusuario</c> (Modulo_Usuarios.md, sección 8).</summary>
+/// <summary>Usado por el subcomando <c>bootstrap-superusuario</c>.</summary>
 internal sealed class CrearSuperusuarioInicialHandler(
     IUsuarioRepository repositorio,
     IHasherContrasenas hasher,
