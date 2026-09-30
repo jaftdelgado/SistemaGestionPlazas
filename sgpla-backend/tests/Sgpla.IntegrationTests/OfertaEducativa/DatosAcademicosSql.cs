@@ -4,8 +4,9 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
 /// <summary>
-/// Inserta por SQL lo que todavía no tiene endpoint: planes de estudio (PR 3) y programaciones académicas (las crea
-/// la sincronización con PLANEA). Respeta los CHECK del esquema; los datos que no importan a la prueba son fijos.
+/// Inserta por SQL lo que todavía no tiene endpoint: planes de estudio (PR 3), y programaciones académicas, sus
+/// sincronizaciones y sus horarios (los crea la sincronización con PLANEA). Respeta los CHECK del esquema; los datos
+/// que no importan a la prueba son fijos.
 /// </summary>
 internal static class DatosAcademicosSql
 {
@@ -82,11 +83,11 @@ internal static class DatosAcademicosSql
     }
 
     /// <summary>
-    /// Inserta solo la programación de una experiencia educativa que ya existe, activa o dada de baja, con un NRC único.
-    /// Devuelve el id de la programación.
+    /// Inserta solo la programación de una experiencia educativa que ya existe, activa o dada de baja. Con
+    /// <paramref name="nrc"/> en <c>null</c> usa un NRC único aleatorio. Devuelve el id de la programación.
     /// </summary>
     public static async Task<int> InsertarProgramacionDeExperienciaAsync(
-        string cadenaConexion, int periodoEscolarId, int experienciaEducativaId, bool dadaDeBaja = false)
+        string cadenaConexion, int periodoEscolarId, int experienciaEducativaId, bool dadaDeBaja = false, string? nrc = null)
     {
         await using var conexion = new SqlConnection(cadenaConexion);
         await conexion.OpenAsync(Cancelacion);
@@ -97,10 +98,64 @@ internal static class DatosAcademicosSql
             VALUES (@nrc, @periodoId, @experienciaId, CASE WHEN @dadaDeBaja = 1 THEN SYSUTCDATETIME() ELSE NULL END);
             """,
             conexion);
-        comando.Parameters.AddWithValue("@nrc", Nrc());
+        comando.Parameters.AddWithValue("@nrc", nrc ?? Nrc());
         comando.Parameters.AddWithValue("@periodoId", periodoEscolarId);
         comando.Parameters.AddWithValue("@experienciaId", experienciaEducativaId);
         comando.Parameters.AddWithValue("@dadaDeBaja", dadaDeBaja);
+
+        return (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
+    }
+
+    /// <summary>Inserta una sincronización EXITOSA del periodo, con fechas válidas; devuelve su id.</summary>
+    public static async Task<int> InsertarSincronizacionAsync(string cadenaConexion, int periodoEscolarId)
+    {
+        await using var conexion = new SqlConnection(cadenaConexion);
+        await conexion.OpenAsync(Cancelacion);
+        await using var comando = new SqlCommand(
+            """
+            INSERT INTO integracion.sincronizacion_planea (periodo_escolar_id, estado, iniciada_en, finalizada_en)
+            OUTPUT INSERTED.id
+            VALUES (@periodoId, 'EXITOSA', SYSUTCDATETIME(), SYSUTCDATETIME());
+            """,
+            conexion);
+        comando.Parameters.AddWithValue("@periodoId", periodoEscolarId);
+
+        return (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
+    }
+
+    /// <summary>Inserta una sesión de horario de la programación; devuelve su id.</summary>
+    public static async Task<int> InsertarHorarioAsync(
+        string cadenaConexion,
+        int programacionAcademicaId,
+        int sincronizacionPlaneaId,
+        byte diaSemana,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        DateOnly fechaInicio,
+        DateOnly fechaFin,
+        string? edificio = null,
+        string? aula = null)
+    {
+        await using var conexion = new SqlConnection(cadenaConexion);
+        await conexion.OpenAsync(Cancelacion);
+        await using var comando = new SqlCommand(
+            """
+            INSERT INTO academico.horario_programacion
+                (programacion_academica_id, sincronizacion_planea_id, dia_semana, hora_inicio, hora_fin,
+                 fecha_inicio, fecha_fin, edificio, aula)
+            OUTPUT INSERTED.id
+            VALUES (@programacionId, @sincronizacionId, @dia, @horaInicio, @horaFin, @fechaInicio, @fechaFin, @edificio, @aula);
+            """,
+            conexion);
+        comando.Parameters.AddWithValue("@programacionId", programacionAcademicaId);
+        comando.Parameters.AddWithValue("@sincronizacionId", sincronizacionPlaneaId);
+        comando.Parameters.AddWithValue("@dia", diaSemana);
+        comando.Parameters.AddWithValue("@horaInicio", horaInicio);
+        comando.Parameters.AddWithValue("@horaFin", horaFin);
+        comando.Parameters.AddWithValue("@fechaInicio", fechaInicio);
+        comando.Parameters.AddWithValue("@fechaFin", fechaFin);
+        comando.Parameters.AddWithValue("@edificio", (object?)edificio ?? DBNull.Value);
+        comando.Parameters.AddWithValue("@aula", (object?)aula ?? DBNull.Value);
 
         return (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
     }

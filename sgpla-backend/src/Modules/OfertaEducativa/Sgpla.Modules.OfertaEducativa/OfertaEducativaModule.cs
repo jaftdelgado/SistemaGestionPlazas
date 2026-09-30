@@ -15,6 +15,7 @@ using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Endpoints.ExperienciasEducativas;
 using Sgpla.Modules.OfertaEducativa.Endpoints.PeriodosEscolares;
 using Sgpla.Modules.OfertaEducativa.Endpoints.PlanesEstudio;
+using Sgpla.Modules.OfertaEducativa.Endpoints.Programaciones;
 using Sgpla.Modules.OfertaEducativa.Endpoints.ProgramasEducativos;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.Ambito;
 using Sgpla.Modules.OfertaEducativa.Infrastructure.Contratos;
@@ -60,6 +61,7 @@ public static class OfertaEducativaModule
         grupo.MapProgramaEducativoEndpoints();
         grupo.MapPlanEstudiosEndpoints();
         grupo.MapExperienciaEducativaEndpoints();
+        grupo.MapProgramacionAcademicaEndpoints();
 
         return endpoints;
     }
