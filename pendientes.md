@@ -32,4 +32,4 @@ Contexto: `Modulo_OfertaEducativa.md`, sección 12. OfertaEducativa declara en s
   - resolución de la EE de un NRC por campus de la entidad (`sec_campus`), código de plan, materia y curso, porque el código de plan se repite entre campus;
   - de dónde salen los horarios, si no vienen en este endpoint;
   - corrección de `DATABASE.md` §12.
-- **Mientras tanto:** OfertaEducativa solo lee programaciones y horarios (PR 4), y una EE con programaciones activas no se da de baja.
+- **Mientras tanto:** OfertaEducativa ya expone la lectura de programaciones y horarios (`GET /api/v1/oferta-educativa/programaciones-academicas`, su detalle y sus horarios; `Modulo_OfertaEducativa.md`, PR 4), pero nada los crea todavía. Una EE con programaciones activas no se da de baja.

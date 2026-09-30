@@ -968,7 +968,7 @@ internal sealed record HorarioResponse(
     string? Edificio,
     string? Aula);
 
-/// <summary>Filtros opcionales, combinados con AND. <paramref name="Nrc"/> se recorta, se pasa a mayúsculas y se compara exacto.</summary>
+/// <summary>Filtros opcionales, combinados con AND. <paramref name="Nrc"/> se recorta, se pasa a mayúsculas y se compara exacto. Un NRC vacío o solo con espacios se ignora.</summary>
 internal sealed record FiltrosProgramacionesAcademicas(
     int? PeriodoEscolarId,
     int? EntidadAcademicaId,
@@ -985,6 +985,8 @@ internal sealed record ObtenerProgramacionAcademicaQuery(int Id);
 /// <summary>Sesiones vigentes de una programación del ámbito, por día, hora de inicio e id. 404 si no está a la vista.</summary>
 internal sealed record ListarHorariosQuery(int ProgramacionAcademicaId);
 ```
+
+Las sesiones vigentes de `ListarHorariosQuery` son todas las filas de `horario_programacion` de la programación: la tabla solo guarda el snapshot vigente de PLANEA, sin baja lógica (`DATABASE.md` §5), así que no se filtra por fechas ni por sincronización.
 
 `ListarProgramacionesAcademicasValidator`: `PaginacionValidator`, ids `GreaterThan(0)` y `Nrc` `MaximumLength(20)`, con `OverridePropertyName` y `WithName`.
 
