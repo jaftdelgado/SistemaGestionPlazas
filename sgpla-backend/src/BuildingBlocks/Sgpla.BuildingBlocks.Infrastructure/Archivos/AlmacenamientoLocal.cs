@@ -100,6 +100,14 @@ public sealed class AlmacenamientoLocal(
             File.Delete(ruta);
             return Task.FromResult(true);
         }
+        catch (FileNotFoundException)
+        {
+            return Task.FromResult(true);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return Task.FromResult(true);
+        }
         catch (IOException)
         {
             logger.ArchivoHuerfano(clave);
