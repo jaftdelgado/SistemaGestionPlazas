@@ -27,8 +27,21 @@ Hay 10 módulos: Institucional, Catalogos, Usuarios, OfertaEducativa, Docentes, 
 
 ## Requisitos
 
-- .NET SDK 10.0.401 o un parche posterior de la banda 10.0.4xx (`global.json` usa `latestPatch` y excluye previews).
-- Docker, para SQL Server local, el entorno completo con `docker compose` y las pruebas de integración.
+- Docker (Docker Desktop en Windows y macOS). El flujo del equipo compila, prueba y ejecuta todo en contenedores con la imagen `mcr.microsoft.com/dotnet/sdk:10.0.401`, sin instalar .NET.
+- Git y una terminal bash: Git Bash en Windows, o la terminal de Linux o macOS. `curl` para la prueba de humo.
+- .NET SDK 10.0.401 o un parche posterior de la banda 10.0.4xx, solo para la sección opcional "Uso local con el SDK" (`global.json` usa `latestPatch` y excluye previews).
+
+## Preparar el entorno
+
+1. Clonar el repositorio. `.gitattributes` fija los finales de línea en LF para todos los archivos de texto, sin importar `core.autocrlf`.
+2. En un clon anterior a ese cambio, refrescar la copia de trabajo una vez, con el árbol limpio (sin cambios sin confirmar):
+
+   ```bash
+   git rm --cached -r -q . && git reset --hard
+   ```
+
+3. Copiar `.env.example` a `.env` en la raíz del monorepo. `docker compose` exige `SGPLA_JWT_CLAVE`.
+4. Comprobar el entorno con `sgpla-backend/scripts/verify.sh` (ver "Verificación").
 
 ## Uso con Docker (solo requiere Docker)
 
@@ -80,7 +93,7 @@ docker compose run --rm api bootstrap-superusuario
 
 Imprime el id y una contraseña temporal una sola vez; cámbiala al iniciar sesión. Ejecutarlo de nuevo con un Superusuario ya activo no crea nada y termina con código 0, así que es seguro incluirlo en cada despliegue.
 
-## Uso local con el SDK
+## Uso local con el SDK (opcional)
 
 Todos los comandos se ejecutan desde `sgpla-backend/`, salvo el de `docker compose`.
 
@@ -100,14 +113,19 @@ Con la API en marcha:
 - **Documentación interactiva:** `http://localhost:5180/scalar/v1`
 - **Estado:** `http://localhost:5180/health`
 
-## Pruebas
+## Verificación
+
+La verificación de un cambio se ejecuta con Docker, desde cualquier carpeta del repositorio:
 
 ```bash
-dotnet test --solution Sgpla.slnx                     # todas (requiere Docker)
-dotnet test --project tests/Sgpla.ArchitectureTests  # solo arquitectura
+sgpla-backend/scripts/verify.sh   # restore, build, format y las tres suites (unos 4 minutos)
+sgpla-backend/scripts/smoke.sh    # entorno limpio con docker compose y un token de Superusuario
 ```
 
-Las pruebas usan Microsoft.Testing.Platform, habilitado en `global.json`.
+- `verify.sh` trabaja sobre una copia de `sgpla-backend/` dentro del contenedor, así que no deja `bin/` ni `obj/` en el host. El log completo queda en `sgpla-backend/TestResults/verify.log` y el resumen muestra las advertencias, los errores y los conteos de las tres suites. Al final avisa de los atajos nuevos respecto a `origin/develop` (pruebas deshabilitadas, supresión de advertencias, `catch` vacíos, esperas en pruebas y versiones fuera de `Directory.Packages.props`): no hacen fallar la verificación, pero cada uno necesita justificación en la revisión.
+- `smoke.sh` borra la base local (`docker compose down -v`), levanta el entorno con `up -d --build`, crea el primer Superusuario, inicia sesión, cambia la contraseña y deja el token en `sgpla-backend/TestResults/smoke-token.txt`. El login de DGAA y Entidad Académica necesita el LDAP de la UV y no forma parte de esta prueba.
+
+Las pruebas usan Microsoft.Testing.Platform, habilitado en `global.json`. Con el SDK local también se pueden ejecutar con `dotnet test --solution Sgpla.slnx`, pero la verificación de un PR es la de `verify.sh`.
 
 ## Migraciones
 

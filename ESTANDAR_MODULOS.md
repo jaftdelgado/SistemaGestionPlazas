@@ -1041,9 +1041,9 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
 
 Un módulo o recurso está terminado cuando:
 
-- [ ] `dotnet build -c Release` compila sin advertencias.
-- [ ] `dotnet format --verify-no-changes` no reporta cambios.
-- [ ] `dotnet test --solution Sgpla.slnx` pasa completo, incluidas las pruebas de arquitectura.
+- [ ] `sgpla-backend/scripts/verify.sh` termina bien: el build en Release compila sin advertencias, `dotnet format --verify-no-changes` no reporta cambios y las tres suites (arquitectura, unitarias e integración) pasan completas.
+- [ ] Los atajos que avisa `verify.sh` (pruebas deshabilitadas, supresión de advertencias, `catch` vacíos, esperas en pruebas, versiones fuera de `Directory.Packages.props`) tienen justificación explícita y se aprobaron en la revisión.
+- [ ] `sgpla-backend/scripts/smoke.sh` deja el entorno de `docker compose` en marcha con un token, y los endpoints nuevos responden con los códigos esperados.
 - [ ] Toda entidad con comportamiento tiene pruebas unitarias de su fábrica y sus invariantes; todo catálogo fijo, su prueba de semilla.
 - [ ] Todo endpoint tiene pruebas de integración de éxito y de cada error que documenta.
 - [ ] No hay tipos públicos fuera de `<Modulo>Module` y `Application/Contracts`.
