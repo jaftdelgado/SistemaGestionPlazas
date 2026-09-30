@@ -235,9 +235,10 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         using var listar = await escenario.Entidad.GetAsync(
             Uri($"?experienciaEducativaId={escenario.ExperienciaId}&periodoEscolarId={escenario.PeriodoSiguienteId}&entidadAcademicaId={escenario.Oferta.EntidadId}&estado=pendiente"),
             Cancelacion);
+        var contenidoListado = await listar.Content.ReadAsStringAsync(Cancelacion);
         var pagina = await EscenarioOferta.Leer(listar);
 
-        listar.StatusCode.ShouldBe(HttpStatusCode.OK);
+        listar.StatusCode.ShouldBe(HttpStatusCode.OK, contenidoListado);
         pagina.GetProperty("elementos").EnumerateArray().Select(e => e.GetProperty("id").GetInt32()).ShouldBe([id]);
         pagina.GetProperty("total").GetInt32().ShouldBe(1);
 
@@ -271,10 +272,12 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
 
         using var respuesta = await escenario.Entidad.GetAsync(Uri(query), Cancelacion);
+        var contenido = await respuesta.Content.ReadAsStringAsync(Cancelacion);
         var problema = await EscenarioOferta.Leer(respuesta);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        problema.GetProperty("errors").TryGetProperty(campo, out _).ShouldBeTrue();
+        problema.TryGetProperty("errors", out var errores).ShouldBeTrue(contenido);
+        errores.TryGetProperty(campo, out _).ShouldBeTrue(contenido);
     }
 
     [Fact]
@@ -301,6 +304,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
             Uri($"?experienciaEducativaId={otraExperiencia}"), Cancelacion);
         using var listarSuperusuario = await escenario.Superusuario.GetAsync(
             Uri($"?experienciaEducativaId={otraExperiencia}"), Cancelacion);
+        var contenidoListadoSuperusuario = await listarSuperusuario.Content.ReadAsStringAsync(Cancelacion);
 
         await VerificaNoEncontradoAsync(obtener);
         await VerificaNoEncontradoAsync(descargarFueraDeAmbito);
@@ -309,6 +313,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         descargarComoSuperusuario.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
         obtenerComoSuperusuario.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await EscenarioOferta.Leer(listarEntidadFueraDeAmbito)).GetProperty("elementos").GetArrayLength().ShouldBe(0);
+        listarSuperusuario.StatusCode.ShouldBe(HttpStatusCode.OK, contenidoListadoSuperusuario);
         (await EscenarioOferta.Leer(listarSuperusuario)).GetProperty("elementos").EnumerateArray()
             .Select(e => e.GetProperty("id").GetInt32()).ShouldBe([otroId]);
     }

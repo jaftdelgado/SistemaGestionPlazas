@@ -125,7 +125,7 @@ internal sealed class EscenarioSolicitud : IDisposable
         using var formulario = CrearFormulario(
             experienciaId,
             periodoId,
-            seccion ?? $"S{DatosUnicos.ClaveAlfanumerica()}",
+            seccion ?? $"S{DatosUnicos.ClaveAlfanumerica()[..8]}",
             cantidad ?? 20);
         using var respuesta = await (cliente ?? Entidad).PostAsync(
             new Uri("/api/v1/solicitudes-apertura/solicitudes", UriKind.Relative), formulario, Cancelacion);
