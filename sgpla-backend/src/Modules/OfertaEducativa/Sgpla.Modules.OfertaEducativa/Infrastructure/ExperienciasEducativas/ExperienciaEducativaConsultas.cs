@@ -107,8 +107,11 @@ internal sealed record ExperienciaEducativaIntermedia(
     /// <summary><c>TuvoProgramaciones</c> cuenta también las programaciones dadas de baja (decisión D13).</summary>
     public static IQueryable<ExperienciaEducativaIntermedia> Proyectar(
         SgplaDbContext contexto,
-        IQueryable<ExperienciaEducativa> experiencias) =>
-        experiencias.Select(e => new ExperienciaEducativaIntermedia(
+        IQueryable<ExperienciaEducativa> experiencias)
+    {
+        var programaciones = contexto.Set<ProgramacionAcademica>().IgnoreQueryFilters([FiltrosConsulta.BajaLogica]);
+
+        return experiencias.Select(e => new ExperienciaEducativaIntermedia(
             e.Id,
             e.Nombre,
             e.Materia,
@@ -120,9 +123,8 @@ internal sealed record ExperienciaEducativaIntermedia(
             e.CupoMaximo,
             e.PerfilDocente,
             e.AreaFormacionId,
-            contexto.Set<ProgramacionAcademica>()
-                .IgnoreQueryFilters([FiltrosConsulta.BajaLogica])
-                .Any(p => p.ExperienciaEducativaId == e.Id)));
+            programaciones.Any(p => p.ExperienciaEducativaId == e.Id)));
+    }
 
     public static async Task<List<ExperienciaEducativaResponse>> ArmarRespuestasAsync(
         IReadOnlyList<ExperienciaEducativaIntermedia> experiencias,
