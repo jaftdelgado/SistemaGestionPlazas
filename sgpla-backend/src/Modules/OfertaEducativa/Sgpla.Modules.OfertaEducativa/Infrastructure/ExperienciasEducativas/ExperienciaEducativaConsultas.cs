@@ -39,7 +39,6 @@ internal sealed class ListarExperienciasEducativasDePlanHandler(
 
         var experiencias = await ExperienciaEducativaIntermedia
             .Proyectar(
-                contexto,
                 contexto.Set<ExperienciaEducativa>()
                     .AsNoTracking()
                     .Where(e => e.PlanEstudiosId == plan.Id)
@@ -49,7 +48,8 @@ internal sealed class ListarExperienciasEducativasDePlanHandler(
             .ToListAsync(cancellationToken);
 
         return Result.Success<IReadOnlyList<ExperienciaEducativaResponse>>(
-            await ExperienciaEducativaIntermedia.ArmarRespuestasAsync(experiencias, plan, clasificaciones, cancellationToken));
+            await ExperienciaEducativaIntermedia.ArmarRespuestasAsync(
+                experiencias, plan, contexto, clasificaciones, cancellationToken));
     }
 }
 
@@ -80,11 +80,11 @@ internal sealed class ObtenerExperienciaEducativaHandler(
         }
 
         var experiencia = await ExperienciaEducativaIntermedia
-            .Proyectar(contexto, contexto.Set<ExperienciaEducativa>().AsNoTracking().Where(e => e.Id == query.Id))
+            .Proyectar(contexto.Set<ExperienciaEducativa>().AsNoTracking().Where(e => e.Id == query.Id))
             .FirstAsync(cancellationToken);
 
         var respuestas = await ExperienciaEducativaIntermedia.ArmarRespuestasAsync(
-            [experiencia], plan, clasificaciones, cancellationToken);
+            [experiencia], plan, contexto, clasificaciones, cancellationToken);
         return respuestas[0];
     }
 }
@@ -101,17 +101,10 @@ internal sealed record ExperienciaEducativaIntermedia(
     int? CupoMinimo,
     int? CupoMaximo,
     string? PerfilDocente,
-    int AreaFormacionId,
-    bool TuvoProgramaciones)
+    int AreaFormacionId)
 {
-    /// <summary><c>TuvoProgramaciones</c> cuenta también las programaciones dadas de baja (decisión D13).</summary>
-    public static IQueryable<ExperienciaEducativaIntermedia> Proyectar(
-        SgplaDbContext contexto,
-        IQueryable<ExperienciaEducativa> experiencias)
-    {
-        var programaciones = contexto.Set<ProgramacionAcademica>().IgnoreQueryFilters([FiltrosConsulta.BajaLogica]);
-
-        return experiencias.Select(e => new ExperienciaEducativaIntermedia(
+    public static IQueryable<ExperienciaEducativaIntermedia> Proyectar(IQueryable<ExperienciaEducativa> experiencias) =>
+        experiencias.Select(e => new ExperienciaEducativaIntermedia(
             e.Id,
             e.Nombre,
             e.Materia,
@@ -122,18 +115,23 @@ internal sealed record ExperienciaEducativaIntermedia(
             e.CupoMinimo,
             e.CupoMaximo,
             e.PerfilDocente,
-            e.AreaFormacionId,
-            programaciones.Any(p => p.ExperienciaEducativaId == e.Id)));
-    }
+            e.AreaFormacionId));
 
     public static async Task<List<ExperienciaEducativaResponse>> ArmarRespuestasAsync(
         IReadOnlyList<ExperienciaEducativaIntermedia> experiencias,
         PlanEstudiosResumenResponse plan,
+        SgplaDbContext contexto,
         IClasificacionesAcademicas clasificaciones,
         CancellationToken cancellationToken)
     {
+        if (experiencias.Count == 0)
+        {
+            return [];
+        }
+
         var areas = await clasificaciones.ObtenerAreasFormacionAsync(
             experiencias.Select(e => e.AreaFormacionId).Distinct().ToList(), cancellationToken);
+        var programadas = await ConProgramacionesAsync(contexto, experiencias.Select(e => e.Id).ToList(), cancellationToken);
 
         return experiencias.Select(e =>
         {
@@ -152,7 +150,23 @@ internal sealed record ExperienciaEducativaIntermedia(
                 e.PerfilDocente,
                 new AreaFormacionResponse(area.Id, area.Clave, area.Nombre),
                 plan,
-                e.TuvoProgramaciones);
+                programadas.Contains(e.Id));
         }).ToList();
     }
+
+    /// <summary>
+    /// Ids de las EE con cualquier programación, incluidas las dadas de baja (decisión D13). Va en su propia consulta:
+    /// <c>IgnoreQueryFilters</c> dentro de la consulta principal se extendería también al filtro de baja de las EE.
+    /// </summary>
+    private static async Task<HashSet<int>> ConProgramacionesAsync(
+        SgplaDbContext contexto,
+        IReadOnlyCollection<int> experienciaIds,
+        CancellationToken cancellationToken) =>
+        (await contexto.Set<ProgramacionAcademica>()
+            .IgnoreQueryFilters([FiltrosConsulta.BajaLogica])
+            .Where(p => experienciaIds.Contains(p.ExperienciaEducativaId))
+            .Select(p => p.ExperienciaEducativaId)
+            .Distinct()
+            .ToListAsync(cancellationToken))
+        .ToHashSet();
 }

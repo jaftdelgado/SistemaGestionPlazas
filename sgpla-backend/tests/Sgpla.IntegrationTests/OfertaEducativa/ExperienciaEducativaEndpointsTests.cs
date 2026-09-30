@@ -32,7 +32,7 @@ public sealed class ExperienciaEducativaEndpointsTests(SqlServerFixture sqlServe
                 ("creditos", 6),
                 ("cupoMinimo", 5),
                 ("cupoMaximo", 30),
-                ("perfilDocente", "  Licenciatura en informática  "),
+                ("perfilDocente", "  Licenciatura en informática" + Environment.NewLine + "o afín  "),
                 ("areaFormacionId", 2)),
             Cancelacion);
         var creada = await EscenarioOferta.Leer(respuesta);
@@ -47,7 +47,7 @@ public sealed class ExperienciaEducativaEndpointsTests(SqlServerFixture sqlServe
         creada.GetProperty("creditos").GetInt32().ShouldBe(6);
         creada.GetProperty("cupoMinimo").GetInt32().ShouldBe(5);
         creada.GetProperty("cupoMaximo").GetInt32().ShouldBe(30);
-        creada.GetProperty("perfilDocente").GetString().ShouldBe("Licenciatura en informática");
+        creada.GetProperty("perfilDocente").GetString().ShouldBe("Licenciatura en informática" + Environment.NewLine + "o afín");
         creada.GetProperty("areaFormacion").GetProperty("id").GetInt32().ShouldBe(2);
         creada.GetProperty("areaFormacion").GetProperty("clave").GetString().ShouldBe("112");
         creada.GetProperty("areaFormacion").GetProperty("nombre").GetString().ShouldBe("Área de Formación Disciplinaria");

@@ -84,11 +84,6 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         var exav = experiencias.Single(e => e.GetProperty("materia").GetString() == "EXAV");
         exav.GetProperty("curso").GetString().ShouldBe("00001");
         experiencias.Count(e => e.GetProperty("perfilDocente").ValueKind == JsonValueKind.Null).ShouldBe(6);
-        var conSaltosDeLinea = PlanEjemploIsof14.ExperienciasEducativas
-            .Count(e => e.PerfilDocente?.Trim().Contains('\n', StringComparison.Ordinal) == true);
-        conSaltosDeLinea.ShouldBeGreaterThan(0);
-        experiencias.Count(e => e.GetProperty("perfilDocente").GetString()?.Contains('\n', StringComparison.Ordinal) == true)
-            .ShouldBe(conSaltosDeLinea);
     }
 
     [Fact]
