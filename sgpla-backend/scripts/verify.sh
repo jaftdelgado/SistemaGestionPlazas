@@ -72,8 +72,10 @@ echo
 echo "== Atajos nuevos respecto a $BASE =="
 if git -C "$RAIZ" rev-parse --verify --quiet "$BASE" > /dev/null; then
   base_comun="$(git -C "$RAIZ" merge-base "$BASE" HEAD)"
-  # Líneas agregadas (confirmadas o no) desde la base común, con archivo y línea.
-  atajos="$(git -C "$RAIZ" diff -U0 "$base_comun" -- sgpla-backend | awk '
+  # Líneas agregadas (confirmadas o no) desde la base común, con archivo y línea. Solo archivos de código y de
+  # proyecto: este script contiene los patrones que busca y no debe avisarse a sí mismo.
+  atajos="$(git -C "$RAIZ" diff -U0 "$base_comun" -- 'sgpla-backend/*.cs' 'sgpla-backend/*.csproj' \
+    'sgpla-backend/*.props' 'sgpla-backend/*.targets' | awk '
     /^\+\+\+ b\// { archivo = substr($0, 7); next }
     /^@@/ { split($3, r, ","); linea = substr(r[1], 2) + 0; next }
     /^\+/ {
