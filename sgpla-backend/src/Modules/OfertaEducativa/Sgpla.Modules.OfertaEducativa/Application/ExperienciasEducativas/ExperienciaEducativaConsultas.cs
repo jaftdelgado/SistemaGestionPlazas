@@ -21,3 +21,5 @@ internal sealed record ExperienciaEducativaResponse(
 
 /// <summary>EE activas de un plan activo del ámbito, en orden de materia, curso e id. 404 si el plan no está a la vista.</summary>
 internal sealed record ListarExperienciasEducativasDePlanQuery(int PlanEstudiosId);
+
+internal sealed record ObtenerExperienciaEducativaQuery(int Id);

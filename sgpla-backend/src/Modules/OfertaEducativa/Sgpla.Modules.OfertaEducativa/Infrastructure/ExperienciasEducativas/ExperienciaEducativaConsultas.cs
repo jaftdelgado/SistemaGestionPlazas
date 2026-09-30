@@ -53,6 +53,42 @@ internal sealed class ListarExperienciasEducativasDePlanHandler(
     }
 }
 
+internal sealed class ObtenerExperienciaEducativaHandler(
+    SgplaDbContext contexto,
+    IAmbitoOfertaEducativa ambito,
+    IClasificacionesAcademicas clasificaciones)
+    : IQueryHandler<ObtenerExperienciaEducativaQuery, ExperienciaEducativaResponse>
+{
+    public async Task<Result<ExperienciaEducativaResponse>> HandleAsync(
+        ObtenerExperienciaEducativaQuery query,
+        CancellationToken cancellationToken)
+    {
+        var programas = await ProgramaEducativoAmbito.AplicarAsync(
+            contexto.Set<ProgramaEducativo>().AsNoTracking(), ambito, cancellationToken);
+
+        var plan = await (
+            from e in contexto.Set<ExperienciaEducativa>().AsNoTracking()
+            join p in contexto.Set<PlanEstudios>().AsNoTracking() on e.PlanEstudiosId equals p.Id
+            join programa in programas on p.ProgramaEducativoId equals programa.Id
+            where e.Id == query.Id
+            select new PlanEstudiosResumenResponse(p.Id, p.Codigo))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (plan is null)
+        {
+            return ExperienciaEducativaErrors.NoEncontrado(query.Id);
+        }
+
+        var experiencia = await ExperienciaEducativaIntermedia
+            .Proyectar(contexto, contexto.Set<ExperienciaEducativa>().AsNoTracking().Where(e => e.Id == query.Id))
+            .FirstAsync(cancellationToken);
+
+        var respuestas = await ExperienciaEducativaIntermedia.ArmarRespuestasAsync(
+            [experiencia], plan, clasificaciones, cancellationToken);
+        return respuestas[0];
+    }
+}
+
 /// <summary>EE con solo el id del área; el nombre del área se resuelve con una llamada por contrato, sobre toda la lista.</summary>
 internal sealed record ExperienciaEducativaIntermedia(
     int Id,

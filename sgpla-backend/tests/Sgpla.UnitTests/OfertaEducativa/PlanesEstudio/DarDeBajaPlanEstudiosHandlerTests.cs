@@ -24,7 +24,8 @@ public sealed class DarDeBajaPlanEstudiosHandlerTests
 
     public DarDeBajaPlanEstudiosHandlerTests()
     {
-        _repositorio.Registrar(Id, _plan, EntidadId);
+        _repositorio.Registrar(Id, _plan);
+        _repositorio.EntidadDelPlan = EntidadId;
         _ambito.EntidadesEscribibles.Add(EntidadId);
     }
 

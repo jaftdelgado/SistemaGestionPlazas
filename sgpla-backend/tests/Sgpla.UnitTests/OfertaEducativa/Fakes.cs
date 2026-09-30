@@ -3,6 +3,7 @@ using Sgpla.Modules.Catalogos.Application.Contracts;
 using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.Ambito;
 using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.OfertaEducativa.Application.ExperienciasEducativas;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
 using Sgpla.Modules.OfertaEducativa.Application.PlanesEstudio;
 using Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
@@ -189,12 +190,13 @@ internal sealed class ProgramaEducativoRepositoryFalso : IProgramaEducativoRepos
 }
 
 /// <summary>
-/// Repositorio en memoria de planes de estudio. Cada plan se registra con la entidad de su programa; la unicidad del
-/// código se simula con los pares programa-código registrados.
+/// Repositorio en memoria de planes de estudio. Las entidades no tienen id asignado (no pasan por la base), así que
+/// <see cref="EntidadDelPlan"/> es la entidad de todos los planes registrados; la unicidad del código se simula con los
+/// pares programa-código registrados.
 /// </summary>
 internal sealed class PlanEstudiosRepositoryFalso : IPlanEstudiosRepository
 {
-    private readonly Dictionary<int, (PlanEstudios Plan, int EntidadAcademicaId)> _porId = [];
+    private readonly Dictionary<int, PlanEstudios> _porId = [];
 
     public List<PlanEstudios> Agregados { get; } = [];
 
@@ -203,12 +205,14 @@ internal sealed class PlanEstudiosRepositoryFalso : IPlanEstudiosRepository
 
     public HashSet<(int ProgramaEducativoId, string Codigo)> CodigosExistentes { get; } = [];
 
+    public int EntidadDelPlan { get; set; }
+
     public bool TieneExperienciasConProgramacionesActivas { get; set; }
 
-    public void Registrar(int id, PlanEstudios plan, int entidadAcademicaId) => _porId[id] = (plan, entidadAcademicaId);
+    public void Registrar(int id, PlanEstudios plan) => _porId[id] = plan;
 
     public Task<PlanEstudios?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
-        Task.FromResult(_porId.TryGetValue(id, out var registro) ? registro.Plan : null);
+        Task.FromResult(_porId.GetValueOrDefault(id));
 
     public Task<PlanEstudios?> ObtenerConExperienciasAsync(int id, CancellationToken cancellationToken) =>
         ObtenerPorIdAsync(id, cancellationToken);
@@ -220,7 +224,7 @@ internal sealed class PlanEstudiosRepositoryFalso : IPlanEstudiosRepository
         Task.FromResult<int?>(EntidadesDeProgramasActivos.TryGetValue(programaEducativoId, out var entidadId) ? entidadId : null);
 
     public Task<int> ObtenerEntidadDelPlanAsync(int planEstudiosId, CancellationToken cancellationToken) =>
-        Task.FromResult(_porId[planEstudiosId].EntidadAcademicaId);
+        Task.FromResult(EntidadDelPlan);
 
     public Task<bool> TieneExperienciasConProgramacionesActivasAsync(int planEstudiosId, CancellationToken cancellationToken) =>
         Task.FromResult(TieneExperienciasConProgramacionesActivas);
@@ -240,4 +244,40 @@ internal sealed class ReferenciasExperienciaEducativaFalsas(bool tieneReferencia
         Consultas.Add(experienciaEducativaIds);
         return Task.FromResult(tieneReferencias);
     }
+}
+
+/// <summary>
+/// Repositorio en memoria de experiencias educativas. Las entidades no tienen id asignado, así que
+/// <see cref="EntidadDeLaExperiencia"/> es la entidad de todas las registradas; la unicidad de materia y curso se simula
+/// con los pares registrados, comparados de forma ordinal.
+/// </summary>
+internal sealed class ExperienciaEducativaRepositoryFalso : IExperienciaEducativaRepository
+{
+    private readonly Dictionary<int, ExperienciaEducativa> _porId = [];
+
+    public HashSet<(string Materia, string Curso)> MateriasYCursosExistentes { get; } = [];
+
+    public int EntidadDeLaExperiencia { get; set; }
+
+    public bool TuvoProgramaciones { get; set; }
+
+    public bool TieneProgramacionesActivas { get; set; }
+
+    public void Registrar(int id, ExperienciaEducativa experiencia) => _porId[id] = experiencia;
+
+    public Task<ExperienciaEducativa?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
+        Task.FromResult(_porId.GetValueOrDefault(id));
+
+    public Task<bool> ExisteMateriaCursoAsync(
+        int planEstudiosId, string materia, string curso, CancellationToken cancellationToken) =>
+        Task.FromResult(MateriasYCursosExistentes.Contains((materia, curso)));
+
+    public Task<bool> TuvoProgramacionesAsync(int experienciaEducativaId, CancellationToken cancellationToken) =>
+        Task.FromResult(TuvoProgramaciones);
+
+    public Task<bool> TieneProgramacionesActivasAsync(int experienciaEducativaId, CancellationToken cancellationToken) =>
+        Task.FromResult(TieneProgramacionesActivas);
+
+    public Task<int> ObtenerEntidadAsync(int experienciaEducativaId, CancellationToken cancellationToken) =>
+        Task.FromResult(EntidadDeLaExperiencia);
 }
