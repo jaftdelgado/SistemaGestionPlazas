@@ -15,7 +15,7 @@ Produce un resultado de verificación fiable y reportado tal como salió. Todo c
 
 ## Flujo
 
-1. Confirma la rama y el árbol: `git status --short` y `git branch --show-current`. El script verifica la copia de trabajo, incluidos los cambios sin confirmar.
+1. Confirma la rama y el árbol: `git status --short` y `git branch --show-current`. El script verifica la copia de trabajo, incluidos los cambios sin confirmar. Si el entorno de `docker compose` está levantado, detenlo con `docker compose stop` para que no compita por memoria con Testcontainers.
 2. Ejecuta la verificación (unos 4 minutos; en segundo plano si la herramienta lo permite):
 
    ```bash
@@ -52,6 +52,7 @@ Produce un resultado de verificación fiable y reportado tal como salió. Todo c
 | `dotnet format` reporta `IMPORTS` o `IDE0055` | Orden de `using` o formato | Corrige el archivo; no desactives la regla |
 | Error de compilación por un analizador | `TreatWarningsAsErrors` | Corrige el código; nunca `#pragma`, `SuppressMessage` sin justificación ni `<NoWarn>` |
 | Testcontainers no conecta con SQL Server | En Linux falta `host.docker.internal` | El script agrega `--add-host`; revisa que Docker esté en marcha y que el socket esté disponible |
+| `SqlException: Execution Timeout Expired` en consultas triviales, o la suite de integración tarda mucho más que de costumbre | Docker sin memoria: otro SQL Server (por ejemplo, el entorno de `docker compose`) compite con el de Testcontainers | `docker compose stop` antes de `verify.sh` y repite; `smoke.sh` vuelve a levantar el entorno después. No toques la prueba |
 | Una prueba de integración falla solo a veces | Una aserción no acotada a los datos de la prueba | Ver `backend-testing` |
 | `smoke.sh` dice que falta `.env` | No se copió `.env.example` | `cp .env.example .env` en la raíz |
 | La sección de atajos dice "omitido" | No existe `origin/develop` localmente | `git fetch origin` |
