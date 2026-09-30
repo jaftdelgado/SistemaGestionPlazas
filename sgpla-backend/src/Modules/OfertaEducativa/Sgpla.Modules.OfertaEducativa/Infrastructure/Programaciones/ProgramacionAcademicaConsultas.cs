@@ -109,6 +109,41 @@ internal sealed class ObtenerProgramacionAcademicaHandler(
     }
 }
 
+internal sealed class ListarHorariosHandler(SgplaDbContext contexto, IAmbitoOfertaEducativa ambito)
+    : IQueryHandler<ListarHorariosQuery, IReadOnlyList<HorarioResponse>>
+{
+    public async Task<Result<IReadOnlyList<HorarioResponse>>> HandleAsync(
+        ListarHorariosQuery query,
+        CancellationToken cancellationToken)
+    {
+        var programas = await ProgramaEducativoAmbito.AplicarAsync(
+            contexto.Set<ProgramaEducativo>().AsNoTracking(), ambito, cancellationToken);
+
+        // La programación debe estar a la vista, igual que al obtenerla.
+        var visible = await ProgramacionAcademicaIntermedia
+            .ProgramacionesConContexto(contexto, programas)
+            .AnyAsync(x => x.Programacion.Id == query.ProgramacionAcademicaId, cancellationToken);
+
+        if (!visible)
+        {
+            return ProgramacionAcademicaErrors.NoEncontrado(query.ProgramacionAcademicaId);
+        }
+
+        // Todas las filas: la tabla solo guarda el snapshot vigente de PLANEA (DATABASE.md §5).
+        var horarios = await contexto.Set<HorarioProgramacion>()
+            .AsNoTracking()
+            .Where(h => h.ProgramacionAcademicaId == query.ProgramacionAcademicaId)
+            .OrderBy(h => h.DiaSemana)
+            .ThenBy(h => h.HoraInicio)
+            .ThenBy(h => h.Id)
+            .Select(h => new HorarioResponse(
+                h.Id, h.DiaSemana, h.HoraInicio, h.HoraFin, h.FechaInicio, h.FechaFin, h.Edificio, h.Aula))
+            .ToListAsync(cancellationToken);
+
+        return Result.Success<IReadOnlyList<HorarioResponse>>(horarios);
+    }
+}
+
 /// <summary>Programación junto con su periodo, EE, plan y programa, ya restringida al ámbito del usuario.</summary>
 internal sealed class ProgramacionConContexto
 {

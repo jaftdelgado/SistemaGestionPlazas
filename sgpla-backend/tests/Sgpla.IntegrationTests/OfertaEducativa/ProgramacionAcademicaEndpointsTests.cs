@@ -290,6 +290,137 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         }
     }
 
+    [Fact]
+    public async Task Horarios_Responde200EnOrdenDeDiaHoraEId_ConEspacioNuloYFormatoDeHorasYFechas()
+    {
+        using var superusuario = await _api.CrearClienteSuperusuarioAsync();
+        using var escenario = await EscenarioOferta.CrearAsync(_api, superusuario);
+        var plan = await CrearPlanAsync(escenario.Dgaa, escenario.ProgramaId, 1);
+        var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
+        var programacion = await InsertarAsync(periodo, plan.Experiencias[0].Id, "NRC001");
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var otraSincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var inicio = new DateOnly(2026, 8, 10);
+        var fin = new DateOnly(2026, 12, 4);
+
+        var miercoles = await InsertarHorarioAsync(programacion, sincronizacion, 3, 8, 10, inicio, fin);
+        var lunesTarde = await InsertarHorarioAsync(programacion, sincronizacion, 1, 10, 12, inicio, fin, "Edificio A", "Aula 5");
+        var lunesMananaLarga = await InsertarHorarioAsync(programacion, sincronizacion, 1, 8, 10, inicio, fin);
+        var lunesMananaCorta = await InsertarHorarioAsync(programacion, sincronizacion, 1, 8, 9, inicio, fin);
+        // Sin filtro por fechas ni por sincronización: una sesión de un periodo ya pasado y de otra sincronización también sale.
+        var sabado = await InsertarHorarioAsync(
+            programacion, otraSincronizacion, 6, 9, 11, new DateOnly(2020, 1, 6), new DateOnly(2020, 5, 1));
+
+        using var respuesta = await superusuario.GetAsync(Uri($"/{programacion}/horarios"), Cancelacion);
+        var horarios = (await EscenarioOferta.Leer(respuesta)).EnumerateArray().ToList();
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        horarios.Select(h => h.GetProperty("id").GetInt32())
+            .ShouldBe([lunesMananaLarga, lunesMananaCorta, lunesTarde, miercoles, sabado]);
+
+        var primera = horarios[0];
+        primera.GetProperty("diaSemana").GetInt32().ShouldBe(1);
+        primera.GetProperty("horaInicio").GetString().ShouldBe("08:00:00");
+        primera.GetProperty("horaFin").GetString().ShouldBe("10:00:00");
+        primera.GetProperty("fechaInicio").GetString().ShouldBe("2026-08-10");
+        primera.GetProperty("fechaFin").GetString().ShouldBe("2026-12-04");
+        primera.GetProperty("edificio").ValueKind.ShouldBe(JsonValueKind.Null);
+        primera.GetProperty("aula").ValueKind.ShouldBe(JsonValueKind.Null);
+
+        var conEspacio = horarios[2];
+        conEspacio.GetProperty("horaInicio").GetString().ShouldBe("10:00:00");
+        conEspacio.GetProperty("edificio").GetString().ShouldBe("Edificio A");
+        conEspacio.GetProperty("aula").GetString().ShouldBe("Aula 5");
+
+        horarios[4].GetProperty("fechaInicio").GetString().ShouldBe("2020-01-06");
+    }
+
+    [Fact]
+    public async Task Horarios_NoIncluyeLasSesionesDeOtraProgramacion_YSinSesionesRespondeArregloVacio()
+    {
+        using var superusuario = await _api.CrearClienteSuperusuarioAsync();
+        using var escenario = await EscenarioOferta.CrearAsync(_api, superusuario);
+        var plan = await CrearPlanAsync(escenario.Dgaa, escenario.ProgramaId, 2);
+        var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
+        var conSesion = await InsertarAsync(periodo, plan.Experiencias[0].Id, "NRC001");
+        var sinSesion = await InsertarAsync(periodo, plan.Experiencias[1].Id, "NRC002");
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var sesion = await InsertarHorarioAsync(
+            conSesion, sincronizacion, 2, 7, 9, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
+
+        using var delVacio = await superusuario.GetAsync(Uri($"/{sinSesion}/horarios"), Cancelacion);
+        using var delOtro = await superusuario.GetAsync(Uri($"/{conSesion}/horarios"), Cancelacion);
+
+        delVacio.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await EscenarioOferta.Leer(delVacio)).GetArrayLength().ShouldBe(0);
+        (await EscenarioOferta.Leer(delOtro)).EnumerateArray().Select(h => h.GetProperty("id").GetInt32()).ShouldBe([sesion]);
+    }
+
+    [Fact]
+    public async Task Horarios_DeUnaProgramacionDadaDeBajaOInexistente_Responde404()
+    {
+        using var superusuario = await _api.CrearClienteSuperusuarioAsync();
+        using var escenario = await EscenarioOferta.CrearAsync(_api, superusuario);
+        var plan = await CrearPlanAsync(escenario.Dgaa, escenario.ProgramaId, 1);
+        var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
+        var dadaDeBaja = await InsertarAsync(periodo, plan.Experiencias[0].Id, "NRC001", dadaDeBaja: true);
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        await InsertarHorarioAsync(dadaDeBaja, sincronizacion, 1, 8, 10, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
+
+        using var deLaBaja = await superusuario.GetAsync(Uri($"/{dadaDeBaja}/horarios"), Cancelacion);
+        using var inexistente = await superusuario.GetAsync(Uri($"/{int.MaxValue}/horarios"), Cancelacion);
+
+        await VerificaNoEncontradoAsync(deLaBaja);
+        await VerificaNoEncontradoAsync(inexistente);
+    }
+
+    [Fact]
+    public async Task Horarios_FueraDelAmbito_Responde404_YDentroDelAmbito200()
+    {
+        using var superusuario = await _api.CrearClienteSuperusuarioAsync();
+        using var propio = await EscenarioOferta.CrearAsync(_api, superusuario);
+        using var ajeno = await EscenarioOferta.CrearAsync(_api, superusuario);
+        using var entidadAcademica = await _api.CrearClienteEntidadAcademicaAsync(propio.EntidadId);
+        var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
+        var planPropio = await CrearPlanAsync(propio.Dgaa, propio.ProgramaId, 1);
+        var planAjeno = await CrearPlanAsync(ajeno.Dgaa, ajeno.ProgramaId, 1);
+        var programacionPropia = await InsertarAsync(periodo, planPropio.Experiencias[0].Id, "NRC001");
+        var programacionAjena = await InsertarAsync(periodo, planAjeno.Experiencias[0].Id, "NRC002");
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        await InsertarHorarioAsync(programacionPropia, sincronizacion, 1, 8, 10, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
+        await InsertarHorarioAsync(programacionAjena, sincronizacion, 1, 8, 10, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
+
+        using var dgaaPropio = await propio.Dgaa.GetAsync(Uri($"/{programacionPropia}/horarios"), Cancelacion);
+        using var dgaaAjeno = await propio.Dgaa.GetAsync(Uri($"/{programacionAjena}/horarios"), Cancelacion);
+        using var entidadPropia = await entidadAcademica.GetAsync(Uri($"/{programacionPropia}/horarios"), Cancelacion);
+        using var entidadAjena = await entidadAcademica.GetAsync(Uri($"/{programacionAjena}/horarios"), Cancelacion);
+        using var superusuarioAjena = await superusuario.GetAsync(Uri($"/{programacionAjena}/horarios"), Cancelacion);
+
+        dgaaPropio.StatusCode.ShouldBe(HttpStatusCode.OK);
+        entidadPropia.StatusCode.ShouldBe(HttpStatusCode.OK);
+        superusuarioAjena.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await VerificaNoEncontradoAsync(dgaaAjeno);
+        await VerificaNoEncontradoAsync(entidadAjena);
+    }
+
+    [Fact]
+    public async Task Horarios_Escribir_Responde405()
+    {
+        using var superusuario = await _api.CrearClienteSuperusuarioAsync();
+
+        foreach (var metodo in new[] { "POST", "PUT", "DELETE" })
+        {
+            using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), Uri("/1/horarios"))
+            {
+                Content = JsonContent.Create(new { diaSemana = 1 }),
+            };
+
+            using var respuesta = await superusuario.SendAsync(solicitud, Cancelacion);
+
+            respuesta.StatusCode.ShouldBe(HttpStatusCode.MethodNotAllowed, metodo);
+        }
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static Uri Uri(string sufijo = "") => new($"{Ruta}{sufijo}", UriKind.Relative);
@@ -322,6 +453,28 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
     private Task<int> InsertarAsync(int periodoEscolarId, int experienciaEducativaId, string nrc, bool dadaDeBaja = false) =>
         DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(
             sqlServer.CadenaConexion, periodoEscolarId, experienciaEducativaId, dadaDeBaja, nrc);
+
+    private Task<int> InsertarHorarioAsync(
+        int programacionId,
+        int sincronizacionId,
+        byte dia,
+        int horaInicio,
+        int horaFin,
+        DateOnly fechaInicio,
+        DateOnly fechaFin,
+        string? edificio = null,
+        string? aula = null) =>
+        DatosAcademicosSql.InsertarHorarioAsync(
+            sqlServer.CadenaConexion,
+            programacionId,
+            sincronizacionId,
+            dia,
+            new TimeOnly(horaInicio, 0),
+            new TimeOnly(horaFin, 0),
+            fechaInicio,
+            fechaFin,
+            edificio,
+            aula);
 
     /// <summary>Con los filtros dados, el cliente ve exactamente estas programaciones, en este orden.</summary>
     private static async Task VerificaFiltroAsync(HttpClient cliente, string consulta, params int[] idsEsperados)

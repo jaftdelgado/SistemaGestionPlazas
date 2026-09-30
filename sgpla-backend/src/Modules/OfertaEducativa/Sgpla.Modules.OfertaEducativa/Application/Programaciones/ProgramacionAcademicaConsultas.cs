@@ -20,6 +20,16 @@ internal sealed record ProgramacionAcademicaResponse(
     ProgramaEducativoResumenResponse ProgramaEducativo,
     EntidadAcademicaResumenResponse EntidadAcademica);
 
+internal sealed record HorarioResponse(
+    int Id,
+    byte DiaSemana,
+    TimeOnly HoraInicio,
+    TimeOnly HoraFin,
+    DateOnly FechaInicio,
+    DateOnly FechaFin,
+    string? Edificio,
+    string? Aula);
+
 /// <summary>Filtros opcionales, combinados con AND. <paramref name="Nrc"/> se recorta, se pasa a mayúsculas y se compara exacto. Un NRC vacío o solo con espacios se ignora.</summary>
 internal sealed record FiltrosProgramacionesAcademicas(
     int? PeriodoEscolarId,
@@ -60,3 +70,6 @@ internal sealed class ListarProgramacionesAcademicasValidator : AbstractValidato
 }
 
 internal sealed record ObtenerProgramacionAcademicaQuery(int Id);
+
+/// <summary>Sesiones vigentes de una programación del ámbito, por día, hora de inicio e id. 404 si no está a la vista.</summary>
+internal sealed record ListarHorariosQuery(int ProgramacionAcademicaId);

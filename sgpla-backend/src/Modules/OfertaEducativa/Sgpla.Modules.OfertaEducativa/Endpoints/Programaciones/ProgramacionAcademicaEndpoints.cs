@@ -21,6 +21,9 @@ internal static class ProgramacionAcademicaEndpoints
         grupo.MapGet("/{id:int}", Obtener).WithName("ObtenerProgramacionAcademica")
             .WithSummary("Obtiene una programación académica activa de tu ámbito.")
             .ProducesProblem(StatusCodes.Status404NotFound);
+        grupo.MapGet("/{id:int}/horarios", ListarHorarios).WithName("ListarHorariosProgramacion")
+            .WithSummary("Lista las sesiones vigentes de una programación, importadas de PLANEA.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return modulo;
     }
@@ -38,6 +41,12 @@ internal static class ProgramacionAcademicaEndpoints
         IQueryHandler<ObtenerProgramacionAcademicaQuery, ProgramacionAcademicaResponse> handler,
         CancellationToken cancellationToken) =>
         (await handler.HandleAsync(new ObtenerProgramacionAcademicaQuery(id), cancellationToken)).ToOk();
+
+    private static async Task<Results<Ok<IReadOnlyList<HorarioResponse>>, ProblemHttpResult>> ListarHorarios(
+        int id,
+        IQueryHandler<ListarHorariosQuery, IReadOnlyList<HorarioResponse>> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new ListarHorariosQuery(id), cancellationToken)).ToOk();
 }
 
 /// <summary>Parámetros de consulta del listado; cada uno llega en camelCase, como lo envía el frontend.</summary>
