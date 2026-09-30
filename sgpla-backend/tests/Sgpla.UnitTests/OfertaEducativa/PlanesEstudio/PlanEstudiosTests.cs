@@ -120,6 +120,26 @@ public sealed class PlanEstudiosTests
     }
 
     [Fact]
+    public void Crear_ConUnElementoNulo_FallaConExperienciaVaciaEnSuIndice()
+    {
+        var experiencias = new List<DatosExperienciaEducativa?>(Experiencias(4)) { [2] = null };
+
+        var error = PlanEstudios.Crear("ISOF-14", ProgramaId, experiencias).Error;
+
+        error.ShouldBe(PlanEstudiosErrors.ExperienciaVacia(2));
+        error.Campo.ShouldBe("ExperienciasEducativas[2]");
+    }
+
+    [Fact]
+    public void Crear_ConUnaExperienciaInvalidaAntesDeUnNulo_DevuelveElErrorDeLaInvalida()
+    {
+        var experiencias = new List<DatosExperienciaEducativa?>(Experiencias(3)) { [2] = null };
+        experiencias[0] = Datos() with { Creditos = 0 };
+
+        PlanEstudios.Crear("ISOF-14", ProgramaId, experiencias).Error.Campo.ShouldBe("ExperienciasEducativas[0].Creditos");
+    }
+
+    [Fact]
     public void Crear_ConUnaExperienciaInvalidaYOtraRepetida_DevuelveElErrorDeLaExperienciaInvalida()
     {
         var experiencias = new List<DatosExperienciaEducativa>

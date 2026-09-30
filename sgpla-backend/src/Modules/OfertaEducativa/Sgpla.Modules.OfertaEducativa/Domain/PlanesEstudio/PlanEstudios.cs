@@ -29,12 +29,13 @@ internal sealed class PlanEstudios : Entity, IEliminable
 
     /// <summary>
     /// Valida el código, el número de EE y cada EE (el primer error lleva el campo prefijado con su índice), y que no haya
-    /// dos con la misma materia y curso. Que el programa y las áreas existan lo comprueba el handler.
+    /// dos con la misma materia y curso. Un elemento nulo se rechaza en su índice. Que el programa y las áreas existan lo
+    /// comprueba el handler.
     /// </summary>
     public static Result<PlanEstudios> Crear(
         string codigo,
         int programaEducativoId,
-        IReadOnlyList<DatosExperienciaEducativa> experiencias)
+        IReadOnlyList<DatosExperienciaEducativa?> experiencias)
     {
         ArgumentNullException.ThrowIfNull(experiencias);
 
@@ -58,7 +59,12 @@ internal sealed class PlanEstudios : Entity, IEliminable
 
         for (var i = 0; i < experiencias.Count; i++)
         {
-            var creada = ExperienciaEducativa.Crear(experiencias[i]);
+            if (experiencias[i] is not { } datos)
+            {
+                return PlanEstudiosErrors.ExperienciaVacia(i);
+            }
+
+            var creada = ExperienciaEducativa.Crear(datos);
             if (creada.IsFailure)
             {
                 return creada.Error with { Campo = $"{nameof(ExperienciasEducativas)}[{i}].{creada.Error.Campo}" };

@@ -45,6 +45,12 @@ internal static class PlanEstudiosErrors
         "La materia y el curso ya aparecen en otra experiencia educativa del plan.",
         CampoDeExperiencia(indice, nameof(ExperienciaEducativa.Curso)));
 
+    /// <param name="indice">Posición (desde 0) del elemento nulo.</param>
+    public static Error ExperienciaVacia(int indice) => Error.Validation(
+        "PlanEstudios.ExperienciaVacia",
+        "La experiencia educativa no puede estar vacía.",
+        $"{nameof(PlanEstudios.ExperienciasEducativas)}[{indice}]");
+
     /// <param name="indice">Posición (desde 0) de la primera EE con un área inexistente.</param>
     public static Error AreaFormacionInexistente(int indice) => Error.Validation(
         "PlanEstudios.AreaFormacionInexistente",

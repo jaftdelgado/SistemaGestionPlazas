@@ -119,7 +119,7 @@ internal sealed record ListarPlanesEstudioRequest(
 internal sealed record ImportarPlanEstudiosRequest(
     int ProgramaEducativoId,
     string Codigo,
-    IReadOnlyList<ExperienciaEducativaEntrada>? ExperienciasEducativas)
+    IReadOnlyList<ExperienciaEducativaEntrada?>? ExperienciasEducativas)
 {
     public ImportarPlanEstudiosCommand ComoComando() => new(ProgramaEducativoId, Codigo, ExperienciasEducativas ?? []);
 }

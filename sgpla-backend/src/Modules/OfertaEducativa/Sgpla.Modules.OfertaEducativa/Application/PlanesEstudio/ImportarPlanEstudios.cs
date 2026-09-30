@@ -10,7 +10,7 @@ namespace Sgpla.Modules.OfertaEducativa.Application.PlanesEstudio;
 internal sealed record ImportarPlanEstudiosCommand(
     int ProgramaEducativoId,
     string Codigo,
-    IReadOnlyList<ExperienciaEducativaEntrada> ExperienciasEducativas);
+    IReadOnlyList<ExperienciaEducativaEntrada?> ExperienciasEducativas);
 
 /// <summary>
 /// Crea el plan con todas sus EE o no crea nada (Modulo_OfertaEducativa.md, D6). Primero valida la forma de todo el plan
@@ -25,7 +25,7 @@ internal sealed class ImportarPlanEstudiosHandler(
     public async Task<Result<int>> HandleAsync(ImportarPlanEstudiosCommand command, CancellationToken cancellationToken)
     {
         var creado = PlanEstudios.Crear(
-            command.Codigo, command.ProgramaEducativoId, command.ExperienciasEducativas.Select(e => e.ADatos()).ToList());
+            command.Codigo, command.ProgramaEducativoId, command.ExperienciasEducativas.Select(e => e?.ADatos()).ToList());
         if (creado.IsFailure)
         {
             return creado.Error;

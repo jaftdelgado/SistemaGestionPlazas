@@ -49,6 +49,17 @@ public sealed class ImportarPlanEstudiosHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ConUnElementoNulo_FallaConExperienciaVaciaSinGuardar()
+    {
+        var resultado = await Handler().HandleAsync(
+            new ImportarPlanEstudiosCommand(ProgramaId, "ISOF-14", [Experiencia("A", "1"), null]),
+            TestContext.Current.CancellationToken);
+
+        resultado.Error.ShouldBe(PlanEstudiosErrors.ExperienciaVacia(1));
+        VerificaQueNoGuardo();
+    }
+
+    [Fact]
     public async Task HandleAsync_ConCodigoInvalido_FallaSinGuardar()
     {
         var resultado = await Handler().HandleAsync(

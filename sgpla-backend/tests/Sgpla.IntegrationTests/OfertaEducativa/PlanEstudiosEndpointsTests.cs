@@ -148,6 +148,18 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
     }
 
     [Fact]
+    public async Task Importar_ConUnElementoNulo_Responde400ConElIndiceYNoCreaNada()
+    {
+        using var escenario = await NuevoEscenarioAsync();
+
+        using var respuesta = await escenario.Dgaa.PostAsJsonAsync(
+            Uri(), Cuerpo(escenario.ProgramaId, EscenarioOferta.CodigoDePlan(), [EscenarioOferta.Experiencia(), null!]), Cancelacion);
+
+        await VerificaErrorDeCampoAsync(respuesta, "experienciasEducativas[1]", "PlanEstudios.ExperienciaVacia");
+        await VerificaQueNoHayPlanesAsync(escenario);
+    }
+
+    [Fact]
     public async Task Importar_ConExperienciaRepetida_Responde400ConElIndiceDeLaSegundaYNoCreaNada()
     {
         using var escenario = await NuevoEscenarioAsync();
