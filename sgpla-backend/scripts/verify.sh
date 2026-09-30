@@ -22,10 +22,12 @@ BASE="${SGPLA_BASE:-origin/develop}"
 mkdir -p "$(dirname "$LOG")"
 
 # En Git Bash, Docker necesita la ruta de Windows del host y que MSYS no reescriba las rutas del contenedor.
+# MSYS_NO_PATHCONV se aplica solo a la llamada de docker: exportado, git dejaría de entender las rutas /c/...
 host_extra=()
+sin_conversion=()
 case "$(uname -s)" in
   MINGW* | MSYS* | CYGWIN*)
-    export MSYS_NO_PATHCONV=1
+    sin_conversion=(env MSYS_NO_PATHCONV=1)
     RAIZ_HOST="$(cd "$RAIZ" && pwd -W)"
     ;;
   Linux)
@@ -42,7 +44,7 @@ echo "Verificando $BACKEND con $IMAGEN_SDK (log: $LOG)..."
 
 # La copia dentro del contenedor aísla bin/ y obj/ de los del host; la normalización a LF es una defensa por si
 # la copia de trabajo tiene CRLF (.editorconfig exige LF y dotnet format fallaría).
-docker run --rm "${host_extra[@]}" \
+${sin_conversion[@]+"${sin_conversion[@]}"} docker run --rm ${host_extra[@]+"${host_extra[@]}"} \
   -v "$RAIZ_HOST/sgpla-backend:/src:ro" \
   -v "$RAIZ_HOST/.editorconfig:/.editorconfig:ro" \
   -v sgpla-nuget:/root/.nuget/packages \
