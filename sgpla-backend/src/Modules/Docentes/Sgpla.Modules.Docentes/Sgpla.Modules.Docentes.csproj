@@ -13,7 +13,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Sgpla.BuildingBlocks.Infrastructure\Sgpla.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
-  <!-- Dependencias entre módulos (ver PLAN_INICIAL.md, grafo de dependencias) -->
+  <!-- Dependencias entre módulos -->
   <ItemGroup>
     <ProjectReference Include="..\..\OfertaEducativa\Sgpla.Modules.OfertaEducativa\Sgpla.Modules.OfertaEducativa.csproj" />
     <ProjectReference Include="..\..\Catalogos\Sgpla.Modules.Catalogos\Sgpla.Modules.Catalogos.csproj" />

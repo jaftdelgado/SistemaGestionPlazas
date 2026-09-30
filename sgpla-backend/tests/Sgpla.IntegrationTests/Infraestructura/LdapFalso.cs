@@ -3,7 +3,7 @@ using Sgpla.Modules.Usuarios.Application.Autenticacion;
 namespace Sgpla.IntegrationTests.Infraestructura;
 
 /// <summary>
-/// Reemplaza a <c>LdapAutenticador</c> en las pruebas (Modulo_Usuarios.md, decisión D11): acepta
+/// Reemplaza a <c>LdapAutenticador</c> en las pruebas: acepta
 /// <see cref="ContrasenaValida"/>, responde <see cref="ResultadoLdap.NoDisponible"/> para un correo que empieza con
 /// <c>ldap-caido</c> y <see cref="ResultadoLdap.CredencialesInvalidas"/> para todo lo demás.
 /// </summary>

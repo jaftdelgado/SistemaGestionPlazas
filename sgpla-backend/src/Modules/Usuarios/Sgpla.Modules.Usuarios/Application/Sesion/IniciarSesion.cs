@@ -22,7 +22,7 @@ internal sealed class IniciarSesionValidator : AbstractValidator<IniciarSesionCo
     }
 }
 
-/// <summary>Sigue el orden de DATABASE.md §13.3: la contraseña nunca se guarda, se registra ni se devuelve.</summary>
+/// <summary>La contraseña nunca se guarda, se registra ni se devuelve.</summary>
 internal sealed class IniciarSesionHandler(
     IUsuarioRepository repositorio,
     IAmbitosInstitucionales ambitos,

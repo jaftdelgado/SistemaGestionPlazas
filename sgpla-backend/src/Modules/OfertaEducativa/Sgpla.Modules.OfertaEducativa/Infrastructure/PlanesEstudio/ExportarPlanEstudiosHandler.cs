@@ -14,7 +14,7 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Infrastructure.PlanesEstudio;
 
 /// <summary>
-/// Genera el .xlsx del plan con el formato de la UV (Modulo_OfertaEducativa.md, D7): la hoja <c>Hoja1</c>, los 14
+/// Genera el .xlsx del plan con el formato de la UV: la hoja <c>Hoja1</c>, los 14
 /// encabezados en la fila 1 y una fila por EE activa. Es el inverso de las reglas de mapeo de la importación. No ajusta el
 /// ancho de las columnas, porque eso depende de las fuentes instaladas en el sistema.
 /// </summary>

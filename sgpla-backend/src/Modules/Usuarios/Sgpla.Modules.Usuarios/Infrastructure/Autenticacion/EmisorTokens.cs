@@ -9,7 +9,7 @@ using Sgpla.Modules.Usuarios.Domain.Cuentas;
 
 namespace Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
 
-/// <summary>El token no lleva el estado de la contraseña: la base es la fuente (Modulo_Usuarios.md, decisión D4).</summary>
+/// <summary>El token no lleva el estado de la contraseña: la base es la fuente.</summary>
 internal sealed class EmisorTokens(IOptions<JwtOptions> opciones, TimeProvider reloj) : IEmisorTokens
 {
     public TokenEmitido Emitir(Usuario usuario)

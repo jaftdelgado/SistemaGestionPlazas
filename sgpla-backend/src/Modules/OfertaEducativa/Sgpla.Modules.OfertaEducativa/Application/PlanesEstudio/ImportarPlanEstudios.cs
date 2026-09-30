@@ -13,7 +13,7 @@ internal sealed record ImportarPlanEstudiosCommand(
     IReadOnlyList<ExperienciaEducativaEntrada?> ExperienciasEducativas);
 
 /// <summary>
-/// Crea el plan con todas sus EE o no crea nada (Modulo_OfertaEducativa.md, D6). Primero valida la forma de todo el plan
+/// Crea el plan con todas sus EE o no crea nada. Primero valida la forma de todo el plan
 /// (dominio) y después las referencias; un programa fuera del ámbito del DGAA se trata como inexistente (D9 y D15).
 /// </summary>
 internal sealed class ImportarPlanEstudiosHandler(

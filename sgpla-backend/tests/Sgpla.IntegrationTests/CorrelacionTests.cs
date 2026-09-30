@@ -9,7 +9,6 @@ namespace Sgpla.IntegrationTests;
 /// <summary>
 /// El traceId de una respuesta de error permite encontrar los logs de esa misma petición.
 /// El error lo produce <c>ToProblem</c>, el helper que usan todos los endpoints, así que la prueba cubre a todos los módulos.
-/// Ver ESTANDAR_MODULOS.md, sección 11.
 /// </summary>
 public sealed partial class CorrelacionTests(SqlServerFixture sqlServer) : IAsyncDisposable
 {

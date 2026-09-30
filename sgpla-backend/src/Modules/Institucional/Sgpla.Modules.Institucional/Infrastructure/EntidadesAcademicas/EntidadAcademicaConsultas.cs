@@ -125,7 +125,7 @@ internal sealed class ListarEntidadesAcademicasHandler(
     private static string? NuloSiVacio(string? valor) => string.IsNullOrEmpty(valor) ? null : valor;
 }
 
-/// <summary>Restringe las entidades al ámbito del usuario en curso (Modulo_Usuarios.md, sección 10).</summary>
+/// <summary>Restringe las entidades al ámbito del usuario en curso.</summary>
 internal static class EntidadAcademicaAmbito
 {
     public static IQueryable<EntidadAcademica> Aplicar(IQueryable<EntidadAcademica> entidades, ICurrentUser actual) =>

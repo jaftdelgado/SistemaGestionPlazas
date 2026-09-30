@@ -9,7 +9,7 @@ internal sealed record DarDeBajaPeriodoEscolarCommand(int Id);
 
 /// <summary>
 /// Sin cascada: la baja se bloquea con cualquier programación del periodo, incluidas las dadas de baja, o con una
-/// referencia de otro módulo (Modulo_OfertaEducativa.md, D11; pendientes.md, P8).
+/// referencia de otro módulo.
 /// </summary>
 internal sealed class DarDeBajaPeriodoEscolarHandler(
     IPeriodoEscolarRepository repositorio,

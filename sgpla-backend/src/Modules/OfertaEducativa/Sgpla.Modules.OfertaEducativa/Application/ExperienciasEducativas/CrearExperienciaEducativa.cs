@@ -11,7 +11,7 @@ internal sealed record CrearExperienciaEducativaCommand(int PlanEstudiosId, Expe
 
 /// <summary>
 /// Agrega una EE a un plan activo del área del DGAA; un plan fuera de su ámbito se trata como inexistente (D9 y D15).
-/// La combinación de materia y curso no se reutiliza, ni siquiera con una EE dada de baja (DATABASE.md §5).
+/// La combinación de materia y curso no se reutiliza, ni siquiera con una EE dada de baja.
 /// </summary>
 internal sealed class CrearExperienciaEducativaHandler(
     IPlanEstudiosRepository planes,

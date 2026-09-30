@@ -2,7 +2,7 @@ namespace Sgpla.Modules.OfertaEducativa.Application.Contracts;
 
 /// <summary>
 /// Lo implementan los módulos que referencian periodos escolares (Integracion, SolicitudesApertura y Publicacion, P8).
-/// Cualquier referencia bloquea la baja del periodo (Modulo_OfertaEducativa.md, D11).
+/// Cualquier referencia bloquea la baja del periodo.
 /// </summary>
 public interface IReferenciasPeriodoEscolar
 {

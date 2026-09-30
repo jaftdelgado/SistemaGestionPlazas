@@ -8,8 +8,7 @@ namespace Sgpla.Modules.Institucional.Application.EntidadesAcademicas;
 internal sealed record DarDeBajaEntidadAcademicaCommand(int Id);
 
 /// <summary>
-/// Sin cascada: la baja se bloquea con usuarios activos o con programas educativos activos (Modulo_OfertaEducativa.md,
-/// decisión D10).
+/// Sin cascada: la baja se bloquea con usuarios activos o con programas educativos activos.
 /// </summary>
 internal sealed class DarDeBajaEntidadAcademicaHandler(
     IEntidadAcademicaRepository repositorio,

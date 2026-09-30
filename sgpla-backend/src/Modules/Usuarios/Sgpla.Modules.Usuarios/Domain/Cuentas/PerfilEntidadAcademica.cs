@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.Usuarios.Domain.Cuentas;
 
-/// <summary>Parte 1:1 del agregado <see cref="Usuario"/> exclusiva del rol <c>EntidadAcademica</c> (DATABASE.md §6.19).</summary>
+/// <summary>Parte 1:1 del agregado <see cref="Usuario"/> exclusiva del rol <c>EntidadAcademica</c>.</summary>
 internal sealed class PerfilEntidadAcademica
 {
     private PerfilEntidadAcademica()

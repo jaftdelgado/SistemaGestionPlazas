@@ -3,10 +3,10 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.Usuarios.Domain.Cuentas;
 
 /// <summary>
-/// Identidad de acceso al sistema (DATABASE.md §6.17). El rol decide el mecanismo de autenticación y exactamente
+/// Identidad de acceso al sistema. El rol decide el mecanismo de autenticación y exactamente
 /// qué parte del agregado tiene: un Superusuario su <see cref="Credencial"/>, un DGAA su <see cref="PerfilDgaa"/>
 /// y una Entidad Académica su <see cref="PerfilEntidadAcademica"/>. Con baja lógica y sin restauración
-/// (Modulo_Usuarios.md, decisión D3).
+///.
 /// </summary>
 internal sealed class Usuario : Entity, IEliminable
 {
@@ -101,7 +101,7 @@ internal sealed class Usuario : Entity, IEliminable
         return Result.Success();
     }
 
-    /// <summary>Idempotente. Da de baja también la credencial, con el mismo instante (DATABASE.md §13.2).</summary>
+    /// <summary>Idempotente. Da de baja también la credencial, con el mismo instante.</summary>
     public void DarDeBaja(DateTime utc)
     {
         FechaEliminacion ??= utc;

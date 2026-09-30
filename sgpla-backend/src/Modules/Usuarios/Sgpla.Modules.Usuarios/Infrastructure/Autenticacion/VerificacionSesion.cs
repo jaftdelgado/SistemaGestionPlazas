@@ -15,7 +15,7 @@ using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
 
-/// <summary>Verificación contra la base en cada petición autenticada (Modulo_Usuarios.md, sección 6).</summary>
+/// <summary>Verificación contra la base en cada petición autenticada.</summary>
 internal static class VerificacionSesion
 {
     public const string ClaimCambioContrasenaPendiente = "cambio_contrasena_pendiente";
@@ -38,7 +38,7 @@ internal static class VerificacionSesion
         }
 
         // AsNoTracking y proyección mínima: esta verificación corre en cada petición autenticada y no necesita el
-        // agregado completo con seguimiento de EF Core (Modulo_Usuarios.md, sección 6).
+        // agregado completo con seguimiento de EF Core.
         var contexto = context.HttpContext.RequestServices.GetRequiredService<SgplaDbContext>();
         var cuenta = await contexto.Set<Usuario>()
             .AsNoTracking()

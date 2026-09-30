@@ -11,7 +11,7 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
 {
     private const string Ruta = "/api/v1/oferta-educativa/planes-estudio";
 
-    /// <summary>Los 14 encabezados del formato de la UV, en orden (Modulo_OfertaEducativa.md, D7).</summary>
+    /// <summary>Los 14 encabezados del formato de la UV, en orden.</summary>
     private static readonly string[] EncabezadosDeLaUv =
     [
         "DESC_AREA_ACAD", "CODIGO_PLAN", "DESCRIPCION", "CODIGO_PER_CAT", "DESC_PER_CAT", "MATERIA_EE", "CURSO_EE", "DESC_EE",

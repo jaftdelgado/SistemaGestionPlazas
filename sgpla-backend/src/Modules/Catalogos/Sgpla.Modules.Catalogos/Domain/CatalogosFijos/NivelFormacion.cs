@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.Catalogos.Domain.CatalogosFijos;
 
-/// <summary>Niveles de formación de los programas educativos (DATABASE.md §6.7).</summary>
+/// <summary>Niveles de formación de los programas educativos.</summary>
 internal sealed class NivelFormacion : CatalogoFijo
 {
     public const int LongitudMaximaNombre = 200;

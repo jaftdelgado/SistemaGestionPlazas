@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Sgpla.SharedKernel;
 
-/// <summary>Normalización de textos compartida por los módulos (Modulo_Usuarios.md, sección 3).</summary>
+/// <summary>Normalización de textos compartida por los módulos.</summary>
 public static partial class Normalizacion
 {
     /// <summary>"  Facultad   de  Letras " → "Facultad de Letras". <c>null</c> → "".</summary>

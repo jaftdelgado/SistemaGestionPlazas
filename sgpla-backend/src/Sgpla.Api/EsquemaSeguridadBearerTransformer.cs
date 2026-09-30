@@ -3,7 +3,7 @@ using Microsoft.OpenApi;
 
 namespace Sgpla.Api;
 
-/// <summary>Declara el esquema Bearer en OpenAPI para que Scalar pueda enviar el token (Modulo_Usuarios.md, sección 4).</summary>
+/// <summary>Declara el esquema Bearer en OpenAPI para que Scalar pueda enviar el token.</summary>
 public sealed class EsquemaSeguridadBearerTransformer : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)

@@ -11,7 +11,7 @@ namespace Sgpla.BuildingBlocks.Infrastructure.Http;
 /// <summary>
 /// Traduce a 409 una violación de unicidad de SQL Server (2601/2627). Es la última defensa cuando dos peticiones
 /// simultáneas pasan la comprobación previa del handler. Solo registra el nombre de la restricción, porque el
-/// mensaje de SQL Server incluye el valor duplicado (ESTANDAR_MODULOS.md, sección 11).
+/// mensaje de SQL Server incluye el valor duplicado.
 /// </summary>
 public sealed partial class ViolacionUnicidadExceptionHandler(
     IProblemDetailsService problemDetails,

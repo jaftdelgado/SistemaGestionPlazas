@@ -8,6 +8,10 @@ Monorepo del Sistema de Gestión de Plazas Académicas (SGPLa).
 | `sgpla-web/` | Frontend en React (reservado, aún sin código). |
 | `DATABASE.md`, `DATABASE_DIAGRAM.md` | Modelo de datos normativo y diagrama entidad-relación. |
 | `PLAN_INICIAL.md` | Arquitectura, módulos y plan del esqueleto. |
+| `ESTANDAR_MODULOS.md` | Estándar normativo de implementación de los módulos del backend. |
+| `DECISIONES.md` | Decisiones de los módulos cerrados y sus desviaciones respecto al modelo y al estándar. |
+| `pendientes.md` | Reglas del modelo que esperan a un módulo que aún no existe. |
+| `AGENTS.md`, `.agents/skills/` | Reglas para los agentes de IA y skills del equipo (metodología, patrones y verificación). `CLAUDE.md` y `.claude/skills/` remiten a ellos. |
 | `docker-compose.yml`, `.env.example` | Entorno local completo: SQL Server 2022, migraciones y API. |
 
 ## Levantar el entorno

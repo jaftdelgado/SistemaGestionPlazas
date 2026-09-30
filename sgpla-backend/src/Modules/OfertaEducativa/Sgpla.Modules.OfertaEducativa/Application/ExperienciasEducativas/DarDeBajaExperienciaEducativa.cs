@@ -9,8 +9,8 @@ namespace Sgpla.Modules.OfertaEducativa.Application.ExperienciasEducativas;
 internal sealed record DarDeBajaExperienciaEducativaCommand(int Id);
 
 /// <summary>
-/// Sin cascada: la baja se bloquea con programaciones activas (Modulo_OfertaEducativa.md, D10) o con referencias de otros
-/// módulos (pendientes.md, P7). Dar de baja la última EE activa no da de baja el plan.
+/// Sin cascada: la baja se bloquea con programaciones activas o con referencias de otros
+/// módulos. Dar de baja la última EE activa no da de baja el plan.
 /// </summary>
 internal sealed class DarDeBajaExperienciaEducativaHandler(
     IExperienciaEducativaRepository repositorio,

@@ -3,8 +3,8 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Domain.Programaciones;
 
 /// <summary>
-/// NRC de una experiencia educativa en un periodo escolar (DATABASE.md §6.13). Solo lectura: la crea y la da de baja la
-/// sincronización con PLANEA (Modulo_OfertaEducativa.md, decisión D12).
+/// NRC de una experiencia educativa en un periodo escolar. Solo lectura: la crea y la da de baja la
+/// sincronización con PLANEA.
 /// </summary>
 internal sealed class ProgramacionAcademica : Entity, IEliminable
 {

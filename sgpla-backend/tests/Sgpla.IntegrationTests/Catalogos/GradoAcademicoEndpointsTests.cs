@@ -5,7 +5,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.Catalogos;
 
-/// <summary>Catálogo fijo: solo se lee lo que carga la semilla (DATABASE.md §6.21).</summary>
+/// <summary>Catálogo fijo: solo se lee lo que carga la semilla.</summary>
 public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/catalogos/grados-academicos";

@@ -1,6 +1,6 @@
 namespace Sgpla.Modules.OfertaEducativa.Application.Ambito;
 
-/// <summary>Ámbito del usuario en curso sobre la oferta educativa (DATABASE.md §13.1; Modulo_OfertaEducativa.md §6).</summary>
+/// <summary>Ámbito del usuario en curso sobre la oferta educativa.</summary>
 internal interface IAmbitoOfertaEducativa
 {
     /// <summary>

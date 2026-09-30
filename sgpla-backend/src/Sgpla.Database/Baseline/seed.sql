@@ -8,7 +8,7 @@ SET QUOTED_IDENTIFIER ON;
 GO
 
 -- 1. usuarios.rol
--- Fijos por DATABASE.md §6.16 y ck_rol__catalogo_fijo.
+-- Fijos por ck_rol__catalogo_fijo.
 
 INSERT INTO usuarios.rol (id, nombre)
 VALUES (1, N'Superusuario'),
@@ -336,7 +336,7 @@ SET IDENTITY_INSERT academico.campus OFF;
 -- Sin datos: requiere area_academica, que registra el Superusuario.
 
 -- 11. academico.grado_academico
--- Catálogo fijo (DATABASE.md §6.21): sin altas, modificaciones ni bajas en la
+-- Catálogo fijo: sin altas, modificaciones ni bajas en la
 -- operación normal. Ids estables en orden de jerarquía académica.
 
 SET IDENTITY_INSERT academico.grado_academico ON;
@@ -363,6 +363,6 @@ VALUES (1, N'Lic',  (SELECT id FROM academico.grado_academico WHERE nombre = N'L
 
 SET IDENTITY_INSERT plazas.tratamiento_academico OFF;
 
--- 13. Catálogos fijos pendientes de valores (DATABASE.md §6.22 y §15.2):
+-- 13. Catálogos fijos pendientes de valores:
 -- academico.tipo_documento_expediente, plazas.modalidad_recepcion,
 -- plazas.tipo_plaza y plazas.tipo_contratacion.

@@ -137,8 +137,8 @@ Excepciones deliberadas:
 - `academico.horario_programacion` representa únicamente el snapshot vigente de PLANEA, no tiene `fecha_eliminacion` y admite reemplazo físico transaccional.
 - `integracion.sincronizacion_planea` es una bitácora append-only, usa marcas temporales propias y no tiene `fecha_eliminacion`.
 - `academico.municipio` es un catálogo fijo de los municipios de Veracruz, no administrable y sin baja lógica.
-- `academico.region` y `academico.campus` son catálogos fijos de la semilla, no administrables y sin baja lógica (Modulo_Institucional.md, decisión D1).
-- `academico.sistema_educativo`, `academico.nivel_formacion` y `academico.area_formacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica (Modulo_OfertaEducativa.md, decisión D1).
+- `academico.region` y `academico.campus` son catálogos fijos de la semilla, no administrables y sin baja lógica (`DECISIONES.md`, INS-D1).
+- `academico.sistema_educativo`, `academico.nivel_formacion` y `academico.area_formacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica (`DECISIONES.md`, OFE-D1).
 - `usuarios.rol` es un catálogo fijo, no administrable y sin baja lógica.
 - `academico.grado_academico`, `academico.tipo_documento_expediente`, `plazas.tratamiento_academico`, `plazas.modalidad_recepcion`, `plazas.tipo_plaza` y `plazas.tipo_contratacion` son catálogos fijos cargados por la semilla, no administrables y sin baja lógica.
 - Los perfiles `usuarios.usuario_dgaa` y `usuarios.usuario_entidad_academica` dependen del ciclo de vida de `usuarios.usuario` y no tienen `fecha_eliminacion` propia.
@@ -163,7 +163,7 @@ Convención de nombres para objetos SQL:
 
 ### 6.1 `academico.region`
 
-Solo lectura; valores de la semilla (Modulo_Institucional.md, decisión D1).
+Solo lectura; valores de la semilla (`DECISIONES.md`, INS-D1).
 
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
@@ -179,7 +179,7 @@ Restricciones:
 
 ### 6.2 `academico.campus`
 
-Solo lectura; valores de la semilla (Modulo_Institucional.md, decisión D1).
+Solo lectura; valores de la semilla (`DECISIONES.md`, INS-D1).
 
 | Columna | Tipo | Nulabilidad | Notas |
 |---|---|---|---|
@@ -346,7 +346,7 @@ Restricciones:
 - `fk_plan_estudios__programa_educativo (programa_educativo_id)`.
 - `ck_plan_estudios__codigo_no_vacio`.
 
-Un código como `ISOF-18-ECR` puede repetirse en programas diferentes, pero no dentro del mismo programa. El plan no tiene archivo: la base es la única fuente de verdad y sus EE se importan desde el Excel de la UV interpretado por el front (Modulo_OfertaEducativa.md, decisiones D5 y D6). El plan no tiene estado ni fechas de vigencia; deja de utilizarse cuando sus EE ya no son programadas.
+Un código como `ISOF-18-ECR` puede repetirse en programas diferentes, pero no dentro del mismo programa. El plan no tiene archivo: la base es la única fuente de verdad y sus EE se importan desde el Excel de la UV interpretado por el front (`DECISIONES.md`, OFE-D5 y OFE-D6). El plan no tiene estado ni fechas de vigencia; deja de utilizarse cuando sus EE ya no son programadas.
 
 ### 6.10 `academico.area_formacion`
 
@@ -537,7 +537,7 @@ Restricciones e índices:
 - `ux_usuario__correo_activo (correo) WHERE fecha_eliminacion IS NULL`, índice único filtrado.
 - `ix_usuario__rol_id (rol_id)`.
 
-El correo solo es único entre cuentas activas. Después de desactivar una cuenta podrá utilizarse en una nueva identidad con otro rol o ámbito. Las cuentas no se restauran (`Modulo_Usuarios.md`, decisión D3).
+El correo solo es único entre cuentas activas. Después de desactivar una cuenta podrá utilizarse en una nueva identidad con otro rol o ámbito. Las cuentas no se restauran (`DECISIONES.md`, USU-D3).
 
 ### 6.18 `usuarios.usuario_dgaa`
 
@@ -691,7 +691,7 @@ La base protege la estructura con PK, FK, UNIQUE y CHECK. La aplicación impleme
 
 ### 9.1 Baja bloqueada por hijos activos
 
-Región y campus son de solo lectura y no se dan de baja (Modulo_Institucional.md, decisión D1). En el resto de la jerarquía de propiedad no hay cascada: la baja de un padre se bloquea mientras tenga hijos activos (Modulo_OfertaEducativa.md, decisiones D10 y D11):
+Región y campus son de solo lectura y no se dan de baja (`DECISIONES.md`, INS-D1). En el resto de la jerarquía de propiedad no hay cascada: la baja de un padre se bloquea mientras tenga hijos activos (`DECISIONES.md`, OFE-D10 y OFE-D11):
 
 ```text
 entidad_academica
@@ -723,13 +723,13 @@ Toda baja debe:
 - la baja de un área académica se bloquea mientras tenga entidades académicas activas;
 - `area_formacion`, `sistema_educativo` y `nivel_formacion` son catálogos fijos (§6.6, §6.7 y §6.10), sin baja lógica;
 - `grado_academico` y `tipo_documento_expediente` son catálogos fijos (§6.21 y §6.22), sin baja lógica;
-- la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos (`Modulo_Usuarios.md`, sección 9);
-- la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos (`Modulo_Usuarios.md`, sección 9);
+- la baja de un área académica se bloquea también mientras tenga usuarios DGAA activos (lo verifica Usuarios a través de un contrato de Institucional);
+- la baja de una entidad académica se bloquea mientras tenga usuarios de entidad activos (lo verifica Usuarios a través de un contrato de Institucional);
 - ninguna baja de estos catálogos se propaga a las entidades clasificadas.
 
 ### 9.3 Restauración
 
-Área y entidad académica no se restauran (Modulo_Institucional.md, decisión D3): un registro dado de baja no existe para la API de Institucional y `DELETE` sobre él responde 404, no 204. OfertaEducativa tampoco restaura (Modulo_OfertaEducativa.md, decisión D4): un programa, plan, EE, programación o periodo dado de baja no existe para la API. La restauración deja de aplicar a todo el modelo académico.
+Área y entidad académica no se restauran (`DECISIONES.md`, INS-D3): un registro dado de baja no existe para la API de Institucional y `DELETE` sobre él responde 404, no 204. OfertaEducativa tampoco restaura (`DECISIONES.md`, OFE-D4): un programa, plan, EE, programación o periodo dado de baja no existe para la API. La restauración deja de aplicar a todo el modelo académico.
 
 Si en el futuro se agregara una restauración, sería selectiva, nunca en cascada:
 
@@ -740,7 +740,7 @@ Si en el futuro se agregara una restauración, sería selectiva, nunca en cascad
 
 Los horarios no se restauran. Después de restaurar una programación o cualquiera de sus padres debe ejecutarse una sincronización exitosa de PLANEA para volver a materializarlos.
 
-La baja de `usuarios.usuario` conserva su perfil de ámbito. Al dar de baja un Superusuario, la aplicación asigna el mismo instante UTC a `usuario.fecha_eliminacion` y `credencial_superusuario.fecha_eliminacion` dentro de una sola transacción. Las cuentas no se restauran (`Modulo_Usuarios.md`, decisión D3): una cuenta dada de baja no existe para la API, y el correo queda libre para una cuenta nueva.
+La baja de `usuarios.usuario` conserva su perfil de ámbito. Al dar de baja un Superusuario, la aplicación asigna el mismo instante UTC a `usuario.fecha_eliminacion` y `credencial_superusuario.fecha_eliminacion` dentro de una sola transacción. Las cuentas no se restauran (`DECISIONES.md`, USU-D3): una cuenta dada de baja no existe para la API, y el correo queda libre para una cuenta nueva.
 
 ## 10. Inmutabilidad y edición
 
@@ -763,7 +763,7 @@ Reglas adicionales:
 - `programa_educativo.sistema_educativo_id` y `nivel_formacion_id` pueden cambiar únicamente si el programa nunca ha tenido un plan de estudios, incluyendo planes dados de baja.
 - Desde la creación del primer plan, sistema educativo y nivel quedan inmutables. Cambiar el sistema educativo antes de ese momento debe volver a validar la unicidad del programa.
 - Crear un programa requiere que su sistema educativo y nivel de formación existan.
-- Si la EE nunca tuvo una programación, incluidas las dadas de baja, pueden cambiar sus horas, créditos y área de formación (Modulo_OfertaEducativa.md, decisión D13).
+- Si la EE nunca tuvo una programación, incluidas las dadas de baja, pueden cambiar sus horas, créditos y área de formación (`DECISIONES.md`, OFE-D13).
 - Si la EE tuvo alguna programación, incluidas las dadas de baja, solo pueden cambiar `experiencia_educativa.nombre`, `perfil_docente` y los cupos; cualquier cambio de cupo se valida con las reglas de no negatividad y orden.
 - Los nombres descriptivos de los catálogos administrables pueden corregirse respetando sus restricciones; `municipio`, `rol`, `sistema_educativo`, `nivel_formacion`, `area_formacion`, `grado_academico`, `tipo_documento_expediente`, `tratamiento_academico`, `modalidad_recepcion`, `tipo_plaza` y `tipo_contratacion` son catálogos fijos.
 - `entidad_academica.calle`, `numero_exterior`, `colonia`, `codigo_postal` y `municipio_id` son editables y representan únicamente el domicilio vigente; los valores anteriores no se conservan.
@@ -963,7 +963,7 @@ Los tres IDs y nombres del catálogo son fijos e inmutables. La aplicación usa 
 
 Las políticas de autorización son fijas y no se modelan tablas configurables de permisos:
 
-- Superusuario tiene acceso administrativo global, salvo en la estructura curricular (programas educativos, planes de estudio y experiencias educativas), que solo consulta: la escribe únicamente el DGAA del área de la entidad (`Modulo_OfertaEducativa.md`, D9).
+- Superusuario tiene acceso administrativo global, salvo en la estructura curricular (programas educativos, planes de estudio y experiencias educativas), que solo consulta: la escribe únicamente el DGAA del área de la entidad (`DECISIONES.md`, OFE-D9).
 - DGAA accede al área asignada y a sus entidades y programas.
 - Entidad Académica accede exclusivamente a la entidad asignada y su descendencia.
 
@@ -979,7 +979,7 @@ Las políticas de autorización son fijas y no se modelan tablas configurables d
 - No se implementa recuperación por correo.
 - El correo es único entre usuarios activos. Una baja permite crear una nueva cuenta con el mismo correo y otro rol o ámbito.
 - Al desactivar un Superusuario se asigna la misma `fecha_eliminacion` UTC a la cuenta y a su credencial dentro de una transacción; no se permite desactivar el último Superusuario activo.
-- Las cuentas no se restauran: una vez dada de baja, no se reactiva (`Modulo_Usuarios.md`, decisión D3).
+- Las cuentas no se restauran: una vez dada de baja, no se reactiva (`DECISIONES.md`, USU-D3).
 
 ### 13.3 Autenticación LDAP
 
@@ -993,7 +993,7 @@ Para DGAA y Entidad Académica:
 
 El nombre almacenado es obligatorio y administrado localmente; no se sobrescribe con atributos de LDAP.
 
-La seguridad del canal es configurable (`Ldaps`, `StartTls` o `SinTls`); `SinTls` solo se acepta en el entorno Development, que es como opera hoy el directorio de la UV (`Modulo_Usuarios.md`, decisión D2).
+La seguridad del canal es configurable (`Ldaps`, `StartTls` o `SinTls`); `SinTls` solo se acepta en el entorno Development, que es como opera hoy el directorio de la UV (`DECISIONES.md`, USU-D2).
 
 ### 13.4 Autenticación local
 
@@ -1023,7 +1023,7 @@ La ausencia de rate limiting es un riesgo aceptado: Argon2id mitiga ataques fuer
 - No se crea una tabla SQL de auditoría de autenticación.
 - Sesiones, refresh tokens, MFA y recuperación por correo quedan fuera del modelo actual.
 
-Estos eventos se emiten hoy como logs estructurados con `[LoggerMessage]` y `EventId` fijos; se exportarán a telemetría externa cuando el host la configure (`Modulo_Usuarios.md`, decisión D12).
+Estos eventos se emiten hoy como logs estructurados con `[LoggerMessage]` y `EventId` fijos; se exportarán a telemetría externa cuando el host la configure (`DECISIONES.md`, USU-D12).
 
 ## 14. Casos de aceptación
 
@@ -1095,7 +1095,7 @@ Estos eventos se emiten hoy como logs estructurados con `[LoggerMessage]` y `Eve
 
 ### Baja y restauración
 
-Los casos de restauración no aplican a ninguna entidad del modelo académico: ni área, entidad, programa, plan, EE, programación o periodo se restauran (Modulo_Institucional.md, decisión D3; Modulo_OfertaEducativa.md, decisión D4). Tampoco aplican a las cuentas de usuario, que siguen la misma regla (Modulo_Usuarios.md, decisión D3).
+Los casos de restauración no aplican a ninguna entidad del modelo académico: ni área, entidad, programa, plan, EE, programación o periodo se restauran (`DECISIONES.md`, INS-D3 y OFE-D4). Tampoco aplican a las cuentas de usuario, que siguen la misma regla (`DECISIONES.md`, USU-D3).
 
 - Bloquear la baja de un padre con hijos activos (entidad, programa y EE), sin cascada.
 - Dar de baja un plan junto con todas sus EE activas con el mismo instante UTC, y bloquearlo si alguna EE tiene programaciones activas.
@@ -1617,7 +1617,7 @@ Enviar exige documento original vigente, resultados finales, asistencia y votaci
 - Los documentos y perfiles históricos referidos por Solicitudes o revisiones nunca se eliminan ni se sobrescriben.
 - Entidad Académica crea Ofertas, Avisos, Aspirantes, Solicitudes y Actas dentro de su entidad; envía documentos y firma/publica.
 - DGAA solo revisa o cancela Avisos y revisa Actas de entidades pertenecientes a su Área Académica.
-- Superusuario conserva acceso global; en la estructura curricular (programas, planes y experiencias educativas) solo consulta (`Modulo_OfertaEducativa.md`, D9).
+- Superusuario conserva acceso global; en la estructura curricular (programas, planes y experiencias educativas) solo consulta (`DECISIONES.md`, OFE-D9).
 - Aspirante, Docente e integrante del Consejo no son identidades de autenticación.
 - Las reglas entre estados, perfiles exclusivos, ámbitos, traslapes, snapshots y operaciones atómicas se aplican en la capa de aplicación; PK, FK, CHECK, unicidad e índices filtrados protegen los invariantes expresables en SQL Server.
 

@@ -20,7 +20,7 @@ internal sealed record ModificarEntidadAcademicaCommand(
 
 /// <summary>
 /// El área solo cambia mientras la entidad no tenga programas educativos, incluidos los dados de baja
-/// (Modulo_OfertaEducativa.md, decisión D14). Se comprueba antes de modificar, para no tocar la entidad.
+///. Se comprueba antes de modificar, para no tocar la entidad.
 /// </summary>
 internal sealed class ModificarEntidadAcademicaHandler(
     IEntidadAcademicaRepository repositorio,

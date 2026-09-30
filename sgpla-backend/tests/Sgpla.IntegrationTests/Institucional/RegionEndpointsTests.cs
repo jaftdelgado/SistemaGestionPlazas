@@ -5,7 +5,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.Institucional;
 
-/// <summary>Regiones de solo lectura: los valores los carga la semilla (Modulo_Institucional.md §6, D1).</summary>
+/// <summary>Regiones de solo lectura: los valores los carga la semilla.</summary>
 public sealed class RegionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/institucional/regiones";

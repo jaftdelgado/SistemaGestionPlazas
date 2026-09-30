@@ -14,7 +14,7 @@ internal sealed record CrearProgramaEducativoCommand(
 
 /// <summary>
 /// Solo el DGAA del área de la entidad crea programas; una entidad fuera de su ámbito se trata como inexistente
-/// (Modulo_OfertaEducativa.md, D9 y D15).
+///.
 /// </summary>
 internal sealed class CrearProgramaEducativoHandler(
     IProgramaEducativoRepository repositorio,

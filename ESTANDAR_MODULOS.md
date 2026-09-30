@@ -5,6 +5,7 @@ Este documento define cómo se implementa cada módulo del backend de SGPLa. Es 
 Documentos relacionados:
 - `PLAN_INICIAL.md`: módulos, grafo de dependencias y decisiones de arquitectura.
 - `DATABASE.md`: modelo de datos, reglas de negocio y casos de aceptación.
+- `DECISIONES.md`: decisiones de los módulos cerrados y sus desviaciones respecto a este estándar y al modelo.
 - `sgpla-backend/README.md`: cómo compilar, probar y migrar.
 
 Los ejemplos salen del módulo Catalogos: `GradoAcademico` ilustra un catálogo fijo, de solo lectura, y `Articulo` un recurso administrable, con alta y modificación.
@@ -161,7 +162,7 @@ Las pruebas de arquitectura exigen que los handlers de comandos estén en Applic
   - los tipos de `Application/Contracts`, que usan otros módulos.
 - Un módulo solo puede usar el namespace `Application.Contracts` de los módulos que el grafo de `PLAN_INICIAL.md` le permite. Nunca usa sus entidades, handlers ni repositorios.
 - El módulo declara `<InternalsVisibleTo Include="Sgpla.UnitTests" />` en su `.csproj` para las pruebas unitarias. Las de integración entran por HTTP y no lo necesitan.
-  - Excepción: Usuarios declara también `<InternalsVisibleTo Include="Sgpla.IntegrationTests" />`, porque sus pruebas de integración emiten tokens reales y reemplazan el adaptador LDAP por un falso (`Modulo_Usuarios.md`, decisión D11).
+  - Excepción: Usuarios declara también `<InternalsVisibleTo Include="Sgpla.IntegrationTests" />`, porque sus pruebas de integración emiten tokens reales y reemplazan el adaptador LDAP por un falso (`DECISIONES.md`, USU-D11).
 
 Hay dos formas de colaborar entre módulos, siempre a través de `Contracts`:
 
@@ -1040,15 +1041,16 @@ public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncD
 
 Un módulo o recurso está terminado cuando:
 
-- [ ] `dotnet build -c Release` compila sin advertencias.
-- [ ] `dotnet format --verify-no-changes` no reporta cambios.
-- [ ] `dotnet test --solution Sgpla.slnx` pasa completo, incluidas las pruebas de arquitectura.
+- [ ] `sgpla-backend/scripts/verify.sh` termina bien: el build en Release compila sin advertencias, `dotnet format --verify-no-changes` no reporta cambios y las tres suites (arquitectura, unitarias e integración) pasan completas.
+- [ ] Los atajos que avisa `verify.sh` (pruebas deshabilitadas, supresión de advertencias, `catch` vacíos, esperas en pruebas, versiones fuera de `Directory.Packages.props`) tienen justificación explícita y se aprobaron en la revisión.
+- [ ] `sgpla-backend/scripts/smoke.sh` deja el entorno de `docker compose` en marcha con un token, y los endpoints nuevos responden con los códigos esperados.
 - [ ] Toda entidad con comportamiento tiene pruebas unitarias de su fábrica y sus invariantes; todo catálogo fijo, su prueba de semilla.
 - [ ] Todo endpoint tiene pruebas de integración de éxito y de cada error que documenta.
 - [ ] No hay tipos públicos fuera de `<Modulo>Module` y `Application/Contracts`.
 - [ ] Los endpoints aparecen documentados en `/scalar/v1` con nombre, resumen y respuestas.
 - [ ] Los logs siguen la sección 11: solo `[LoggerMessage]` y sin datos personales ni secretos. La correlación por `traceId` la verifica `CorrelacionTests` y no requiere revisión manual.
 - [ ] Los cambios de esquema están en una migración nueva y `baseline.sql` no se editó. `seed.sql` solo cambia para cargar un catálogo fijo.
+- [ ] Ningún comentario, `Justification` ni script SQL cita un documento markdown (sección 16).
 - [ ] Si cambió una regla del estándar, este documento se actualizó en el mismo PR.
 - [ ] Los commits y el PR siguen la convención del repositorio.
 
@@ -1072,3 +1074,4 @@ Un módulo o recurso está terminado cuando:
 | Leer `DateTime.UtcNow` | Hace el código difícil de probar | `TimeProvider` inyectado |
 | Registrar datos de una persona o el mensaje de una excepción SQL | Los logs no tienen el control de acceso de la base y el mensaje de 2627 incluye el valor duplicado | Registrar el `id` o el nombre de la restricción |
 | Registrar un `Result` fallido o capturar una excepción para registrarla y relanzarla | Duplica lo que ya ve el cliente o lo que ya registra el middleware | Nada: el error ya es visible |
+| Citar un documento markdown (`DATABASE.md §9`, `DECISIONES.md`, `Modulo_<X>.md`…) en un comentario, un `Justification` o un script SQL | Los documentos son de desarrollo: se consolidan, se renumeran o se borran, y la cita queda rota | Enunciar la regla en el propio comentario. La línea base (`baseline.sql` y `seed.sql`) se limpió una vez con esta regla, como excepción: DbUp registra los scripts por nombre y solo ejecuta la línea base sobre una base vacía |

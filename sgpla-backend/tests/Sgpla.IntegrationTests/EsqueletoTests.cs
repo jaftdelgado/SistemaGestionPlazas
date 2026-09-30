@@ -75,7 +75,7 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     [Fact]
     public async Task Migraciones_NoCreanArchivoDelPlanNiBajaEnClasificaciones()
     {
-        // Modulo_OfertaEducativa.md, D1 y D5: el plan no tiene archivo y las tres clasificaciones no tienen baja lógica.
+        // El plan no tiene archivo y las tres clasificaciones no tienen baja lógica.
         await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
         await using var comando = new SqlCommand(
@@ -103,7 +103,7 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     [Fact]
     public void Persistencia_NoRegistraValoresDeParametros()
     {
-        // ESTANDAR_MODULOS.md, sección 11: EnableSensitiveDataLogging nunca se activa.
+        // EnableSensitiveDataLogging nunca se activa.
         using var alcance = _api.Services.CreateScope();
         var opciones = alcance.ServiceProvider.GetRequiredService<DbContextOptions<SgplaDbContext>>();
 

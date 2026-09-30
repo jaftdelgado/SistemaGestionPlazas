@@ -2,7 +2,7 @@ using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.Usuarios.Domain.Cuentas;
 
-/// <summary>Nombres de los roles, exactamente como los carga la semilla de <c>usuarios.rol</c> (DATABASE.md §6.16).</summary>
+/// <summary>Nombres de los roles, exactamente como los carga la semilla de <c>usuarios.rol</c>.</summary>
 internal static class NombresRol
 {
     public static string Nombre(Rol rol) => rol switch

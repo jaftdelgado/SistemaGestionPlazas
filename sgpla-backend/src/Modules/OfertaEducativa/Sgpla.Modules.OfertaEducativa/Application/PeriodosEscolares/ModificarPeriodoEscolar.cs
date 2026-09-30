@@ -6,7 +6,7 @@ namespace Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
 
 internal sealed record ModificarPeriodoEscolarCommand(int Id, DateOnly FechaInicio, DateOnly FechaFin);
 
-/// <summary>Las fechas siempre pueden cambiar, aunque el periodo tenga programaciones (Modulo_OfertaEducativa.md, D11).</summary>
+/// <summary>Las fechas siempre pueden cambiar, aunque el periodo tenga programaciones.</summary>
 internal sealed class ModificarPeriodoEscolarHandler(
     IPeriodoEscolarRepository repositorio,
     IUnitOfWork unidadDeTrabajo) : ICommandHandler<ModificarPeriodoEscolarCommand>

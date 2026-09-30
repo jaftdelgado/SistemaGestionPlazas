@@ -18,7 +18,7 @@ internal interface IProgramaEducativoRepository
         int? excluirId,
         CancellationToken cancellationToken);
 
-    /// <summary>Cualquier plan, incluidos los dados de baja (DATABASE.md §10).</summary>
+    /// <summary>Cualquier plan, incluidos los dados de baja.</summary>
     Task<bool> TuvoPlanesAsync(int programaEducativoId, CancellationToken cancellationToken);
 
     Task<bool> TienePlanesActivosAsync(int programaEducativoId, CancellationToken cancellationToken);

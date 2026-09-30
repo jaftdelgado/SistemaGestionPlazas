@@ -9,7 +9,7 @@ using Sgpla.Modules.Catalogos.Application.CatalogosFijos;
 namespace Sgpla.Modules.Catalogos.Endpoints.CatalogosFijos;
 
 /// <summary>
-/// Rutas de solo lectura de un catálogo fijo que solo tiene nombre (ESTANDAR_MODULOS.md, "Catálogos fijos"):
+/// Rutas de solo lectura de un catálogo fijo que solo tiene nombre:
 /// <c>GET /</c> con todos los valores en orden de id y <c>GET /{id}</c>. No hay rutas de escritura, así que un
 /// <c>POST</c>, <c>PUT</c> o <c>DELETE</c> responde 405.
 /// </summary>

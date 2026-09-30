@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace Sgpla.Modules.Usuarios.Infrastructure.Autenticacion;
 
-/// <summary>Seguridad del canal LDAP (Modulo_Usuarios.md, decisión D2).</summary>
+/// <summary>Seguridad del canal LDAP.</summary>
 internal enum SeguridadLdap
 {
     Ldaps,
@@ -28,7 +28,7 @@ internal sealed class LdapOptions
     public int TiempoEsperaSegundos { get; set; } = 10;
 }
 
-/// <summary><c>SinTls</c> solo se acepta en Development (Modulo_Usuarios.md, decisión D2).</summary>
+/// <summary><c>SinTls</c> solo se acepta en Development.</summary>
 internal sealed class LdapOptionsValidador(IHostEnvironment entorno) : IValidateOptions<LdapOptions>
 {
     public ValidateOptionsResult Validate(string? name, LdapOptions options)

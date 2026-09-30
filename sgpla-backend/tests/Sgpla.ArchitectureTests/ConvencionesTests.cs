@@ -5,7 +5,6 @@ namespace Sgpla.ArchitectureTests;
 
 /// <summary>
 /// Ubicación, sellado y visibilidad de los tipos de cada módulo según su sufijo o su rol.
-/// Ver ESTANDAR_MODULOS.md, secciones 3 a 5.
 /// </summary>
 public class ConvencionesTests
 {

@@ -13,7 +13,7 @@ using Sgpla.Modules.Usuarios;
 namespace Sgpla.ArchitectureTests;
 
 /// <summary>
-/// Módulos del sistema y dependencias permitidas entre ellos (ver PLAN_INICIAL.md, grafo de dependencias).
+/// Módulos del sistema y dependencias permitidas entre ellos.
 /// Al agregar un módulo o una dependencia, actualizar este mapa de forma deliberada.
 /// </summary>
 internal static class Modulos
@@ -48,7 +48,7 @@ internal static class Modulos
 
     public static string Namespace(string modulo) => $"Sgpla.Modules.{modulo}";
 
-    /// <summary>Único namespace de un módulo que otros módulos pueden usar (ESTANDAR_MODULOS.md, sección 5).</summary>
+    /// <summary>Único namespace de un módulo que otros módulos pueden usar.</summary>
     public static string NamespaceContratos(string modulo) => $"{Namespace(modulo)}.Application.Contracts";
 
     public static string NombreClaseModulo(string modulo) => $"{modulo}Module";

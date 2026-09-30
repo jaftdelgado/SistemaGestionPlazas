@@ -68,7 +68,7 @@ internal static class SesionEndpoints
             : await ArmarSesionAsync(resultado.Value, consulta, cancellationToken);
     }
 
-    /// <summary>El cierre de sesión no tiene efecto en el servidor (Modulo_Usuarios.md, decisión D4).</summary>
+    /// <summary>El cierre de sesión no tiene efecto en el servidor.</summary>
     private static NoContent CerrarSesion() => TypedResults.NoContent();
 
     private static async Task<Results<Ok<SesionResponse>, ProblemHttpResult>> ArmarSesionAsync(

@@ -4,7 +4,7 @@ using Sgpla.Modules.Usuarios;
 
 namespace Sgpla.UnitTests.Usuarios;
 
-/// <summary>Los EventId de auditoría son fijos (Modulo_Usuarios.md, sección 11; DATABASE.md §13.5).</summary>
+/// <summary>Los EventId de auditoría son fijos.</summary>
 public sealed class AuditoriaTests
 {
     [Fact]

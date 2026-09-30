@@ -3,9 +3,9 @@ using Sgpla.SharedKernel;
 namespace Sgpla.Modules.OfertaEducativa.Domain.PlanesEstudio;
 
 /// <summary>
-/// EE exclusiva de un plan, identificada dentro de él por materia y curso (DATABASE.md §6.11). Nace con su plan o con un
+/// EE exclusiva de un plan, identificada dentro de él por materia y curso. Nace con su plan o con un
 /// alta individual. Las horas, los créditos y el área de formación se congelan con la primera programación, incluidas
-/// las dadas de baja (Modulo_OfertaEducativa.md, decisión D13). Con baja lógica y sin restauración.
+/// las dadas de baja. Con baja lógica y sin restauración.
 /// </summary>
 internal sealed class ExperienciaEducativa : Entity, IEliminable
 {

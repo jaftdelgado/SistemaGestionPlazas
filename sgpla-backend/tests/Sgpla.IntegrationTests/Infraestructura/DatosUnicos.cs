@@ -4,7 +4,7 @@ namespace Sgpla.IntegrationTests.Infraestructura;
 
 /// <summary>
 /// Valores únicos por prueba. Las pruebas comparten la base y corren en paralelo, así que cada una crea sus
-/// propios datos y no depende de que una tabla esté vacía (ESTANDAR_MODULOS.md, sección 12).
+/// propios datos y no depende de que una tabla esté vacía.
 /// </summary>
 public static class DatosUnicos
 {

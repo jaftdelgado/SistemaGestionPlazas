@@ -7,7 +7,7 @@ namespace Sgpla.Modules.OfertaEducativa.Application.ProgramasEducativos;
 
 internal sealed record DarDeBajaProgramaEducativoCommand(int Id);
 
-/// <summary>Sin cascada: la baja se bloquea con planes de estudio activos (Modulo_OfertaEducativa.md, D10).</summary>
+/// <summary>Sin cascada: la baja se bloquea con planes de estudio activos.</summary>
 internal sealed class DarDeBajaProgramaEducativoHandler(
     IProgramaEducativoRepository repositorio,
     IAmbitoOfertaEducativa ambito,

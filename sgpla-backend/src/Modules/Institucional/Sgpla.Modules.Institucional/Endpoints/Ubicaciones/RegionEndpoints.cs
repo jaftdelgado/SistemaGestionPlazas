@@ -8,7 +8,7 @@ using Sgpla.Modules.Institucional.Application.Ubicaciones;
 
 namespace Sgpla.Modules.Institucional.Endpoints.Ubicaciones;
 
-/// <summary>Regiones de solo lectura: los valores los carga la semilla (Modulo_Institucional.md §6, D1).</summary>
+/// <summary>Regiones de solo lectura: los valores los carga la semilla.</summary>
 internal static class RegionEndpoints
 {
     public static RouteGroupBuilder MapRegionEndpoints(this RouteGroupBuilder modulo)

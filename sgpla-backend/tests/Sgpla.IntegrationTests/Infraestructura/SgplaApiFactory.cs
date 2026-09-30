@@ -37,7 +37,7 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Sgpla", sqlServer.CadenaConexion);
 
-        // Jwt:Clave y Ldap:Servidor son obligatorios y nunca van en appsettings*.json (Modulo_Usuarios.md, sección 4).
+        // Jwt:Clave y Ldap:Servidor son obligatorios y nunca van en appsettings*.json.
         builder.UseSetting("Jwt:Clave", ClaveJwtDePrueba);
         builder.UseSetting("Ldap:Servidor", "ldap-de-pruebas.invalido");
 
