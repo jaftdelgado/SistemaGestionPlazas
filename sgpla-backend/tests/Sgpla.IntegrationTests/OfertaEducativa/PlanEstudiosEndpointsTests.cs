@@ -895,7 +895,7 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         darDeBaja.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    private async Task VerificaQueNoHayPlanesAsync(EscenarioOferta escenario)
+    private static async Task VerificaQueNoHayPlanesAsync(EscenarioOferta escenario)
     {
         using var respuesta = await escenario.Dgaa.GetAsync(Uri($"?programaEducativoId={escenario.ProgramaId}"), Cancelacion);
         var pagina = await EscenarioOferta.Leer(respuesta);

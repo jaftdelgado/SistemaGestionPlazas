@@ -84,7 +84,7 @@ internal sealed record ExperienciaDeEjemplo(
     int AreaFormacionId,
     string? PerfilDocente)
 {
-    public int? CupoMinimo => null;
+    public int? CupoMinimo { get; init; }
 
-    public int? CupoMaximo => null;
+    public int? CupoMaximo { get; init; }
 }
