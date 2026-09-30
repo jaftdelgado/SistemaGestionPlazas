@@ -720,7 +720,7 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         VerificaNumero(hoja.Cell(2, 11), 8);
         hoja.Cell(2, 12).GetString().ShouldBe("111");
         hoja.Cell(2, 13).GetString().ShouldBe("Área de Formación Básica");
-        hoja.Cell(2, 14).GetString().ShouldBe("Licenciado en informática" + Environment.NewLine + "o afín");
+        hoja.Cell(2, 14).GetString().ShouldBe("Licenciado en informática\no afín");
 
         // La segunda fila: los ceros iniciales se conservan porque CURSO_EE es texto, y sin perfil la celda queda vacía.
         var curso = hoja.Cell(3, 7);
