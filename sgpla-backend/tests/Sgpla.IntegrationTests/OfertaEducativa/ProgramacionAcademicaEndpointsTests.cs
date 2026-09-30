@@ -483,7 +483,7 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         var pagina = await EscenarioOferta.Leer(respuesta);
 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
-        Ids(pagina).ShouldBe(idsEsperados, customMessage: consulta);
+        Ids(pagina).ShouldBe(idsEsperados);
         pagina.GetProperty("total").GetInt32().ShouldBe(idsEsperados.Length, consulta);
     }
 
