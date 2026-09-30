@@ -28,6 +28,10 @@ internal static class PlanEstudiosEndpoints
             .WithName("ListarExperienciasEducativasDePlan")
             .WithSummary("Lista las experiencias educativas activas del plan, en orden de materia y curso.")
             .ProducesProblem(StatusCodes.Status404NotFound);
+        grupo.MapGet("/{id:int}/excel", Exportar).WithName("ExportarPlanEstudios")
+            .WithSummary("Genera el Excel del plan con el formato de la UV.")
+            .Produces(StatusCodes.Status200OK, contentType: ArchivoGenerado.TipoContenidoExcel)
+            .ProducesProblem(StatusCodes.Status404NotFound);
         grupo.MapPost("/", Importar).WithName("ImportarPlanEstudios")
             .WithSummary("Registra un plan de estudios con sus experiencias educativas.")
             .RequireAuthorization(Politicas.Dgaa)
@@ -61,6 +65,18 @@ internal static class PlanEstudiosEndpoints
         IQueryHandler<ListarExperienciasEducativasDePlanQuery, IReadOnlyList<ExperienciaEducativaResponse>> handler,
         CancellationToken cancellationToken) =>
         (await handler.HandleAsync(new ListarExperienciasEducativasDePlanQuery(id), cancellationToken)).ToOk();
+
+    private static async Task<Results<FileContentHttpResult, ProblemHttpResult>> Exportar(
+        int id,
+        IQueryHandler<ExportarPlanEstudiosQuery, ArchivoGenerado> handler,
+        CancellationToken cancellationToken)
+    {
+        var resultado = await handler.HandleAsync(new ExportarPlanEstudiosQuery(id), cancellationToken);
+
+        return resultado.IsSuccess
+            ? TypedResults.File(resultado.Value.Contenido, resultado.Value.TipoContenido, resultado.Value.Nombre)
+            : resultado.Error.ToProblem();
+    }
 
     /// <summary>Compone como el de programas: invoca el comando y después la consulta de obtener.</summary>
     private static async Task<Results<CreatedAtRoute<PlanEstudiosResponse>, ProblemHttpResult>> Importar(

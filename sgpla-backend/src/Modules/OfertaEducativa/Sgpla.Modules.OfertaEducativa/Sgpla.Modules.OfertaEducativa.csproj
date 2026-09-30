@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Sgpla.UnitTests" />
   </ItemGroup>
 

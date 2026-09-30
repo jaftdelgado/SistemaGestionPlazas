@@ -32,6 +32,11 @@
     <PackageVersion Include="dbup-sqlserver" Version="7.2.0" />
   </ItemGroup>
 
+  <!-- Documentos (OfertaEducativa) -->
+  <ItemGroup>
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
+  </ItemGroup>
+
   <!-- Pruebas -->
   <ItemGroup>
     <PackageVersion Include="xunit.v3" Version="4.0.1" />

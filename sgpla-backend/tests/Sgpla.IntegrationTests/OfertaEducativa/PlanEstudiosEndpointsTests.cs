@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ClosedXML.Excel;
 using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
@@ -9,6 +10,13 @@ namespace Sgpla.IntegrationTests.OfertaEducativa;
 public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/oferta-educativa/planes-estudio";
+
+    /// <summary>Los 14 encabezados del formato de la UV, en orden (Modulo_OfertaEducativa.md, D7).</summary>
+    private static readonly string[] EncabezadosDeLaUv =
+    [
+        "DESC_AREA_ACAD", "CODIGO_PLAN", "DESCRIPCION", "CODIGO_PER_CAT", "DESC_PER_CAT", "MATERIA_EE", "CURSO_EE", "DESC_EE",
+        "HT_EE", "HP_EE", "CREDITOS_EE", "CODE_AREA_F", "DESC_AREA_F", "PERFIL_DOC",
+    ];
 
     private readonly SgplaApiFactory _api = new(sqlServer);
 
@@ -658,9 +666,186 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         await VerificaNoEncontradoAsync(ajenoExperiencias);
     }
 
+    [Fact]
+    public async Task Exportar_ConUnPlan_Responde200ConElArchivoConLosEncabezadosYLaFilaCompleta()
+    {
+        using var escenario = await NuevoEscenarioAsync();
+        var codigo = EscenarioOferta.CodigoDePlan();
+        var planId = await EscenarioOferta.CrearPlanAsync(
+            escenario.Dgaa,
+            escenario.ProgramaId,
+            codigo,
+            [
+                EscenarioOferta.Experiencia(
+                    materia: "EXAV", curso: "00001", nombre: "Acreditación del idioma inglés", horasTeoricas: 0, horasPracticas: 0,
+                    creditos: 6, areaFormacionId: 3),
+                EscenarioOferta.Experiencia(
+                    materia: "ENSO", curso: "38003", nombre: "Habilidades de comunicación", horasTeoricas: 2, horasPracticas: 3,
+                    creditos: 8, perfilDocente: "Licenciado en informática" + Environment.NewLine + "o afín", areaFormacionId: 1),
+            ]);
+
+        using var respuesta = await escenario.Dgaa.GetAsync(Uri($"/{planId}/excel"), Cancelacion);
+        using var libro = await AbrirLibroAsync(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        respuesta.Content.Headers.ContentType.ShouldNotBeNull().MediaType
+            .ShouldBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        respuesta.Content.Headers.ContentDisposition.ShouldNotBeNull().FileName.ShouldNotBeNull().Trim('"')
+            .ShouldBe($"{codigo}.xlsx");
+
+        var hoja = libro.Worksheets.Single();
+        hoja.Name.ShouldBe("Hoja1");
+        Enumerable.Range(1, 14).Select(columna => hoja.Cell(1, columna).GetString()).ShouldBe(EncabezadosDeLaUv);
+        hoja.LastRowUsed().ShouldNotBeNull().RowNumber().ShouldBe(3);
+        hoja.LastColumnUsed().ShouldNotBeNull().ColumnNumber().ShouldBe(14);
+
+        // Las EE salen en orden de materia y curso: ENSO antes que EXAV.
+        hoja.Cell(2, 1).GetString().ShouldBe(escenario.AreaNombre);
+        hoja.Cell(2, 2).GetString().ShouldBe(codigo);
+        hoja.Cell(2, 3).GetString().ShouldBe(escenario.ProgramaNombre);
+        hoja.Cell(2, 4).IsEmpty().ShouldBeTrue();
+        hoja.Cell(2, 5).IsEmpty().ShouldBeTrue();
+        hoja.Cell(2, 6).GetString().ShouldBe("ENSO");
+        hoja.Cell(2, 7).GetString().ShouldBe("38003");
+        hoja.Cell(2, 8).GetString().ShouldBe("Habilidades de comunicación");
+        VerificaNumero(hoja.Cell(2, 9), 2);
+        VerificaNumero(hoja.Cell(2, 10), 3);
+        VerificaNumero(hoja.Cell(2, 11), 8);
+        hoja.Cell(2, 12).GetString().ShouldBe("111");
+        hoja.Cell(2, 13).GetString().ShouldBe("Área de Formación Básica");
+        hoja.Cell(2, 14).GetString().ShouldBe("Licenciado en informática" + Environment.NewLine + "o afín");
+
+        // La segunda fila: los ceros iniciales se conservan porque CURSO_EE es texto, y sin perfil la celda queda vacía.
+        var curso = hoja.Cell(3, 7);
+        curso.DataType.ShouldBe(XLDataType.Text);
+        curso.Value.IsText.ShouldBeTrue();
+        curso.GetString().ShouldBe("00001");
+        hoja.Cell(3, 6).GetString().ShouldBe("EXAV");
+        VerificaNumero(hoja.Cell(3, 9), 0);
+        VerificaNumero(hoja.Cell(3, 10), 0);
+        hoja.Cell(3, 12).GetString().ShouldBe("113");
+        hoja.Cell(3, 13).GetString().ShouldBe("Área de Formación Terminal");
+        hoja.Cell(3, 14).IsEmpty().ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Exportar_ConElPlanDeEjemploDeLaUv_GeneraUnaFilaPorExperienciaEnOrdenDeMateriaYCurso()
+    {
+        using var escenario = await NuevoEscenarioAsync();
+        var planId = await EscenarioOferta.CrearPlanAsync(
+            escenario.Dgaa, escenario.ProgramaId, PlanEjemploIsof14.Codigo, PlanEjemploIsof14.ExperienciasEducativas);
+
+        using var respuesta = await escenario.Dgaa.GetAsync(Uri($"/{planId}/excel"), Cancelacion);
+        using var libro = await AbrirLibroAsync(respuesta);
+        var hoja = libro.Worksheets.Single();
+        var filas = Enumerable.Range(2, 58).ToList();
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        hoja.LastRowUsed().ShouldNotBeNull().RowNumber().ShouldBe(59);
+        filas.Select(f => (hoja.Cell(f, 6).GetString(), hoja.Cell(f, 7).GetString()))
+            .ShouldBe(PlanEjemploIsof14.ExperienciasEducativas
+                .Select(e => (e.Materia, e.Curso))
+                .OrderBy(clave => clave.Materia, StringComparer.Ordinal)
+                .ThenBy(clave => clave.Curso, StringComparer.Ordinal));
+        filas.GroupBy(f => hoja.Cell(f, 12).GetString()).ToDictionary(g => g.Key, g => g.Count())
+            .ShouldBe(new Dictionary<string, int> { ["111"] = 18, ["112"] = 22, ["113"] = 18 }, ignoreOrder: true);
+        filas.Count(f => hoja.Cell(f, 14).IsEmpty()).ShouldBe(PlanEjemploIsof14.ExperienciasEducativas.Count(e => e.PerfilDocente is null));
+        filas.ShouldAllBe(f => hoja.Cell(f, 7).DataType == XLDataType.Text && hoja.Cell(f, 9).DataType == XLDataType.Number);
+    }
+
+    [Fact]
+    public async Task Exportar_ConUnPlanSinExperienciasActivas_GeneraSoloLaFilaDeEncabezados()
+    {
+        using var escenario = await NuevoEscenarioAsync();
+        var planId = await CrearPlanSimpleAsync(escenario);
+        var experienciaId = (await ExperienciasDelPlanAsync(escenario.Dgaa, planId)).Single().Id;
+        (await escenario.Dgaa.DeleteAsync(RutaExperiencia(experienciaId), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var respuesta = await escenario.Dgaa.GetAsync(Uri($"/{planId}/excel"), Cancelacion);
+        using var libro = await AbrirLibroAsync(respuesta);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var hoja = libro.Worksheets.Single();
+        hoja.LastRowUsed().ShouldNotBeNull().RowNumber().ShouldBe(1);
+        Enumerable.Range(1, 14).Select(columna => hoja.Cell(1, columna).GetString()).ShouldBe(EncabezadosDeLaUv);
+    }
+
+    [Fact]
+    public async Task Exportar_ConUnaExperienciaDadaDeBaja_NoLaIncluye()
+    {
+        using var escenario = await NuevoEscenarioAsync();
+        var planId = await EscenarioOferta.CrearPlanAsync(
+            escenario.Dgaa,
+            escenario.ProgramaId,
+            EscenarioOferta.CodigoDePlan(),
+            [EscenarioOferta.Experiencia(materia: "ENSO"), EscenarioOferta.Experiencia(materia: "FBGR")]);
+        var dadaDeBaja = (await ExperienciasDelPlanAsync(escenario.Dgaa, planId)).Single(e => e.Materia == "ENSO").Id;
+        (await escenario.Dgaa.DeleteAsync(RutaExperiencia(dadaDeBaja), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var respuesta = await escenario.Dgaa.GetAsync(Uri($"/{planId}/excel"), Cancelacion);
+        using var libro = await AbrirLibroAsync(respuesta);
+
+        var hoja = libro.Worksheets.Single();
+        hoja.LastRowUsed().ShouldNotBeNull().RowNumber().ShouldBe(2);
+        hoja.Cell(2, 6).GetString().ShouldBe("FBGR");
+    }
+
+    [Fact]
+    public async Task Exportar_ConPlanInexistenteODadoDeBaja_Responde404ConCodigo()
+    {
+        using var escenario = await NuevoEscenarioAsync();
+        var planId = await CrearPlanSimpleAsync(escenario);
+        (await escenario.Dgaa.DeleteAsync(Uri($"/{planId}"), Cancelacion)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var inexistente = await escenario.Dgaa.GetAsync(Uri($"/{int.MaxValue}/excel"), Cancelacion);
+        using var dadoDeBaja = await escenario.Dgaa.GetAsync(Uri($"/{planId}/excel"), Cancelacion);
+
+        await VerificaNoEncontradoAsync(inexistente);
+        await VerificaNoEncontradoAsync(dadoDeBaja);
+    }
+
+    [Fact]
+    public async Task Exportar_ElSuperusuarioYLaEntidadAcademicaExportanLoSuyo_YUnDgaaDeOtraAreaRecibe404()
+    {
+        using var superusuario = await _api.CrearClienteSuperusuarioAsync();
+        using var propio = await EscenarioOferta.CrearAsync(_api, superusuario);
+        using var ajeno = await EscenarioOferta.CrearAsync(_api, superusuario);
+        var planPropio = await CrearPlanSimpleAsync(propio);
+        var planAjeno = await CrearPlanSimpleAsync(ajeno);
+        using var entidadAcademica = await _api.CrearClienteEntidadAcademicaAsync(propio.EntidadId);
+
+        using var delSuperusuario = await superusuario.GetAsync(Uri($"/{planAjeno}/excel"), Cancelacion);
+        using var delDgaa = await propio.Dgaa.GetAsync(Uri($"/{planPropio}/excel"), Cancelacion);
+        using var delaEntidad = await entidadAcademica.GetAsync(Uri($"/{planPropio}/excel"), Cancelacion);
+        using var deOtraEntidad = await entidadAcademica.GetAsync(Uri($"/{planAjeno}/excel"), Cancelacion);
+        using var deOtraArea = await propio.Dgaa.GetAsync(Uri($"/{planAjeno}/excel"), Cancelacion);
+
+        delSuperusuario.StatusCode.ShouldBe(HttpStatusCode.OK);
+        delDgaa.StatusCode.ShouldBe(HttpStatusCode.OK);
+        delaEntidad.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var libro = await AbrirLibroAsync(delSuperusuario);
+        libro.Worksheets.Single().Cell(2, 1).GetString().ShouldBe(ajeno.AreaNombre);
+        await VerificaNoEncontradoAsync(deOtraEntidad);
+        await VerificaNoEncontradoAsync(deOtraArea);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static Uri Uri(string sufijo = "") => new($"{Ruta}{sufijo}", UriKind.Relative);
+
+    private static Uri RutaExperiencia(int id) => new($"/api/v1/oferta-educativa/experiencias-educativas/{id}", UriKind.Relative);
+
+    private static async Task<XLWorkbook> AbrirLibroAsync(HttpResponseMessage respuesta)
+    {
+        var bytes = await respuesta.Content.ReadAsByteArrayAsync(Cancelacion);
+        return new XLWorkbook(new MemoryStream(bytes));
+    }
+
+    private static void VerificaNumero(IXLCell celda, double esperado)
+    {
+        celda.DataType.ShouldBe(XLDataType.Number);
+        celda.Value.GetNumber().ShouldBe(esperado);
+    }
 
     private static Uri RutaPrograma(int id) => new($"/api/v1/oferta-educativa/programas-educativos/{id}", UriKind.Relative);
 

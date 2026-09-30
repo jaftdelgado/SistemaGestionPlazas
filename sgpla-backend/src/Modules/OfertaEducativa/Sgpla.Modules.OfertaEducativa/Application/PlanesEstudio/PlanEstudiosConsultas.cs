@@ -38,3 +38,11 @@ internal sealed class ListarPlanesEstudioValidator : AbstractValidator<ListarPla
 }
 
 internal sealed record ObtenerPlanEstudiosQuery(int Id);
+
+/// <summary>El .xlsx con el formato de la UV (D7).</summary>
+internal sealed record ExportarPlanEstudiosQuery(int Id);
+
+internal sealed record ArchivoGenerado(string Nombre, string TipoContenido, byte[] Contenido)
+{
+    public const string TipoContenidoExcel = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+}
