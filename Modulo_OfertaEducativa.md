@@ -106,7 +106,7 @@ public sealed record EntidadAcademicaResumen(int Id, string Clave, string Nombre
 
 ### Paquete ClosedXML (PR 3)
 
-Se agrega `ClosedXML` a `Directory.Packages.props` (grupo nuevo "Documentos (OfertaEducativa)"), con la última versión estable compatible con .NET 10, y se referencia desde `Sgpla.Modules.OfertaEducativa.csproj` y `Sgpla.IntegrationTests.csproj` (para leer el archivo generado en las pruebas). Si la última versión no compila sin advertencias con .NET 10, se detiene y se pregunta.
+Se agrega `ClosedXML` a `Directory.Packages.props` (grupo nuevo "Documentos (OfertaEducativa)"), con la última versión estable compatible con .NET 10, y se referencia desde `Sgpla.Modules.OfertaEducativa.csproj` y `Sgpla.IntegrationTests.csproj` (para leer el archivo generado en las pruebas). Si la última versión no compila sin advertencias con .NET 10, se detiene y se pregunta. Versión adoptada: 0.105.1. Sus dependencias son MIT, salvo `SixLabors.Fonts`, que se resuelve a 1.0.0 (Apache-2.0). ClosedXML admite hasta la 2.x, que usa la Six Labors Split License: cualquier actualización que la arrastre requiere revisar la licencia antes de aceptarla.
 
 ### Normalización
 
@@ -574,10 +574,10 @@ internal sealed record DatosExperienciaEducativa(
 ```
 
 Métodos:
-- `static Result<PlanEstudios> Crear(string codigo, int programaEducativoId, IReadOnlyList<DatosExperienciaEducativa> experiencias)`, en este orden:
+- `static Result<PlanEstudios> Crear(string codigo, int programaEducativoId, IReadOnlyList<DatosExperienciaEducativa?> experiencias)`, en este orden:
   1. valida el código;
   2. si la lista está vacía, `SinExperiencias`; si pasa de 300, `DemasiadasExperiencias`;
-  3. crea cada EE con `ExperienciaEducativa.Crear`. El primer error se devuelve con el campo prefijado: `error with { Campo = $"ExperienciasEducativas[{i}].{error.Campo}" }` (índice desde 0);
+  3. si un elemento es `null`, `ExperienciaVacia` en el campo `ExperienciasEducativas[{i}]`; si no, crea cada EE con `ExperienciaEducativa.Crear`. El primer error se devuelve con el campo prefijado: `error with { Campo = $"ExperienciasEducativas[{i}].{error.Campo}" }` (índice desde 0);
   4. si dos EE de la lista tienen la misma materia y curso ya normalizados, `ExperienciaRepetida` en el campo `ExperienciasEducativas[{i}].Curso` de la segunda.
 - `Result<ExperienciaEducativa> AgregarExperiencia(DatosExperienciaEducativa datos)`: crea la EE y la agrega a la lista. La unicidad contra la base la comprueba el handler.
 - `void DarDeBaja(DateTime utc)`: `FechaEliminacion ??= utc` y `DarDeBaja(utc)` en cada EE cargada (D10). Idempotente.
@@ -591,6 +591,7 @@ Métodos:
 | `PlanEstudios.SinExperiencias` | Validation | `ExperienciasEducativas` | El plan debe incluir al menos una experiencia educativa. |
 | `PlanEstudios.DemasiadasExperiencias` | Validation | `ExperienciasEducativas` | El plan admite hasta 300 experiencias educativas por importación. |
 | `PlanEstudios.ExperienciaRepetida` | Validation | `ExperienciasEducativas[i].Curso` | La materia y el curso ya aparecen en otra experiencia educativa del plan. |
+| `PlanEstudios.ExperienciaVacia` | Validation | `ExperienciasEducativas[i]` | La experiencia educativa no puede estar vacía. |
 | `PlanEstudios.ProgramaEducativoInexistente` | Validation | `ProgramaEducativoId` | No existe un programa educativo activo con ese id en tu ámbito. |
 | `PlanEstudios.AreaFormacionInexistente` | Validation | `ExperienciasEducativas[i].AreaFormacionId` | No existe el área de formación indicada. |
 | `PlanEstudios.CodigoDuplicado` | Conflict | — | El programa educativo ya tiene un plan con ese código. |
@@ -680,10 +681,12 @@ Comandos:
 
 | Archivo | Command | Dependencias del handler | Pasos |
 |---|---|---|---|
-| `ImportarPlanEstudios.cs` | `ImportarPlanEstudiosCommand(int ProgramaEducativoId, string Codigo, IReadOnlyList<DatosExperienciaEducativa> ExperienciasEducativas)`; devuelve el `int` del id | `IPlanEstudiosRepository`, `IAmbitoOfertaEducativa`, `IClasificacionesAcademicas`, `IUnitOfWork` | 1. `PlanEstudios.Crear`. 2. `ObtenerEntidadDeProgramaActivoAsync` y `PuedeEscribirEnEntidadAsync`; si falla cualquiera → `ProgramaEducativoInexistente`. 3. Con **una** llamada a `ObtenerAreasFormacionAsync` (ids distintos), la primera EE con un área inexistente → `AreaFormacionInexistente` con su índice. 4. `ExisteCodigoAsync` → `CodigoDuplicado`. 5. `Agregar` y **un** `SaveChangesAsync` (plan y EE en la misma transacción). 6. Devuelve el `Id` |
+| `ImportarPlanEstudios.cs` | `ImportarPlanEstudiosCommand(int ProgramaEducativoId, string Codigo, IReadOnlyList<ExperienciaEducativaEntrada?> ExperienciasEducativas)`; devuelve el `int` del id | `IPlanEstudiosRepository`, `IAmbitoOfertaEducativa`, `IClasificacionesAcademicas`, `IUnitOfWork` | 1. `PlanEstudios.Crear`. 2. `ObtenerEntidadDeProgramaActivoAsync` y `PuedeEscribirEnEntidadAsync`; si falla cualquiera → `ProgramaEducativoInexistente`. 3. Con **una** llamada a `ObtenerAreasFormacionAsync` (ids distintos), la primera EE con un área inexistente → `AreaFormacionInexistente` con su índice. 4. `ExisteCodigoAsync` → `CodigoDuplicado`. 5. `Agregar` y **un** `SaveChangesAsync` (plan y EE en la misma transacción). 6. Devuelve el `Id` |
 | `DarDeBajaPlanEstudios.cs` | `DarDeBajaPlanEstudiosCommand(int Id)` | `IPlanEstudiosRepository`, `IAmbitoOfertaEducativa`, `IEnumerable<IReferenciasExperienciaEducativa>`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerConExperienciasAsync` → `NoEncontrado`. 2. Ámbito de escritura de su entidad → `NoEncontrado`. 3. `TieneExperienciasConProgramacionesActivasAsync` → `ExperienciasConProgramacionesActivas`. 4. Si alguna implementación de `IReferenciasExperienciaEducativa` responde `true` para los ids de las EE activas → `ExperienciaEducativa.TieneReferencias` (sección 10), el mismo error que la baja individual, porque el motivo es el mismo. 5. `DarDeBaja(instante)` y `SaveChangesAsync` |
 
-El endpoint de importación enlaza un request propio (`ImportarPlanEstudiosRequest`, con `ExperienciaEducativaRequest` por elemento) y lo convierte al comando. El orden de la validación es el de los pasos: primero la forma de todo el plan (dominio), después las referencias. Si `experienciasEducativas` llega `null` o se omite, el request la convierte en una lista vacía y el dominio responde `PlanEstudios.SinExperiencias`.
+El endpoint de importación enlaza un request propio (`ImportarPlanEstudiosRequest`, con `ExperienciaEducativaEntrada` por elemento) y lo convierte al comando. El orden de la validación es el de los pasos: primero la forma de todo el plan (dominio), después las referencias. Si `experienciasEducativas` llega `null` o se omite, el request la convierte en una lista vacía y el dominio responde `PlanEstudios.SinExperiencias`.
+
+`ExperienciaEducativaEntrada` (`Application/ExperienciasEducativas/ExperienciaEducativaEntrada.cs`) tiene los mismos campos que `DatosExperienciaEducativa` y la convierte con `ADatos()`. Existe porque Endpoints no puede depender de Domain (`CapasTests`): los requests y los comandos usan la entrada de Application, y el handler la convierte a los datos del dominio.
 
 ### Exportación (D7)
 
@@ -878,7 +881,7 @@ Comandos:
 
 | Archivo | Command | Dependencias del handler | Pasos |
 |---|---|---|---|
-| `CrearExperienciaEducativa.cs` | `CrearExperienciaEducativaCommand(int PlanEstudiosId, DatosExperienciaEducativa Datos)`; devuelve el `int` del id | `IPlanEstudiosRepository`, `IExperienciaEducativaRepository`, `IAmbitoOfertaEducativa`, `IClasificacionesAcademicas`, `IUnitOfWork` | 1. `IPlanEstudiosRepository.ObtenerPorIdAsync`; si no existe o su entidad no cumple el ámbito de escritura → `PlanEstudiosInexistente`. 2. `plan.AgregarExperiencia(datos)`; si falla, su error. 3. Área existente → `AreaFormacionInexistente`. 4. `ExisteMateriaCursoAsync` → `MateriaCursoDuplicado`. 5. `SaveChangesAsync`. 6. Devuelve el `Id` |
+| `CrearExperienciaEducativa.cs` | `CrearExperienciaEducativaCommand(int PlanEstudiosId, ExperienciaEducativaEntrada Datos)`; devuelve el `int` del id | `IPlanEstudiosRepository`, `IExperienciaEducativaRepository`, `IAmbitoOfertaEducativa`, `IClasificacionesAcademicas`, `IUnitOfWork` | 1. `IPlanEstudiosRepository.ObtenerPorIdAsync`; si no existe o su entidad no cumple el ámbito de escritura → `PlanEstudiosInexistente`. 2. `plan.AgregarExperiencia(command.Datos.ADatos())`; si falla, su error. 3. Área existente → `AreaFormacionInexistente`. 4. `ExisteMateriaCursoAsync` → `MateriaCursoDuplicado`. 5. `SaveChangesAsync`. 6. Devuelve el `Id` |
 | `ModificarExperienciaEducativa.cs` | `ModificarExperienciaEducativaCommand(int Id, string Nombre, int HorasTeoricas, int HorasPracticas, int Creditos, int? CupoMinimo, int? CupoMaximo, string? PerfilDocente, int AreaFormacionId)` | `IExperienciaEducativaRepository`, `IAmbitoOfertaEducativa`, `IClasificacionesAcademicas`, `IUnitOfWork` | 1. `ObtenerPorIdAsync` → `NoEncontrado`. 2. Ámbito de escritura de su entidad → `NoEncontrado`. 3. `TuvoProgramacionesAsync`. 4. `Modificar(..., tuvoProgramaciones)`. 5. Área existente → `AreaFormacionInexistente`. 6. `SaveChangesAsync` |
 | `DarDeBajaExperienciaEducativa.cs` | `DarDeBajaExperienciaEducativaCommand(int Id)` | `IExperienciaEducativaRepository`, `IAmbitoOfertaEducativa`, `IEnumerable<IReferenciasExperienciaEducativa>`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrado`. 2. Ámbito → `NoEncontrado`. 3. `TieneProgramacionesActivasAsync` → `TieneProgramacionesActivas`. 4. Alguna implementación de `IReferenciasExperienciaEducativa` con `true` → `TieneReferencias`. 5. `DarDeBaja(instante)` y `SaveChangesAsync` |
 
@@ -901,7 +904,7 @@ Dar de baja la última EE activa de un plan no da de baja el plan: queda un plan
 | Método y ruta | `WithName` | `WithSummary` | Autorización | Entrada | Éxito | Errores declarados |
 |---|---|---|---|---|---|---|
 | `GET /{id:int}` | `ObtenerExperienciaEducativa` | Obtiene una experiencia educativa activa de tu ámbito. | (grupo) | — | 200 | 404 |
-| `POST /` | `CrearExperienciaEducativa` | Agrega una experiencia educativa a un plan de estudios. | `Dgaa` | `CrearExperienciaEducativaRequest` (`planEstudiosId` más los campos de `DatosExperienciaEducativa`) | 201 con `Location` y el recurso | 400, 409 |
+| `POST /` | `CrearExperienciaEducativa` | Agrega una experiencia educativa a un plan de estudios. | `Dgaa` | `CrearExperienciaEducativaRequest` (`planEstudiosId` más los campos de `ExperienciaEducativaEntrada`) | 201 con `Location` y el recurso | 400, 409 |
 | `PUT /{id:int}` | `ModificarExperienciaEducativa` | Modifica una experiencia educativa; materia, curso y plan no cambian. | `Dgaa` | `ModificarExperienciaEducativaRequest` (los campos del comando sin `Id`) | 204 | 400, 404, 409 |
 | `DELETE /{id:int}` | `DarDeBajaExperienciaEducativa` | Da de baja una experiencia educativa sin programaciones activas. | `Dgaa` | — | 204 | 404, 409 |
 
@@ -1111,7 +1114,7 @@ src/Modules/OfertaEducativa/Sgpla.Modules.OfertaEducativa/
     PlanesEstudio/IPlanEstudiosRepository.cs, PlanEstudiosConsultas.cs,
                   ImportarPlanEstudios.cs, DarDeBajaPlanEstudios.cs
     ExperienciasEducativas/IExperienciaEducativaRepository.cs, ExperienciaEducativaConsultas.cs,
-                           CrearExperienciaEducativa.cs, ModificarExperienciaEducativa.cs,
+                           ExperienciaEducativaEntrada.cs, CrearExperienciaEducativa.cs, ModificarExperienciaEducativa.cs,
                            DarDeBajaExperienciaEducativa.cs
     Programaciones/ProgramacionAcademicaConsultas.cs
   Infrastructure/
