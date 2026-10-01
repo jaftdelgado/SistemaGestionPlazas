@@ -15,4 +15,7 @@ internal interface ISolicitudAperturaRepository
         CancellationToken cancellationToken);
 
     void Agregar(SolicitudApertura solicitud);
+
+    /// <summary>Borrado físico de un oficio reemplazado (PR 2).</summary>
+    void EliminarOficio(ArchivoSolicitudApertura oficio);
 }

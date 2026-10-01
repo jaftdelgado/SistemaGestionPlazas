@@ -39,32 +39,11 @@ internal sealed class CrearSolicitudAperturaHandler(
             return ArchivoSolicitudAperturaErrors.Obligatorio;
         }
 
-        var validacionOficio = ArchivoSolicitudApertura.ValidarOficio(
-            oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes);
+        var validacionOficio = await SolicitudAperturaComandos.ValidarOficioAsync(
+            oficio, almacenamiento.TamanoMaximoBytes, cancellationToken);
         if (validacionOficio.IsFailure)
         {
             return validacionOficio.Error;
-        }
-
-        await using (var stream = oficio.AbrirLectura())
-        {
-            var encabezado = new byte[5];
-            var leidos = 0;
-            while (leidos < encabezado.Length)
-            {
-                var cantidad = await stream.ReadAsync(encabezado.AsMemory(leidos), cancellationToken);
-                if (cantidad == 0)
-                {
-                    break;
-                }
-
-                leidos += cantidad;
-            }
-
-            if (!ArchivoSolicitudApertura.TieneFirmaPdf(encabezado.AsSpan(0, leidos)))
-            {
-                return ArchivoSolicitudAperturaErrors.NoEsPdf;
-            }
         }
 
         var experienciaPorId = await experienciasEducativas.ObtenerAsync([command.ExperienciaEducativaId], cancellationToken);
@@ -109,7 +88,7 @@ internal sealed class CrearSolicitudAperturaHandler(
 
         await using var contenido = oficio.AbrirLectura();
         var guardado = await almacenamiento.GuardarAsync("solicitudes-apertura", ".pdf", contenido, cancellationToken);
-        var utc = TruncarASegundos(reloj.GetUtcNow().UtcDateTime);
+        var utc = SolicitudAperturaComandos.Ahora(reloj);
         var archivo = ArchivoSolicitudApertura.Crear(
             validacionOficio.Value,
             guardado.Tamano,
@@ -171,7 +150,4 @@ internal sealed class CrearSolicitudAperturaHandler(
             solicitud.CanceladaEn,
             solicitud.CanceladaPorUsuarioId,
             solicitud.MotivoCancelacion);
-
-    private static DateTime TruncarASegundos(DateTime utc) =>
-        new(utc.Ticks / TimeSpan.TicksPerSecond * TimeSpan.TicksPerSecond, DateTimeKind.Utc);
 }

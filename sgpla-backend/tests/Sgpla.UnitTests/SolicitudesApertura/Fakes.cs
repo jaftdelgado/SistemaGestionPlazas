@@ -14,6 +14,8 @@ internal sealed class SolicitudAperturaRepositoryFalso : ISolicitudAperturaRepos
 
     public List<SolicitudApertura> Agregadas { get; } = [];
 
+    public List<ArchivoSolicitudApertura> OficiosEliminados { get; } = [];
+
     public bool TienePendiente { get; set; }
 
     public Task<SolicitudApertura?> ObtenerPorIdAsync(int id, CancellationToken cancellationToken) =>
@@ -25,7 +27,11 @@ internal sealed class SolicitudAperturaRepositoryFalso : ISolicitudAperturaRepos
         string seccion,
         CancellationToken cancellationToken) => Task.FromResult(TienePendiente);
 
+    public void Precargar(int id, SolicitudApertura solicitud) => _porId[id] = solicitud;
+
     public void Agregar(SolicitudApertura solicitud) => Agregadas.Add(solicitud);
+
+    public void EliminarOficio(ArchivoSolicitudApertura oficio) => OficiosEliminados.Add(oficio);
 }
 
 internal sealed class ExperienciasEducativasFalsas : IExperienciasEducativas
@@ -113,13 +119,13 @@ internal sealed class AlmacenamientoArchivosFalso : IAlmacenamientoArchivos
     }
 }
 
-internal sealed class UsuarioActualFalso(int id, Rol rol, int? entidadAcademicaId) : ICurrentUser
+internal sealed class UsuarioActualFalso(int id, Rol rol, int? entidadAcademicaId, int? areaAcademicaId = null) : ICurrentUser
 {
     public int Id => id;
 
     public Rol Rol => rol;
 
-    public int? AreaAcademicaId => null;
+    public int? AreaAcademicaId => areaAcademicaId;
 
     public int? EntidadAcademicaId => entidadAcademicaId;
 }
@@ -130,9 +136,13 @@ internal sealed class UnitOfWorkFalso : IUnitOfWork
 
     public int Guardados { get; private set; }
 
+    /// <summary>Se invoca dentro de <see cref="SaveChangesAsync"/>, antes de lanzar la excepción o de terminar.</summary>
+    public Action? AlGuardar { get; set; }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         Guardados++;
+        AlGuardar?.Invoke();
         return Excepcion is null ? Task.CompletedTask : Task.FromException(Excepcion);
     }
 }
