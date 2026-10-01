@@ -143,6 +143,21 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
     }
 
     [Fact]
+    public async Task Crear_ConExperienciaDadaDeBaja_Devuelve400EnExperienciaEducativaId()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        using var baja = await escenario.Oferta.Dgaa.DeleteAsync(
+            new Uri($"/api/v1/oferta-educativa/experiencias-educativas/{escenario.ExperienciaId}", UriKind.Relative),
+            Cancelacion);
+        baja.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        using var formulario = escenario.CrearFormulario();
+
+        using var respuesta = await escenario.Entidad.PostAsync(Uri(), formulario, Cancelacion);
+
+        await VerificaErrorDeCampoAsync(respuesta, "experienciaEducativaId", "SolicitudApertura.ExperienciaEducativaInvalida");
+    }
+
+    [Fact]
     public async Task Crear_ConPeriodoInexistente_Devuelve400EnPeriodoEscolarId()
     {
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
@@ -154,10 +169,11 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
     }
 
     [Fact]
-    public async Task Crear_ConPeriodoActual_Devuelve409PeriodoNoAbierto()
+    public async Task Crear_ConPeriodoActivoQueNoEsElSiguiente_Devuelve409PeriodoNoAbierto()
     {
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
-        using var formulario = escenario.CrearFormulario(periodoId: escenario.PeriodoActualId);
+        var periodoPropioId = await EscenarioOferta.CrearPeriodoAsync(escenario.Superusuario);
+        using var formulario = escenario.CrearFormulario(periodoId: periodoPropioId);
 
         using var respuesta = await escenario.Entidad.PostAsync(Uri(), formulario, Cancelacion);
         var problema = await EscenarioOferta.Leer(respuesta);
@@ -247,41 +263,64 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
     }
 
     [Fact]
-    public async Task ListarYObtener_FiltraPorAmbitoYFiltrosDeclarados()
+    public async Task Listar_OrdenaPorCreadaEnDescendenteYPorIdDescendenteEnEmpate()
     {
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
-        var (id, creada) = await escenario.CrearSolicitudAsync(seccion: "A1");
+        var instante = new DateTime(2026, 10, 1, 15, 4, 5, DateTimeKind.Utc);
+        var a = await InsertarAsync(escenario, "PENDIENTE", "A1", instante);
+        var b = await InsertarAsync(escenario, "PENDIENTE", "A2", instante.AddSeconds(-1));
+        var c = await InsertarAsync(escenario, "PENDIENTE", "A3", instante);
 
-        using var listar = await escenario.Entidad.GetAsync(
-            Uri($"?experienciaEducativaId={escenario.ExperienciaId}&periodoEscolarId={escenario.PeriodoSiguienteId}&entidadAcademicaId={escenario.Oferta.EntidadId}&estado=pendiente"),
-            Cancelacion);
-        var contenidoListado = await listar.Content.ReadAsStringAsync(Cancelacion);
-        var pagina = await EscenarioOferta.Leer(listar);
+        var ids = await ListarIdsAsync(escenario.Entidad, $"?experienciaEducativaId={escenario.ExperienciaId}");
 
-        listar.StatusCode.ShouldBe(HttpStatusCode.OK, contenidoListado);
-        pagina.GetProperty("elementos").EnumerateArray().Select(e => e.GetProperty("id").GetInt32()).ShouldBe([id]);
-        pagina.GetProperty("total").GetInt32().ShouldBe(1);
-
-        using var obtener = await escenario.Entidad.GetAsync(Uri($"/{id}"), Cancelacion);
+        ids.ShouldBe([c, a, b]);
+        using var obtener = await escenario.Entidad.GetAsync(Uri($"/{a}"), Cancelacion);
         obtener.StatusCode.ShouldBe(HttpStatusCode.OK);
-        (await EscenarioOferta.Leer(obtener)).GetProperty("id").GetInt32().ShouldBe(id);
+        var solicitud = await EscenarioOferta.Leer(obtener);
+        solicitud.GetProperty("creadaEn").GetString().ShouldBe("2026-10-01T15:04:05Z");
+        solicitud.GetProperty("oficio").GetProperty("cargadoEn").GetString().ShouldBe("2026-10-01T15:04:05Z");
+    }
 
-        var filtros = new[]
-        {
-            $"?experienciaEducativaId={escenario.ExperienciaId}",
-            $"?periodoEscolarId={escenario.PeriodoSiguienteId}",
-            $"?entidadAcademicaId={escenario.Oferta.EntidadId}",
-            "?estado=PENDIENTE",
-        };
-        foreach (var filtro in filtros)
-        {
-            using var filtrado = await escenario.Entidad.GetAsync(Uri(filtro), Cancelacion);
-            filtrado.StatusCode.ShouldBe(HttpStatusCode.OK);
-            (await EscenarioOferta.Leer(filtrado)).GetProperty("elementos").EnumerateArray()
-                .Select(e => e.GetProperty("id").GetInt32()).ShouldContain(id);
-        }
+    [Fact]
+    public async Task ListarYObtener_FiltraPorAmbitoYFiltrosDeclarados()
+    {
+        using var escenario1 = await EscenarioSolicitud.CrearAsync(_api);
+        using var escenario2 = await EscenarioSolicitud.CrearAsync(_api);
+        var periodoPropioId = await EscenarioOferta.CrearPeriodoAsync(escenario1.Superusuario);
+        var planId = await EscenarioOferta.CrearPlanAsync(
+            escenario1.Oferta.Dgaa,
+            escenario1.Oferta.ProgramaId,
+            EscenarioOferta.CodigoDePlan(),
+            [EscenarioOferta.Experiencia(cupoMinimo: 10, cupoMaximo: 40)]);
+        var experiencia2Id = await ObtenerExperienciaAsync(escenario1.Oferta.Dgaa, planId);
+        var siguienteId = escenario1.PeriodoSiguienteId;
+        var s1 = await DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion, escenario1.ExperienciaId, siguienteId, "PENDIENTE", "B1");
+        var s2 = await DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion, escenario1.ExperienciaId, siguienteId, "CANCELADA", "B2");
+        var s3 = await DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion, escenario1.ExperienciaId, periodoPropioId, "PENDIENTE", "B3");
+        var s4 = await DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion, experiencia2Id, siguienteId, "PENDIENTE", "B4");
+        var s5 = await DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion, escenario2.ExperienciaId, siguienteId, "PENDIENTE", "B5");
+        var entidad1 = escenario1.Oferta.EntidadId;
+        var entidad2 = escenario2.Oferta.EntidadId;
 
-        creada.GetProperty("estado").GetString().ShouldBe("PENDIENTE");
+        (await ListarIdsAsync(escenario1.Entidad, "?estado=cancelada")).ShouldBe([s2], ignoreOrder: true);
+        (await ListarIdsAsync(escenario1.Entidad, "?estado=PENDIENTE")).ShouldBe([s1, s3, s4], ignoreOrder: true);
+        (await ListarIdsAsync(escenario1.Entidad, $"?periodoEscolarId={siguienteId}")).ShouldBe([s1, s2, s4], ignoreOrder: true);
+        (await ListarIdsAsync(escenario1.Entidad, $"?experienciaEducativaId={experiencia2Id}")).ShouldBe([s4]);
+        (await ListarIdsAsync(escenario1.Entidad, string.Empty)).ShouldBe([s1, s2, s3, s4], ignoreOrder: true);
+        (await ListarIdsAsync(escenario1.Oferta.Dgaa, string.Empty)).ShouldBe([s1, s2, s3, s4], ignoreOrder: true);
+        (await ListarIdsAsync(escenario1.Superusuario, $"?entidadAcademicaId={entidad1}")).ShouldBe([s1, s2, s3, s4], ignoreOrder: true);
+        (await ListarIdsAsync(escenario1.Superusuario, $"?entidadAcademicaId={entidad2}")).ShouldBe([s5]);
+        await VerificaListadoVacioAsync(escenario1.Entidad, $"?entidadAcademicaId={entidad2}");
+        await VerificaListadoVacioAsync(escenario1.Oferta.Dgaa, $"?entidadAcademicaId={entidad2}");
+
+        using var obtener = await escenario1.Entidad.GetAsync(Uri($"/{s1}"), Cancelacion);
+        obtener.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await EscenarioOferta.Leer(obtener)).GetProperty("id").GetInt32().ShouldBe(s1);
     }
 
     [Theory]
@@ -356,6 +395,28 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static Uri Uri(string sufijo = "") => new($"{Ruta}{sufijo}", UriKind.Relative);
+
+    private Task<int> InsertarAsync(EscenarioSolicitud escenario, string estado, string seccion, DateTime creadaEn) =>
+        DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, estado, seccion, creadaEn);
+
+    private static async Task<List<int>> ListarIdsAsync(HttpClient cliente, string query)
+    {
+        using var respuesta = await cliente.GetAsync(Uri(query), Cancelacion);
+        var contenido = await respuesta.Content.ReadAsStringAsync(Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK, contenido);
+        return (await EscenarioOferta.Leer(respuesta)).GetProperty("elementos").EnumerateArray()
+            .Select(e => e.GetProperty("id").GetInt32()).ToList();
+    }
+
+    private static async Task VerificaListadoVacioAsync(HttpClient cliente, string query)
+    {
+        using var respuesta = await cliente.GetAsync(Uri(query), Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var pagina = await EscenarioOferta.Leer(respuesta);
+        pagina.GetProperty("elementos").GetArrayLength().ShouldBe(0);
+        pagina.GetProperty("total").GetInt32().ShouldBe(0);
+    }
 
     private async Task<byte[]> ObtenerChecksumAsync(int solicitudId)
     {

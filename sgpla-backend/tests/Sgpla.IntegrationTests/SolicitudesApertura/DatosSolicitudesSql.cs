@@ -10,7 +10,8 @@ internal static class DatosSolicitudesSql
         int experienciaEducativaId,
         int periodoEscolarId,
         string estado,
-        string seccion)
+        string seccion,
+        DateTime? creadaEn = null)
     {
         await using var conexion = new SqlConnection(cadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
@@ -40,7 +41,7 @@ internal static class DatosSolicitudesSql
                  resuelta_por_usuario_id, comentarios_resolucion, cancelada_en, cancelada_por_usuario_id,
                  motivo_cancelacion)
             VALUES (@experienciaId, @periodoId, @seccion, 20, N'Solicitud de prueba.', @archivoId, @estado,
-                '2026-10-01T15:04:05', (SELECT MIN(id) FROM usuarios.usuario), @resueltaEn,
+                @creadaEn, (SELECT MIN(id) FROM usuarios.usuario), @resueltaEn,
                 CASE WHEN @estado IN ('ACEPTADA', 'RECHAZADA') THEN (SELECT MIN(id) FROM usuarios.usuario) END,
                 @comentarios, @canceladaEn,
                 CASE WHEN @estado = 'CANCELADA' THEN (SELECT MIN(id) FROM usuarios.usuario) END,
@@ -52,6 +53,7 @@ internal static class DatosSolicitudesSql
         comando.Parameters.AddWithValue("@seccion", seccion);
         comando.Parameters.AddWithValue("@archivoId", archivoId);
         comando.Parameters.AddWithValue("@estado", estado);
+        comando.Parameters.Add("@creadaEn", System.Data.SqlDbType.DateTime2).Value = creadaEn ?? Fecha;
         comando.Parameters.Add("@resueltaEn", System.Data.SqlDbType.DateTime2).Value =
             estado is "ACEPTADA" or "RECHAZADA" ? Fecha : DBNull.Value;
         comando.Parameters.Add("@comentarios", System.Data.SqlDbType.NVarChar, -1).Value =

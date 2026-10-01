@@ -75,6 +75,7 @@ public sealed class CrearSolicitudAperturaHandlerTests
         var resultado = await Handler().HandleAsync(Comando() with { Seccion = "A 2" }, CancellationToken.None);
 
         resultado.Error.ShouldBe(SolicitudAperturaErrors.SeccionFormatoInvalido);
+        _experiencias.Consultas.ShouldBe(0);
         _almacenamiento.Guardados.ShouldBe(0);
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
@@ -85,6 +86,7 @@ public sealed class CrearSolicitudAperturaHandlerTests
         var resultado = await Handler().HandleAsync(Comando() with { Oficio = null }, CancellationToken.None);
 
         resultado.Error.ShouldBe(ArchivoSolicitudAperturaErrors.Obligatorio);
+        _experiencias.Consultas.ShouldBe(0);
         _almacenamiento.Guardados.ShouldBe(0);
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
@@ -95,6 +97,7 @@ public sealed class CrearSolicitudAperturaHandlerTests
         var resultado = await Handler().HandleAsync(Comando(Encoding.ASCII.GetBytes("texto")), CancellationToken.None);
 
         resultado.Error.ShouldBe(ArchivoSolicitudAperturaErrors.NoEsPdf);
+        _experiencias.Consultas.ShouldBe(0);
         _almacenamiento.Guardados.ShouldBe(0);
         _unidadDeTrabajo.Guardados.ShouldBe(0);
     }
@@ -114,7 +117,7 @@ public sealed class CrearSolicitudAperturaHandlerTests
     [Theory]
     [InlineData(false, 7)]
     [InlineData(true, 8)]
-    public async Task HandleAsync_ConExperienciaNoVigenteODetraEntidad_FallaEnExperienciaEducativaId(
+    public async Task HandleAsync_ConExperienciaNoVigenteODeOtraEntidad_FallaEnExperienciaEducativaId(
         bool vigente,
         int entidadId)
     {

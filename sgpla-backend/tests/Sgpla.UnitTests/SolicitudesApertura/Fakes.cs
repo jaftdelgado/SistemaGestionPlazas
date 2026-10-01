@@ -32,11 +32,16 @@ internal sealed class ExperienciasEducativasFalsas : IExperienciasEducativas
 {
     public Dictionary<int, ExperienciaEducativaResumen> Resumenes { get; } = [];
 
+    public int Consultas { get; private set; }
+
     public Task<IReadOnlyDictionary<int, ExperienciaEducativaResumen>> ObtenerAsync(
         IReadOnlyCollection<int> ids,
-        CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyDictionary<int, ExperienciaEducativaResumen>>(
+        CancellationToken cancellationToken)
+    {
+        Consultas++;
+        return Task.FromResult<IReadOnlyDictionary<int, ExperienciaEducativaResumen>>(
             Resumenes.Where(par => ids.Contains(par.Key)).ToDictionary(par => par.Key, par => par.Value));
+    }
 
     public Task<IQueryable<int>> ConsultarIdsVisiblesAsync(int? entidadAcademicaId, CancellationToken cancellationToken) =>
         Task.FromResult(Resumenes.Values
