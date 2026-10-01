@@ -409,7 +409,7 @@ Comando del PR 1:
 
 | Archivo | Command | Dependencias del handler | Pasos |
 |---|---|---|---|
-| `CrearSolicitudApertura.cs` | `CrearSolicitudAperturaCommand(int ExperienciaEducativaId, int PeriodoEscolarId, string? Seccion, int CantidadEstudiantes, string? Justificacion, ArchivoRecibido? Oficio)`; devuelve `SolicitudAperturaResponse` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `IPeriodosEscolares`, `IPeriodosConfigurados`, `IAlmacenamientoArchivos`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `DatosSolicitudApertura.Crear` (400). 2. `ArchivoSolicitudApertura.ValidarOficio(oficio, almacenamiento.TamanoMaximoBytes)` y la firma `%PDF-` leyendo los primeros 5 bytes de `AbrirLectura()` (400, sección 7). 3. `ObtenerAsync([id])` de la EE: si no aparece, no está `Vigente` o su `EntidadAcademicaId` no es `actual.EntidadAcademicaId` → `ExperienciaEducativaInvalida`. 4. `ObtenerAsync([periodoId])` del periodo: si no aparece o no está `Activo` → `PeriodoEscolarInvalido`. 5. `ObtenerActivosPorClaveAsync([ClaveActual, ClaveSiguiente])`: si falta alguna → `PeriodosNoDisponibles`. 6. Si la clave del periodo no es `ClaveSiguiente` → `PeriodoNoAbierto`. 7. `SolicitudApertura.ValidarCupos` con los cupos del resumen. 8. `ExistePendienteAsync` → `SeccionDuplicada`. 9. `GuardarAsync("solicitudes-apertura", ".pdf", AbrirLectura())`. 10. `ArchivoSolicitudApertura.Crear` y `SolicitudApertura.Crear` con el mismo instante (truncado a segundos) y `Agregar`. 11. `SaveChangesAsync` dentro de un `try`; en el `catch` sin filtro se llama a `IntentarEliminarAsync(clave, CancellationToken.None)` y se relanza con `throw;`. 12. Arma el `Response` con los resúmenes de los pasos 3 y 4 |
+| `CrearSolicitudApertura.cs` | `CrearSolicitudAperturaCommand(int ExperienciaEducativaId, int PeriodoEscolarId, string? Seccion, int CantidadEstudiantes, string? Justificacion, ArchivoRecibido? Oficio)`; devuelve `SolicitudAperturaResponse` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `IPeriodosEscolares`, `IPeriodosConfigurados`, `IAlmacenamientoArchivos`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `DatosSolicitudApertura.Crear` (400). 2. Si no llega el oficio, `ArchivoSolicitudAperturaErrors.Obligatorio`; si llega, `ArchivoSolicitudApertura.ValidarOficio(oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes)` y la firma `%PDF-` leyendo los primeros 5 bytes de `AbrirLectura()` (400, sección 7). 3. `ObtenerAsync([id])` de la EE: si no aparece, no está `Vigente` o su `EntidadAcademicaId` no es `actual.EntidadAcademicaId` → `ExperienciaEducativaInvalida`. 4. `ObtenerAsync([periodoId])` del periodo: si no aparece o no está `Activo` → `PeriodoEscolarInvalido`. 5. `ObtenerActivosPorClaveAsync([ClaveActual, ClaveSiguiente])`: si falta alguna → `PeriodosNoDisponibles`. 6. Si la clave del periodo no es `ClaveSiguiente` → `PeriodoNoAbierto`. 7. `SolicitudApertura.ValidarCupos` con los cupos del resumen. 8. `ExistePendienteAsync` → `SeccionDuplicada`. 9. `GuardarAsync("solicitudes-apertura", ".pdf", AbrirLectura())`. 10. `ArchivoSolicitudApertura.Crear` y `SolicitudApertura.Crear` con el mismo instante (truncado a segundos) y `Agregar`. 11. `SaveChangesAsync` dentro de un `try`; en el `catch` sin filtro se llama a `IntentarEliminarAsync(clave, CancellationToken.None)` y se relanza con `throw;`. 12. Arma el `Response` con los resúmenes de los pasos 3 y 4 |
 
 Comandos del PR 2:
 
@@ -430,6 +430,7 @@ Un choque de `rowversion` en cualquiera de los `SaveChangesAsync` del PR 2 lanza
   - `Estado` con `HasMaxLength(20).IsUnicode(false)` y un convertidor explícito a mayúsculas (D21): `HasConversion(e => e.ToString().ToUpperInvariant(), t => Enum.Parse<EstadoSolicitudApertura>(t, ignoreCase: true))`;
   - `MotivoCancelacion` con `HasMaxLength(LongitudMaximaMotivo)`; `Justificacion` y `ComentariosResolucion` sin `HasMaxLength` (son `nvarchar(max)`);
   - `Version` con `IsRowVersion()` (columna `version`);
+  - `CreadaEn`, `ActualizadaEn`, `ResueltaEn` y `CanceladaEn` se leen como UTC (`DateTimeKind.Utc`) con un convertidor, para que el JSON las devuelva con `Z`;
   - `HasOne(s => s.Oficio).WithOne().HasForeignKey<SolicitudApertura>(s => s.OficioRespaldoId)`;
   - sin filtro de baja lógica, porque la tabla no tiene `fecha_eliminacion`.
 - `SolicitudAperturaRepository.cs`: `ObtenerPorIdAsync` con `Include(s => s.Oficio)`; `ExistePendienteAsync` compara en la base con `Estado == EstadoSolicitudApertura.Pendiente`.
@@ -506,9 +507,9 @@ Archivo único del oficio de una solicitud (`DATABASE.md` §16.3). No se version
 | `CargadoPorUsuarioId` | `int` | — |
 
 Métodos:
-- `static Result<string> ValidarOficio(ArchivoRecibido? oficio, long tamanoMaximoBytes)`: valida en este orden: que llegue (`Obligatorio`), el nombre (`NombreVacio`, `NombreDemasiadoLargo`), el tamaño (`Vacio`, `DemasiadoGrande`) y el tipo declarado (`NoEsPdf`). Devuelve el nombre normalizado.
+- `static Result<string> ValidarOficio(string? nombre, string? tipoContenido, long tamano, long tamanoMaximoBytes)`: valida en este orden: el nombre (`NombreVacio`, `NombreDemasiadoLargo`), el tamaño (`Vacio`, `DemasiadoGrande`) y el tipo declarado (`NoEsPdf`). Devuelve el nombre normalizado. Recibe valores simples porque Domain no depende de `BuildingBlocks.Application`; que el oficio llegue (`Obligatorio`) lo comprueba el handler antes de llamarla.
 - `static bool TieneFirmaPdf(ReadOnlySpan<byte> encabezado)`: `true` si los primeros 5 bytes son `%PDF-`. El handler lee el encabezado y, si es `false`, devuelve `NoEsPdf`.
-- `static ArchivoSolicitudApertura Crear(string nombre, ArchivoGuardado guardado, int usuarioId, DateTime utc)`: con `Mime = MimePdf`, `Tamano` y `ChecksumSha256` de `guardado` y `ClaveAlmacenamiento = guardado.Clave`.
+- `static ArchivoSolicitudApertura Crear(string nombre, long tamano, byte[] checksumSha256, string claveAlmacenamiento, int usuarioId, DateTime utc)`: con `Mime = MimePdf`; el handler pasa `Tamano`, `ChecksumSha256` y `Clave` de `ArchivoGuardado`.
 
 `Domain/SolicitudesApertura/ArchivoSolicitudAperturaErrors.cs`, todos de tipo Validation y con el campo `Oficio`:
 
@@ -525,7 +526,7 @@ Métodos:
 
 ### Infrastructure
 
-`ArchivoSolicitudAperturaConfiguration.cs`: `ToTable("archivo_solicitud_apertura", "academico")`; `Nombre` con `HasMaxLength(260)`; `Mime` con `HasMaxLength(255).IsUnicode(false)`; `ChecksumSha256` con `HasMaxLength(32).IsFixedLength()`; `ClaveAlmacenamiento` con `HasMaxLength(500)`.
+`ArchivoSolicitudAperturaConfiguration.cs`: `ToTable("archivo_solicitud_apertura", "academico")`; `Nombre` con `HasMaxLength(260)`; `Mime` con `HasMaxLength(255).IsUnicode(false)`; `ChecksumSha256` con `HasMaxLength(32).IsFixedLength()`; `ClaveAlmacenamiento` con `HasMaxLength(500)`. `CargadoEn` se lee como UTC con el mismo convertidor.
 
 ## 8. Periodos configurados
 
