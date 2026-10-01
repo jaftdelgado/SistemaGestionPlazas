@@ -7,7 +7,7 @@ public sealed class ArchivoSolicitudAperturaTests
     [Fact]
     public void ValidarOficio_ExtraeNombreDeWindowsYDeLinux()
     {
-        ArchivoSolicitudApertura.ValidarOficio("C:\fakepath\oficio.pdf", "application/pdf", 5, 100).Value.ShouldBe("oficio.pdf");
+        ArchivoSolicitudApertura.ValidarOficio("C:\\fakepath\\oficio.pdf", "application/pdf", 5, 100).Value.ShouldBe("oficio.pdf");
         ArchivoSolicitudApertura.ValidarOficio("carpeta/oficio.pdf", "application/pdf", 5, 100).Value.ShouldBe("oficio.pdf");
     }
 

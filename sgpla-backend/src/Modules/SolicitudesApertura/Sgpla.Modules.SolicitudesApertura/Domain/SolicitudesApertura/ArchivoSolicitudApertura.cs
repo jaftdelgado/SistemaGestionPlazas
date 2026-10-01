@@ -31,7 +31,7 @@ internal sealed class ArchivoSolicitudApertura : Entity
     public static Result<string> ValidarOficio(string? nombre, string? tipoContenido, long tamano, long tamanoMaximoBytes)
     {
         var texto = nombre ?? string.Empty;
-        var separador = Math.Max(texto.LastIndexOf('/'), texto.LastIndexOf('\'));
+        var separador = Math.Max(texto.LastIndexOf('/'), texto.LastIndexOf('\\'));
         texto = Normalizacion.Recortar(texto[(separador + 1)..]);
 
         if (texto.Length == 0)
