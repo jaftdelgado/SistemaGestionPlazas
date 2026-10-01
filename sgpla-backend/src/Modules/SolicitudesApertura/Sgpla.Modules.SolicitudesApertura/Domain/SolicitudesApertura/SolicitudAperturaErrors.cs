@@ -56,6 +56,29 @@ internal static class SolicitudAperturaErrors
         "SolicitudApertura.SeccionDuplicada",
         "Ya existe una solicitud pendiente de esa sección para la experiencia educativa y el periodo.");
 
+    public static readonly Error ComentariosVacios = Error.Validation(
+        "SolicitudApertura.ComentariosVacios", "Los comentarios son obligatorios para rechazar.", "Comentarios");
+
+    public static readonly Error ComentariosDemasiadoLargos = Error.Validation(
+        "SolicitudApertura.ComentariosDemasiadoLargos",
+        $"Los comentarios admiten hasta {SolicitudApertura.LongitudMaximaComentarios} caracteres.",
+        "Comentarios");
+
+    public static readonly Error MotivoVacio = Error.Validation(
+        "SolicitudApertura.MotivoVacio", "El motivo es obligatorio.", "Motivo");
+
+    public static readonly Error MotivoDemasiadoLargo = Error.Validation(
+        "SolicitudApertura.MotivoDemasiadoLargo",
+        $"El motivo admite hasta {SolicitudApertura.LongitudMaximaMotivo} caracteres.",
+        "Motivo");
+
+    public static readonly Error NoPendiente = Error.Conflict(
+        "SolicitudApertura.NoPendiente", "La solicitud ya no está pendiente.");
+
+    public static readonly Error CuposIncompletos = Error.Conflict(
+        "SolicitudApertura.CuposIncompletos",
+        "La experiencia educativa necesita cupo mínimo y máximo para aceptar la solicitud.");
+
     public static Error NoEncontrada(int id) => Error.NotFound(
         "SolicitudApertura.NoEncontrada", $"No existe la solicitud de apertura {id.ToString(CultureInfo.InvariantCulture)}.");
 }

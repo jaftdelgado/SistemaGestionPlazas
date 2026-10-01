@@ -35,6 +35,32 @@ internal static class SolicitudAperturaEndpoints
             .RequireAuthorization(Politicas.EntidadAcademica)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
+        grupo.MapPut("/{id:int}", Modificar).WithName("ModificarSolicitudApertura")
+            .WithSummary("Modifica una solicitud de apertura pendiente: cantidad, justificación y, si llega, el oficio.")
+            // La API se autentica con token bearer, sin cookies: no hay CSRF que prevenir.
+            .DisableAntiforgery()
+            .RequireAuthorization(Politicas.EntidadAcademica)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        grupo.MapPost("/{id:int}/aceptar", Aceptar).WithName("AceptarSolicitudApertura")
+            .WithSummary("Acepta una solicitud de apertura pendiente.")
+            .RequireAuthorization(Politicas.Dgaa)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        grupo.MapPost("/{id:int}/rechazar", Rechazar).WithName("RechazarSolicitudApertura")
+            .WithSummary("Rechaza una solicitud de apertura pendiente, con comentarios.")
+            .RequireAuthorization(Politicas.Dgaa)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        grupo.MapPost("/{id:int}/cancelar", Cancelar).WithName("CancelarSolicitudApertura")
+            .WithSummary("Cancela una solicitud de apertura pendiente, con un motivo.")
+            .RequireAuthorization(Politicas.EntidadAcademica)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         return modulo;
     }
@@ -94,7 +120,48 @@ internal static class SolicitudAperturaEndpoints
             ? TypedResults.CreatedAtRoute(resultado.Value, NombreRutaObtener, new { id = resultado.Value.Id })
             : resultado.Error.ToProblem();
     }
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> Modificar(
+        int id,
+        [FromForm(Name = "cantidadEstudiantes")] int? cantidadEstudiantes,
+        [FromForm(Name = "justificacion")] string? justificacion,
+        [FromForm(Name = "oficio")] IFormFile? oficio,
+        ICommandHandler<ModificarSolicitudAperturaCommand> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(
+            new ModificarSolicitudAperturaCommand(id, cantidadEstudiantes ?? 0, justificacion, oficio.ComoArchivoRecibido()),
+            cancellationToken)).ToNoContent();
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> Aceptar(
+        int id,
+        AceptarSolicitudAperturaRequest request,
+        ICommandHandler<AceptarSolicitudAperturaCommand> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new AceptarSolicitudAperturaCommand(id, request.Comentarios), cancellationToken))
+            .ToNoContent();
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> Rechazar(
+        int id,
+        RechazarSolicitudAperturaRequest request,
+        ICommandHandler<RechazarSolicitudAperturaCommand> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new RechazarSolicitudAperturaCommand(id, request.Comentarios), cancellationToken))
+            .ToNoContent();
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> Cancelar(
+        int id,
+        CancelarSolicitudAperturaRequest request,
+        ICommandHandler<CancelarSolicitudAperturaCommand> handler,
+        CancellationToken cancellationToken) =>
+        (await handler.HandleAsync(new CancelarSolicitudAperturaCommand(id, request.Motivo), cancellationToken))
+            .ToNoContent();
 }
+
+internal sealed record AceptarSolicitudAperturaRequest(string? Comentarios);
+
+internal sealed record RechazarSolicitudAperturaRequest(string? Comentarios);
+
+internal sealed record CancelarSolicitudAperturaRequest(string? Motivo);
 
 internal sealed record ListarSolicitudesAperturaRequest(
     [FromQuery(Name = "pagina")] int? Pagina,

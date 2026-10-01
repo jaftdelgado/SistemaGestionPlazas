@@ -109,7 +109,22 @@ public sealed record ArchivoGuardado(string Clave, long Tamano, ReadOnlyMemory<b
 /// Archivo recibido en una petición, antes de guardarlo. <see cref="AbrirLectura"/> abre el contenido desde el inicio y
 /// puede llamarse más de una vez.
 /// </summary>
-public sealed record ArchivoRecibido(string Nombre, string TipoContenido, long Tamano, Func<Stream> AbrirLectura);
+public sealed record ArchivoRecibido(string Nombre, string TipoContenido, long Tamano, Func<Stream> AbrirLectura)
+{
+    /// <summary>
+    /// Lee hasta <paramref name="longitud"/> bytes desde el inicio del contenido; menos si el contenido es más corto.
+    /// Sirve para comprobar la firma de un archivo sin cargarlo completo.
+    /// </summary>
+    public async Task<byte[]> LeerEncabezadoAsync(int longitud, CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(longitud);
+
+        await using var contenido = AbrirLectura();
+        var encabezado = new byte[longitud];
+        var leidos = await contenido.ReadAtLeastAsync(encabezado, longitud, throwOnEndOfStream: false, cancellationToken);
+        return encabezado[..leidos];
+    }
+}
 ```
 
 `src/BuildingBlocks/Sgpla.BuildingBlocks.Infrastructure/Archivos/` (carpeta nueva):
@@ -205,7 +220,7 @@ El `mime` que se guarda es siempre `application/pdf`. Un campo de formulario que
 
 Cómo se aplica el ámbito:
 - **Lectura** (listar, obtener y descargar): la consulta parte de `IExperienciasEducativas.ConsultarIdsVisiblesAsync` (sección 9), que devuelve los ids de las EE del ámbito de lectura de OfertaEducativa: la entidad de la Entidad Académica, las entidades del área de la DGAA o todas para el Superusuario, incluidas las EE, los planes, los programas y las entidades dados de baja. Es el mismo ámbito que D12 pide, porque `IAmbitoOfertaEducativa.EntidadesVisiblesAsync` ya lo calcula así. Una solicitud cuya EE no está entre esos ids responde 404 `SolicitudApertura.NoEncontrada` (D13).
-- **Comandos** sobre una solicitud (PR 2): el handler obtiene el resumen de su EE con `IExperienciasEducativas.ObtenerAsync` y compara con `ICurrentUser`: la Entidad Académica necesita `EntidadAcademicaId == actual.EntidadAcademicaId`; la DGAA, `AreaAcademicaId == actual.AreaAcademicaId`. Si no coincide, 404 `SolicitudApertura.NoEncontrada`.
+- **Comandos** sobre una solicitud (PR 2): el handler carga la solicitud y pide a `IAmbitoSolicitudesApertura` el resumen de su EE: `ExperienciaDeSuEntidadAsync` para la Entidad Académica (la EE debe ser de `actual.EntidadAcademicaId`) y `ExperienciaDeSuAreaAsync` para la DGAA (la EE debe ser de una entidad de `actual.AreaAcademicaId`). Si devuelve `null`, 404 `SolicitudApertura.NoEncontrada`. El servicio vive en `Application/Ambito` y lo implementa `Infrastructure/Ambito/AmbitoSolicitudesApertura` con `IExperienciasEducativas` e `ICurrentUser`.
 - **Crear:** la EE del cuerpo debe estar vigente y ser de la entidad del usuario; si no, 400 en `experienciaEducativaId` (D10).
 - `ICurrentUser` ya garantiza por petición que la cuenta y su ámbito están activos (USU-D4); este módulo no lo vuelve a comprobar.
 
@@ -320,7 +335,7 @@ internal interface ISolicitudAperturaRepository
 
     void Agregar(SolicitudApertura solicitud);
 
-    /// <summary>Borrado físico de un oficio reemplazado (PR 2).</summary>
+    /// <summary>Borrado físico de un oficio reemplazado.</summary>
     void EliminarOficio(ArchivoSolicitudApertura oficio);
 }
 ```
@@ -409,16 +424,16 @@ Comando del PR 1:
 
 | Archivo | Command | Dependencias del handler | Pasos |
 |---|---|---|---|
-| `CrearSolicitudApertura.cs` | `CrearSolicitudAperturaCommand(int ExperienciaEducativaId, int PeriodoEscolarId, string? Seccion, int CantidadEstudiantes, string? Justificacion, ArchivoRecibido? Oficio)`; devuelve `SolicitudAperturaResponse` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `IPeriodosEscolares`, `IPeriodosConfigurados`, `IAlmacenamientoArchivos`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `DatosSolicitudApertura.Crear` (400). 2. Si no llega el oficio, `ArchivoSolicitudAperturaErrors.Obligatorio`; si llega, `ArchivoSolicitudApertura.ValidarOficio(oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes)` y la firma `%PDF-` leyendo los primeros 5 bytes de `AbrirLectura()` (400, sección 7). 3. `ObtenerAsync([id])` de la EE: si no aparece, no está `Vigente` o su `EntidadAcademicaId` no es `actual.EntidadAcademicaId` → `ExperienciaEducativaInvalida`. 4. `ObtenerAsync([periodoId])` del periodo: si no aparece o no está `Activo` → `PeriodoEscolarInvalido`. 5. `ObtenerActivosPorClaveAsync([ClaveActual, ClaveSiguiente])`: si falta alguna → `PeriodosNoDisponibles`. 6. Si la clave del periodo no es `ClaveSiguiente` → `PeriodoNoAbierto`. 7. `SolicitudApertura.ValidarCupos` con los cupos del resumen. 8. `ExistePendienteAsync` → `SeccionDuplicada`. 9. `GuardarAsync("solicitudes-apertura", ".pdf", AbrirLectura())`. 10. `ArchivoSolicitudApertura.Crear` y `SolicitudApertura.Crear` con el mismo instante (truncado a segundos) y `Agregar`. 11. `SaveChangesAsync` dentro de un `try`; en el `catch` sin filtro se llama a `IntentarEliminarAsync(clave, CancellationToken.None)` y se relanza con `throw;`. 12. Arma el `Response` con los resúmenes de los pasos 3 y 4 |
+| `CrearSolicitudApertura.cs` | `CrearSolicitudAperturaCommand(int ExperienciaEducativaId, int PeriodoEscolarId, string? Seccion, int CantidadEstudiantes, string? Justificacion, ArchivoRecibido? Oficio)`; devuelve `SolicitudAperturaResponse` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `IPeriodosEscolares`, `IPeriodosConfigurados`, `IAlmacenamientoArchivos`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `DatosSolicitudApertura.Crear` (400). 2. Si no llega el oficio, `ArchivoSolicitudAperturaErrors.Obligatorio`; si llega, `ArchivoSolicitudApertura.ValidarOficio(oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes)` y la firma `%PDF-` con `oficio.LeerEncabezadoAsync(ArchivoSolicitudApertura.LongitudFirmaPdf, …)` (400, sección 7). 3. `ObtenerAsync([id])` de la EE: si no aparece, no está `Vigente` o su `EntidadAcademicaId` no es `actual.EntidadAcademicaId` → `ExperienciaEducativaInvalida`. 4. `ObtenerAsync([periodoId])` del periodo: si no aparece o no está `Activo` → `PeriodoEscolarInvalido`. 5. `ObtenerActivosPorClaveAsync([ClaveActual, ClaveSiguiente])`: si falta alguna → `PeriodosNoDisponibles`. 6. Si la clave del periodo no es `ClaveSiguiente` → `PeriodoNoAbierto`. 7. `SolicitudApertura.ValidarCupos` con los cupos del resumen. 8. `ExistePendienteAsync` → `SeccionDuplicada`. 9. `GuardarAsync("solicitudes-apertura", ".pdf", AbrirLectura())`. 10. `ArchivoSolicitudApertura.Crear` y `SolicitudApertura.Crear` con el mismo instante (truncado a segundos) y `Agregar`. 11. `SaveChangesAsync` dentro de un `try`; en el `catch` sin filtro se llama a `IntentarEliminarAsync(clave, CancellationToken.None)` y se relanza con `throw;`. 12. Arma el `Response` con los resúmenes de los pasos 3 y 4 |
 
 Comandos del PR 2:
 
 | Archivo | Command | Dependencias del handler | Pasos |
 |---|---|---|---|
-| `ModificarSolicitudApertura.cs` | `ModificarSolicitudAperturaCommand(int Id, int CantidadEstudiantes, string? Justificacion, ArchivoRecibido? Oficio)` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `IAlmacenamientoArchivos`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrada`. 2. Resumen de la EE y ámbito de Entidad Académica → `NoEncontrada`. 3. Si llega oficio: `ValidarOficio` y firma (400). 4. `Modificar` con los cupos del resumen. 5. Si llega oficio: `GuardarAsync`, `ArchivoSolicitudApertura.Crear`, `ReemplazarOficio` y `EliminarOficio(anterior)`. 6. `SaveChangesAsync` con la misma compensación que crear. 7. Si hubo reemplazo, `IntentarEliminarAsync(claveAnterior, CancellationToken.None)` después de confirmar |
-| `AceptarSolicitudApertura.cs` | `AceptarSolicitudAperturaCommand(int Id, string? Comentarios)` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrada`. 2. Resumen y ámbito de DGAA → `NoEncontrada`. 3. `Aceptar` con los cupos vigentes del resumen. 4. `SaveChangesAsync` |
+| `ModificarSolicitudApertura.cs` | `ModificarSolicitudAperturaCommand(int Id, int CantidadEstudiantes, string? Justificacion, ArchivoRecibido? Oficio)` | `ISolicitudAperturaRepository`, `IAmbitoSolicitudesApertura`, `IAlmacenamientoArchivos`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrada`. 2. `ExperienciaDeSuEntidadAsync` con la EE de la solicitud; `null` → `NoEncontrada`. 3. Si llega oficio: `ArchivoSolicitudApertura.ValidarOficio(oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes)` y la firma `%PDF-` con `oficio.LeerEncabezadoAsync(ArchivoSolicitudApertura.LongitudFirmaPdf, …)` (400); si no llega, se conserva el actual. 4. `Modificar` con los cupos del resumen. 5. Si llega oficio: `GuardarAsync`, `ArchivoSolicitudApertura.Crear`, `ReemplazarOficio` y `EliminarOficio(anterior)`. 6. `SaveChangesAsync` con la misma compensación que crear. 7. Si hubo reemplazo, `IntentarEliminarAsync(claveAnterior, CancellationToken.None)` después de confirmar |
+| `AceptarSolicitudApertura.cs` | `AceptarSolicitudAperturaCommand(int Id, string? Comentarios)` | `ISolicitudAperturaRepository`, `IAmbitoSolicitudesApertura`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrada`. 2. `ExperienciaDeSuAreaAsync` con la EE de la solicitud; `null` → `NoEncontrada`. 3. `Aceptar` con los cupos vigentes del resumen. 4. `SaveChangesAsync` |
 | `RechazarSolicitudApertura.cs` | `RechazarSolicitudAperturaCommand(int Id, string? Comentarios)` | Las mismas, sin cupos | 1 y 2 como aceptar. 3. `Rechazar`. 4. `SaveChangesAsync` |
-| `CancelarSolicitudApertura.cs` | `CancelarSolicitudAperturaCommand(int Id, string? Motivo)` | `ISolicitudAperturaRepository`, `IExperienciasEducativas`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrada`. 2. Resumen y ámbito de Entidad Académica → `NoEncontrada`. 3. `Cancelar`. 4. `SaveChangesAsync` |
+| `CancelarSolicitudApertura.cs` | `CancelarSolicitudAperturaCommand(int Id, string? Motivo)` | `ISolicitudAperturaRepository`, `IAmbitoSolicitudesApertura`, `ICurrentUser`, `IUnitOfWork`, `TimeProvider` | 1. `ObtenerPorIdAsync` → `NoEncontrada`. 2. `ExperienciaDeSuEntidadAsync` con la EE de la solicitud; `null` → `NoEncontrada`. 3. `Cancelar`. 4. `SaveChangesAsync` |
 
 Un choque de `rowversion` en cualquiera de los `SaveChangesAsync` del PR 2 lanza `DbUpdateConcurrencyException`, que responde 409 `Persistencia.ModificacionConcurrente` (sección 3); en modificar, la compensación elimina antes el binario nuevo.
 
@@ -508,7 +523,7 @@ Archivo único del oficio de una solicitud (`DATABASE.md` §16.3). No se version
 
 Métodos:
 - `static Result<string> ValidarOficio(string? nombre, string? tipoContenido, long tamano, long tamanoMaximoBytes)`: valida en este orden: el nombre (`NombreVacio`, `NombreDemasiadoLargo`), el tamaño (`Vacio`, `DemasiadoGrande`) y el tipo declarado (`NoEsPdf`). Devuelve el nombre normalizado. Recibe valores simples porque Domain no depende de `BuildingBlocks.Application`; que el oficio llegue (`Obligatorio`) lo comprueba el handler antes de llamarla.
-- `static bool TieneFirmaPdf(ReadOnlySpan<byte> encabezado)`: `true` si los primeros 5 bytes son `%PDF-`. El handler lee el encabezado y, si es `false`, devuelve `NoEsPdf`.
+- `static bool TieneFirmaPdf(ReadOnlySpan<byte> encabezado)`: `true` si los primeros `LongitudFirmaPdf` (5) bytes son `%PDF-`. El handler lee el encabezado con `ArchivoRecibido.LeerEncabezadoAsync(LongitudFirmaPdf, …)` y, si es `false`, devuelve `NoEsPdf`.
 - `static ArchivoSolicitudApertura Crear(string nombre, long tamano, byte[] checksumSha256, string claveAlmacenamiento, int usuarioId, DateTime utc)`: con `Mime = MimePdf`; el handler pasa `Tamano`, `ChecksumSha256` y `Clave` de `ArchivoGuardado`.
 
 `Domain/SolicitudesApertura/ArchivoSolicitudAperturaErrors.cs`, todos de tipo Validation y con el campo `Oficio`:
@@ -677,6 +692,7 @@ La clave del almacenamiento es un GUID con su carpeta y no identifica a nadie. N
 - `AddPersistenciaModulo` y `AddHandlersModulo` del ensamblado;
 - `PeriodosOptions` (sección 8) e `IPeriodosConfigurados` → `PeriodosConfigurados` (`Singleton`);
 - `ISolicitudAperturaRepository` → `SolicitudAperturaRepository` (`Scoped`);
+- `IAmbitoSolicitudesApertura` → `AmbitoSolicitudesApertura` (`Scoped`);
 - `IReferenciasExperienciaEducativa` → `ReferenciasExperienciaEducativaEnSolicitudes` e `IReferenciasPeriodoEscolar` → `ReferenciasPeriodoEscolarEnSolicitudes` (`Scoped`), con el comentario `// Contratos de OfertaEducativa que este módulo implementa (bajas de EE, plan y periodo).`
 
 `MapSolicitudesAperturaEndpoints`: `MapGroup(Ruta).WithTags(...)` pasa a `MapGroup(Ruta).RequireAuthorization(Politicas.Autenticado)`, con `ProducesProblem(401)` y `ProducesProblem(403)` en el grupo, y mapea `MapSolicitudAperturaEndpoints()` y `MapPeriodoEndpoints()`.
@@ -744,13 +760,14 @@ Rama sugerida: `feat/solicitudes-apertura-ciclo`.
 - **Pruebas unitarias:**
   - `SolicitudAperturaTests`: `Modificar`, `Aceptar`, `Rechazar` y `Cancelar` con cada error en su orden, sin asignar nada si fallan, y cada transición desde un estado terminal → `NoPendiente`; `Aceptar` con comentarios vacíos → `null`;
   - handlers de modificar (con y sin oficio; compensación del binario nuevo si la base falla; eliminación del anterior solo después de confirmar), aceptar, rechazar y cancelar, con los fakes del PR 1.
+  - `AmbitoSolicitudesAperturaTests`: cada rol con su entidad o su área, otro rol, una cuenta sin ámbito y una EE inexistente; y `BuildingBlocks/ArchivoRecibidoTests` para `LeerEncabezadoAsync`;
 - **Pruebas de integración** (`SolicitudAperturaEndpointsTests.cs`):
   - modificar: 204 con y sin oficio (el anterior deja de existir en la base y en la carpeta del almacenamiento); 400 por cada campo; 409 `CantidadFueraDeCupos` y 409 `NoPendiente` fuera de PENDIENTE; 404 para otra entidad; 403 para DGAA y Superusuario;
   - aceptar: 204 con y sin comentarios; 409 `CuposIncompletos` con una EE sin cupo máximo; 409 `CantidadFueraDeCupos` después de reducir los cupos de la EE con la DGAA; 409 `NoPendiente`; 404 para una DGAA de otra área; 403 para Entidad Académica y Superusuario;
   - rechazar: 204; 400 sin comentarios; 409 `NoPendiente`;
   - cancelar: 204; 400 sin motivo y con 1001 caracteres; 409 `NoPendiente`;
   - después de aceptar, la baja de la EE sigue respondiendo 409; después de rechazar o cancelar, responde 204;
-  - `ConcurrenciaTests.cs` (en la raíz de `Sgpla.IntegrationTests`, como `ViolacionUnicidadTests`): carga una solicitud en un alcance con el repositorio, cambia su fila por SQL, llama a `Aceptar` y `SaveChangesAsync` y comprueba que se lanza `DbUpdateConcurrencyException`; después entrega esa excepción a `ConcurrenciaExceptionHandler` y comprueba el 409 con `codigo` `Persistencia.ModificacionConcurrente`.
+  - `ConcurrenciaTests.cs` (en la raíz de `Sgpla.IntegrationTests`, como `ViolacionUnicidadTests`): el manejador recibe una `DbUpdateConcurrencyException` y responde 409 con `codigo` `Persistencia.ModificacionConcurrente`, y no maneja otras excepciones; de punta a punta, un host derivado reemplaza `IUnitOfWork` por un decorador de prueba que, antes de guardar, actualiza por SQL la fila de la solicitud (`SET justificacion = justificacion`, que renueva su `rowversion`), y `POST /{id}/aceptar` responde 409 con ese `codigo`. Las pruebas de integración no ven los tipos internos del módulo, así que no usan su repositorio.
 - **Documentos:** `ESTANDAR_MODULOS.md` §2 agrega `ConcurrenciaExceptionHandler` (`DbUpdateConcurrencyException` → 409) a `BuildingBlocks.Infrastructure`.
 
 ## 13. Criterios de terminado

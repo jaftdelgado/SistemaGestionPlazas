@@ -25,4 +25,7 @@ internal sealed class SolicitudAperturaRepository(SgplaDbContext contexto) : ISo
             cancellationToken);
 
     public void Agregar(SolicitudApertura solicitud) => contexto.Set<SolicitudApertura>().Add(solicitud);
+
+    public void EliminarOficio(ArchivoSolicitudApertura oficio) =>
+        contexto.Set<ArchivoSolicitudApertura>().Remove(oficio);
 }

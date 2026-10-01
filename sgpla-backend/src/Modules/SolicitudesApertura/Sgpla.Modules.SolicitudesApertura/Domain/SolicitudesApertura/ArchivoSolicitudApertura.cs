@@ -8,6 +8,7 @@ internal sealed class ArchivoSolicitudApertura : Entity
     public const string MimePdf = "application/pdf";
     public const int LongitudMaximaMime = 255;
     public const int LongitudChecksum = 32;
+    public const int LongitudFirmaPdf = 5;
     public const int LongitudMaximaClave = 500;
 
     private ArchivoSolicitudApertura()
@@ -63,7 +64,7 @@ internal sealed class ArchivoSolicitudApertura : Entity
     }
 
     public static bool TieneFirmaPdf(ReadOnlySpan<byte> encabezado) =>
-        encabezado.Length >= 5 && encabezado[..5].SequenceEqual("%PDF-"u8);
+        encabezado.Length >= LongitudFirmaPdf && encabezado[..LongitudFirmaPdf].SequenceEqual("%PDF-"u8);
 
     public static ArchivoSolicitudApertura Crear(
         string nombre,
