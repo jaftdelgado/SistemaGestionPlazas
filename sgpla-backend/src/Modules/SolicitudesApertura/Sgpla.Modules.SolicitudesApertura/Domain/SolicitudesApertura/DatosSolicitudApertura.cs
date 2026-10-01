@@ -22,22 +22,18 @@ internal sealed record DatosSolicitudApertura(string Seccion, int CantidadEstudi
             return SolicitudAperturaErrors.SeccionFormatoInvalido;
         }
 
-        if (cantidadEstudiantes <= 0)
+        var cantidad = SolicitudApertura.ValidarCantidad(cantidadEstudiantes);
+        if (cantidad.IsFailure)
         {
-            return SolicitudAperturaErrors.CantidadNoPositiva;
+            return cantidad.Error;
         }
 
-        var justificacionNormalizada = Normalizacion.Recortar(justificacion);
-        if (justificacionNormalizada.Length == 0)
+        var justificacionNormalizada = SolicitudApertura.NormalizarJustificacion(justificacion);
+        if (justificacionNormalizada.IsFailure)
         {
-            return SolicitudAperturaErrors.JustificacionVacia;
+            return justificacionNormalizada.Error;
         }
 
-        if (justificacionNormalizada.Length > SolicitudApertura.LongitudMaximaJustificacion)
-        {
-            return SolicitudAperturaErrors.JustificacionDemasiadoLarga;
-        }
-
-        return new DatosSolicitudApertura(seccionNormalizada, cantidadEstudiantes, justificacionNormalizada);
+        return new DatosSolicitudApertura(seccionNormalizada, cantidadEstudiantes, justificacionNormalizada.Value);
     }
 }
