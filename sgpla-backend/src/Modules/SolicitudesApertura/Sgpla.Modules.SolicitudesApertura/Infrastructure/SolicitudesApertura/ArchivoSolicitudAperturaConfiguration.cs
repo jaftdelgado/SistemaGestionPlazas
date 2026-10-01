@@ -19,5 +19,6 @@ internal sealed class ArchivoSolicitudAperturaConfiguration : IEntityTypeConfigu
             .HasMaxLength(ArchivoSolicitudApertura.LongitudChecksum)
             .IsFixedLength();
         builder.Property(a => a.ClaveAlmacenamiento).HasMaxLength(ArchivoSolicitudApertura.LongitudMaximaClave);
+        builder.Property(a => a.CargadoEn).HasConversion(ConversionesUtc.Utc);
     }
 }

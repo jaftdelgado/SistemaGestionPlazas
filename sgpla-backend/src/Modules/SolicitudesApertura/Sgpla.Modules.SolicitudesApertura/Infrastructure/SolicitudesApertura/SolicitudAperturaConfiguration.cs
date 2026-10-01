@@ -22,6 +22,10 @@ internal sealed class SolicitudAperturaConfiguration : IEntityTypeConfiguration<
                 valor => Enum.Parse<EstadoSolicitudApertura>(valor, ignoreCase: true));
         builder.Property(s => s.MotivoCancelacion).HasMaxLength(SolicitudApertura.LongitudMaximaMotivo);
         builder.Property(s => s.Version).IsRowVersion();
+        builder.Property(s => s.CreadaEn).HasConversion(ConversionesUtc.Utc);
+        builder.Property(s => s.ActualizadaEn).HasConversion(ConversionesUtc.Utc);
+        builder.Property(s => s.ResueltaEn).HasConversion(ConversionesUtc.Utc);
+        builder.Property(s => s.CanceladaEn).HasConversion(ConversionesUtc.Utc);
 
         builder.HasOne(s => s.Oficio)
             .WithOne()

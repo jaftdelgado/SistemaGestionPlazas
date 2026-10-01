@@ -43,11 +43,31 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         creada.GetProperty("experienciaEducativa").GetProperty("programaEducativoId").GetInt32().ShouldBe(escenario.Oferta.ProgramaId);
         creada.GetProperty("experienciaEducativa").GetProperty("entidadAcademicaId").GetInt32().ShouldBe(escenario.Oferta.EntidadId);
         creada.GetProperty("experienciaEducativa").GetProperty("modalidad").GetString().ShouldBe("Escolarizada");
+        creada.GetProperty("experienciaEducativa").GetProperty("planEstudiosCodigo").GetString().ShouldBe(escenario.PlanCodigo);
+        creada.GetProperty("experienciaEducativa").GetProperty("programaEducativoNombre").GetString()
+            .ShouldBe(escenario.Oferta.ProgramaNombre);
+        creada.GetProperty("experienciaEducativa").GetProperty("entidadAcademicaClave").GetString()
+            .ShouldBe(escenario.Oferta.EntidadClave);
+        creada.GetProperty("experienciaEducativa").GetProperty("entidadAcademicaNombre").GetString()
+            .ShouldBe(escenario.Oferta.EntidadNombre);
         creada.GetProperty("periodoEscolar").GetProperty("id").GetInt32().ShouldBe(escenario.PeriodoSiguienteId);
+        creada.GetProperty("periodoEscolar").GetProperty("clave").GetString().ShouldBe(SqlServerFixture.ClavePeriodoSiguiente);
         creada.GetProperty("oficio").GetProperty("nombre").GetString().ShouldBe("oficio.pdf");
         creada.GetProperty("oficio").GetProperty("tamano").GetInt64().ShouldBe(pdf.LongLength);
+        creada.GetProperty("actualizadaEn").ValueKind.ShouldBe(JsonValueKind.Null);
+        creada.GetProperty("resueltaEn").ValueKind.ShouldBe(JsonValueKind.Null);
+        creada.GetProperty("comentariosResolucion").ValueKind.ShouldBe(JsonValueKind.Null);
+        creada.GetProperty("canceladaEn").ValueKind.ShouldBe(JsonValueKind.Null);
+        creada.GetProperty("motivoCancelacion").ValueKind.ShouldBe(JsonValueKind.Null);
 
         var id = creada.GetProperty("id").GetInt32();
+        var creadaEn = creada.GetProperty("creadaEn").GetString().ShouldNotBeNull();
+        creadaEn.ShouldMatch(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$");
+        creada.GetProperty("oficio").GetProperty("cargadoEn").GetString().ShouldBe(creadaEn);
+        using var obtenida = await escenario.Entidad.GetAsync(Uri($"/{id}"), Cancelacion);
+        obtenida.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await EscenarioOferta.Leer(obtenida)).GetProperty("creadaEn").GetString().ShouldBe(creadaEn);
+
         using var descarga = await escenario.Entidad.GetAsync(Uri($"/{id}/oficio"), Cancelacion);
         descarga.StatusCode.ShouldBe(HttpStatusCode.OK);
         descarga.Content.Headers.ContentType?.MediaType.ShouldBe("application/pdf");
