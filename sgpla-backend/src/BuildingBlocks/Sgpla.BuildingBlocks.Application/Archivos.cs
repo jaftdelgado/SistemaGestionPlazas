@@ -32,4 +32,19 @@ public sealed record ArchivoGuardado(string Clave, long Tamano, ReadOnlyMemory<b
 /// Archivo recibido en una petición, antes de guardarlo. <see cref="AbrirLectura"/> abre el contenido desde el inicio y
 /// puede llamarse más de una vez.
 /// </summary>
-public sealed record ArchivoRecibido(string Nombre, string TipoContenido, long Tamano, Func<Stream> AbrirLectura);
+public sealed record ArchivoRecibido(string Nombre, string TipoContenido, long Tamano, Func<Stream> AbrirLectura)
+{
+    /// <summary>
+    /// Lee hasta <paramref name="longitud"/> bytes desde el inicio del contenido; menos si el contenido es más corto.
+    /// Sirve para comprobar la firma de un archivo sin cargarlo completo.
+    /// </summary>
+    public async Task<byte[]> LeerEncabezadoAsync(int longitud, CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(longitud);
+
+        await using var contenido = AbrirLectura();
+        var encabezado = new byte[longitud];
+        var leidos = await contenido.ReadAtLeastAsync(encabezado, longitud, throwOnEndOfStream: false, cancellationToken);
+        return encabezado[..leidos];
+    }
+}
