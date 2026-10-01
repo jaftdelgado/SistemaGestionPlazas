@@ -24,6 +24,7 @@ builder.Logging.Configure(options =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ViolacionUnicidadExceptionHandler>();
+builder.Services.AddExceptionHandler<ConcurrenciaExceptionHandler>();
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<EsquemaSeguridadBearerTransformer>());
 builder.Services.AddSingleton(TimeProvider.System);
 
