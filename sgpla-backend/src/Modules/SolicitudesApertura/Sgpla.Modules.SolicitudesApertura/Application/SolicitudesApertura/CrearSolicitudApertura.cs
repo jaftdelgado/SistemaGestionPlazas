@@ -139,7 +139,7 @@ internal sealed class CrearSolicitudAperturaHandler(
         PeriodoEscolarResumen periodo) =>
         new(
             solicitud.Id,
-            solicitud.Estado.ToString().ToUpperInvariant(),
+            solicitud.Estado.ComoTexto(),
             solicitud.Seccion,
             solicitud.CantidadEstudiantes,
             solicitud.Justificacion,

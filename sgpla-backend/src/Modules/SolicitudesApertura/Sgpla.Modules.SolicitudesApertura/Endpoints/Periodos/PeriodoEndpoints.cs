@@ -18,8 +18,8 @@ internal static class PeriodoEndpoints
         return modulo;
     }
 
-    private static async Task<Ok<PeriodosSolicitudAperturaResponse>> Obtener(
+    private static async Task<Results<Ok<PeriodosSolicitudAperturaResponse>, ProblemHttpResult>> Obtener(
         IQueryHandler<ObtenerPeriodosSolicitudAperturaQuery, PeriodosSolicitudAperturaResponse> handler,
         CancellationToken cancellationToken) =>
-        TypedResults.Ok((await handler.HandleAsync(new ObtenerPeriodosSolicitudAperturaQuery(), cancellationToken)).Value);
+        (await handler.HandleAsync(new ObtenerPeriodosSolicitudAperturaQuery(), cancellationToken)).ToOk();
 }

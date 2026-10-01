@@ -1,8 +1,6 @@
 using System.Linq.Expressions;
-
 using Microsoft.EntityFrameworkCore;
 using Sgpla.BuildingBlocks.Application;
-using Sgpla.BuildingBlocks.Infrastructure.Archivos;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.OfertaEducativa.Application.Contracts;
 using Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
@@ -179,7 +177,7 @@ internal sealed record SolicitudAperturaIntermedia(
 
             return new SolicitudAperturaResponse(
                 s.Id,
-                s.Estado.ToString().ToUpperInvariant(),
+                s.Estado.ComoTexto(),
                 s.Seccion,
                 s.CantidadEstudiantes,
                 s.Justificacion,

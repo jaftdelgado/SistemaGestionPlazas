@@ -46,8 +46,8 @@ public static class OfertaEducativaModule
         services.AddScoped<IPlanEstudiosRepository, PlanEstudiosRepository>();
         services.AddScoped<IExperienciaEducativaRepository, ExperienciaEducativaRepository>();
 
-        // Contratos para otros módulos (Institucional). IReferenciasPeriodoEscolar e IReferenciasExperienciaEducativa los
-        // registra cada módulo que los implementa.
+        // Contratos para otros módulos (Institucional y SolicitudesApertura). IReferenciasPeriodoEscolar e
+        // IReferenciasExperienciaEducativa los registra cada módulo que los implementa.
         services.AddScoped<IProgramasDeEntidadAcademica, ProgramasDeEntidadAcademica>();
         services.AddScoped<IExperienciasEducativas, ExperienciasEducativas>();
         services.AddScoped<IPeriodosEscolares, PeriodosEscolares>();
