@@ -10,7 +10,7 @@ public sealed class AceptarSolicitudAperturaHandlerTests
     private const int AreaDgaa = DatosDePrueba.AreaId;
 
     private readonly SolicitudAperturaRepositoryFalso _repositorio = new();
-    private readonly ExperienciasEducativasFalsas _experiencias = new();
+    private readonly AmbitoSolicitudesAperturaFalso _ambito = new();
     private readonly UsuarioActualFalso _actual = new(88, Rol.Dgaa, null, AreaDgaa);
     private readonly UnitOfWorkFalso _unidadDeTrabajo = new();
     private readonly RelojFalso _reloj = new(new DateTimeOffset(2026, 10, 2, 9, 30, 0, 987, TimeSpan.Zero));
@@ -18,7 +18,7 @@ public sealed class AceptarSolicitudAperturaHandlerTests
 
     public AceptarSolicitudAperturaHandlerTests()
     {
-        _experiencias.Resumenes.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
+        _ambito.DeSuArea.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
         _repositorio.Precargar(DatosDePrueba.SolicitudId, _solicitud);
     }
 
@@ -32,9 +32,9 @@ public sealed class AceptarSolicitudAperturaHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConSolicitudDeOtraArea_DevuelveNoEncontrada()
+    public async Task HandleAsync_ConSolicitudFueraDelAmbito_DevuelveNoEncontrada()
     {
-        _experiencias.Resumenes[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(areaId: AreaDgaa + 1);
+        _ambito.DeSuArea.Remove(DatosDePrueba.ExperienciaId);
 
         var resultado = await Handler().HandleAsync(Comando(), CancellationToken.None);
 
@@ -69,7 +69,7 @@ public sealed class AceptarSolicitudAperturaHandlerTests
     [Fact]
     public async Task HandleAsync_UsaLosCuposVigentesDeLaExperiencia()
     {
-        _experiencias.Resumenes[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(cupoMinimo: 10, cupoMaximo: 15);
+        _ambito.DeSuArea[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(cupoMinimo: 10, cupoMaximo: 15);
 
         var resultado = await Handler().HandleAsync(Comando(), CancellationToken.None);
 
@@ -83,7 +83,7 @@ public sealed class AceptarSolicitudAperturaHandlerTests
     [InlineData(10, null)]
     public async Task HandleAsync_ConCuposIncompletos_DevuelveCuposIncompletos(int? minimo, int? maximo)
     {
-        _experiencias.Resumenes[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(minimo, maximo);
+        _ambito.DeSuArea[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(minimo, maximo);
 
         var resultado = await Handler().HandleAsync(Comando(), CancellationToken.None);
 
@@ -116,7 +116,7 @@ public sealed class AceptarSolicitudAperturaHandlerTests
 
     private AceptarSolicitudAperturaHandler Handler() => new(
         _repositorio,
-        _experiencias,
+        _ambito,
         _actual,
         _unidadDeTrabajo,
         _reloj);

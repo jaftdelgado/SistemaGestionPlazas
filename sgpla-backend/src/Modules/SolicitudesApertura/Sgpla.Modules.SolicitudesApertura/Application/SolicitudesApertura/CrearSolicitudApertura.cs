@@ -39,11 +39,17 @@ internal sealed class CrearSolicitudAperturaHandler(
             return ArchivoSolicitudAperturaErrors.Obligatorio;
         }
 
-        var validacionOficio = await SolicitudAperturaComandos.ValidarOficioAsync(
-            oficio, almacenamiento.TamanoMaximoBytes, cancellationToken);
+        var validacionOficio = ArchivoSolicitudApertura.ValidarOficio(
+            oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes);
         if (validacionOficio.IsFailure)
         {
             return validacionOficio.Error;
+        }
+
+        if (!ArchivoSolicitudApertura.TieneFirmaPdf(
+                await oficio.LeerEncabezadoAsync(ArchivoSolicitudApertura.LongitudFirmaPdf, cancellationToken)))
+        {
+            return ArchivoSolicitudAperturaErrors.NoEsPdf;
         }
 
         var experienciaPorId = await experienciasEducativas.ObtenerAsync([command.ExperienciaEducativaId], cancellationToken);
@@ -88,15 +94,16 @@ internal sealed class CrearSolicitudAperturaHandler(
 
         await using var contenido = oficio.AbrirLectura();
         var guardado = await almacenamiento.GuardarAsync("solicitudes-apertura", ".pdf", contenido, cancellationToken);
-        var utc = SolicitudAperturaComandos.Ahora(reloj);
+        var ahora = reloj.GetUtcNow().UtcDateTime;
+        var instante = ahora.AddTicks(-(ahora.Ticks % TimeSpan.TicksPerSecond));
         var archivo = ArchivoSolicitudApertura.Crear(
             validacionOficio.Value,
             guardado.Tamano,
             guardado.ChecksumSha256.ToArray(),
             guardado.Clave,
             actual.Id,
-            utc);
-        var solicitud = SolicitudApertura.Crear(datos.Value, experiencia.Id, periodo.Id, archivo, actual.Id, utc);
+            instante);
+        var solicitud = SolicitudApertura.Crear(datos.Value, experiencia.Id, periodo.Id, archivo, actual.Id, instante);
         repositorio.Agregar(solicitud);
 
         try

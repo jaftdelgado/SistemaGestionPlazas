@@ -16,6 +16,6 @@ internal interface ISolicitudAperturaRepository
 
     void Agregar(SolicitudApertura solicitud);
 
-    /// <summary>Borrado físico de un oficio reemplazado (PR 2).</summary>
+    /// <summary>Borrado físico de un oficio reemplazado.</summary>
     void EliminarOficio(ArchivoSolicitudApertura oficio);
 }

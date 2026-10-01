@@ -8,7 +8,7 @@ namespace Sgpla.UnitTests.SolicitudesApertura;
 public sealed class CancelarSolicitudAperturaHandlerTests
 {
     private readonly SolicitudAperturaRepositoryFalso _repositorio = new();
-    private readonly ExperienciasEducativasFalsas _experiencias = new();
+    private readonly AmbitoSolicitudesAperturaFalso _ambito = new();
     private readonly UsuarioActualFalso _actual = new(44, Rol.EntidadAcademica, DatosDePrueba.EntidadId);
     private readonly UnitOfWorkFalso _unidadDeTrabajo = new();
     private readonly RelojFalso _reloj = new(new DateTimeOffset(2026, 10, 2, 9, 30, 0, 987, TimeSpan.Zero));
@@ -16,7 +16,7 @@ public sealed class CancelarSolicitudAperturaHandlerTests
 
     public CancelarSolicitudAperturaHandlerTests()
     {
-        _experiencias.Resumenes.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
+        _ambito.DeSuEntidad.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
         _repositorio.Precargar(DatosDePrueba.SolicitudId, _solicitud);
     }
 
@@ -31,9 +31,9 @@ public sealed class CancelarSolicitudAperturaHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConSolicitudDeOtraEntidad_DevuelveNoEncontrada()
+    public async Task HandleAsync_ConSolicitudFueraDelAmbito_DevuelveNoEncontrada()
     {
-        _experiencias.Resumenes[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(entidadId: 8);
+        _ambito.DeSuEntidad.Remove(DatosDePrueba.ExperienciaId);
 
         var resultado = await Handler().HandleAsync(Comando("Ya no se necesita."), CancellationToken.None);
 
@@ -82,7 +82,7 @@ public sealed class CancelarSolicitudAperturaHandlerTests
 
     private CancelarSolicitudAperturaHandler Handler() => new(
         _repositorio,
-        _experiencias,
+        _ambito,
         _actual,
         _unidadDeTrabajo,
         _reloj);

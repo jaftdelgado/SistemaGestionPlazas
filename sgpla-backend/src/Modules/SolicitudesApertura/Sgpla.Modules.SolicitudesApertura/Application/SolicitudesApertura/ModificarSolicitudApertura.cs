@@ -1,5 +1,5 @@
 using Sgpla.BuildingBlocks.Application;
-using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.SolicitudesApertura.Application.Ambito;
 using Sgpla.Modules.SolicitudesApertura.Domain.SolicitudesApertura;
 using Sgpla.SharedKernel;
 
@@ -13,7 +13,7 @@ internal sealed record ModificarSolicitudAperturaCommand(
 
 internal sealed class ModificarSolicitudAperturaHandler(
     ISolicitudAperturaRepository repositorio,
-    IExperienciasEducativas experienciasEducativas,
+    IAmbitoSolicitudesApertura ambito,
     IAlmacenamientoArchivos almacenamiento,
     ICurrentUser actual,
     IUnitOfWork unidadDeTrabajo,
@@ -21,40 +21,43 @@ internal sealed class ModificarSolicitudAperturaHandler(
 {
     public async Task<Result> HandleAsync(ModificarSolicitudAperturaCommand command, CancellationToken cancellationToken)
     {
-        var cargada = await SolicitudAperturaComandos.ObtenerEnAmbitoAsync(
-            repositorio,
-            experienciasEducativas,
-            command.Id,
-            e => e.EntidadAcademicaId == actual.EntidadAcademicaId,
-            cancellationToken);
-        if (cargada.IsFailure)
+        var solicitud = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
+        var experiencia = solicitud is null
+            ? null
+            : await ambito.ExperienciaDeSuEntidadAsync(solicitud.ExperienciaEducativaId, cancellationToken);
+        if (solicitud is null || experiencia is null)
         {
-            return cargada;
+            return SolicitudAperturaErrors.NoEncontrada(command.Id);
         }
-
-        var (solicitud, experiencia) = cargada.Value;
 
         string? nombreOficio = null;
         if (command.Oficio is { } oficio)
         {
-            var validacionOficio = await SolicitudAperturaComandos.ValidarOficioAsync(
-                oficio, almacenamiento.TamanoMaximoBytes, cancellationToken);
+            var validacionOficio = ArchivoSolicitudApertura.ValidarOficio(
+                oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes);
             if (validacionOficio.IsFailure)
             {
                 return validacionOficio;
             }
 
+            if (!ArchivoSolicitudApertura.TieneFirmaPdf(
+                    await oficio.LeerEncabezadoAsync(ArchivoSolicitudApertura.LongitudFirmaPdf, cancellationToken)))
+            {
+                return ArchivoSolicitudAperturaErrors.NoEsPdf;
+            }
+
             nombreOficio = validacionOficio.Value;
         }
 
-        var utc = SolicitudAperturaComandos.Ahora(reloj);
+        var ahora = reloj.GetUtcNow().UtcDateTime;
+        var instante = ahora.AddTicks(-(ahora.Ticks % TimeSpan.TicksPerSecond));
         var modificada = solicitud.Modificar(
             command.CantidadEstudiantes,
             command.Justificacion,
             experiencia.CupoMinimo,
             experiencia.CupoMaximo,
             actual.Id,
-            utc);
+            instante);
         if (modificada.IsFailure)
         {
             return modificada;
@@ -72,7 +75,7 @@ internal sealed class ModificarSolicitudAperturaHandler(
                 guardado.ChecksumSha256.ToArray(),
                 guardado.Clave,
                 actual.Id,
-                utc);
+                instante);
             anterior = solicitud.ReemplazarOficio(archivo);
             repositorio.EliminarOficio(anterior);
         }

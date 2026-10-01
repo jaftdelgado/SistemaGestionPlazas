@@ -7,10 +7,12 @@ using Sgpla.BuildingBlocks.Application;
 using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.SolicitudesApertura.Application.Ambito;
 using Sgpla.Modules.SolicitudesApertura.Application.Periodos;
 using Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
 using Sgpla.Modules.SolicitudesApertura.Endpoints.Periodos;
 using Sgpla.Modules.SolicitudesApertura.Endpoints.SolicitudesApertura;
+using Sgpla.Modules.SolicitudesApertura.Infrastructure.Ambito;
 using Sgpla.Modules.SolicitudesApertura.Infrastructure.Contratos;
 using Sgpla.Modules.SolicitudesApertura.Infrastructure.Periodos;
 using Sgpla.Modules.SolicitudesApertura.Infrastructure.SolicitudesApertura;
@@ -40,6 +42,7 @@ public static class SolicitudesAperturaModule
             .ValidateOnStart();
         services.AddSingleton<IPeriodosConfigurados, PeriodosConfigurados>();
         services.AddScoped<ISolicitudAperturaRepository, SolicitudAperturaRepository>();
+        services.AddScoped<IAmbitoSolicitudesApertura, AmbitoSolicitudesApertura>();
 
         // Contratos de OfertaEducativa que este módulo implementa (bajas de EE, plan y periodo).
         services.AddScoped<IReferenciasExperienciaEducativa, ReferenciasExperienciaEducativaEnSolicitudes>();

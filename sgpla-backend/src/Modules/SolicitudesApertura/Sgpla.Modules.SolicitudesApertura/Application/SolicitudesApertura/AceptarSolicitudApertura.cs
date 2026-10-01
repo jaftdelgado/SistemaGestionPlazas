@@ -1,5 +1,6 @@
 using Sgpla.BuildingBlocks.Application;
-using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.SolicitudesApertura.Application.Ambito;
+using Sgpla.Modules.SolicitudesApertura.Domain.SolicitudesApertura;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
@@ -8,31 +9,30 @@ internal sealed record AceptarSolicitudAperturaCommand(int Id, string? Comentari
 
 internal sealed class AceptarSolicitudAperturaHandler(
     ISolicitudAperturaRepository repositorio,
-    IExperienciasEducativas experienciasEducativas,
+    IAmbitoSolicitudesApertura ambito,
     ICurrentUser actual,
     IUnitOfWork unidadDeTrabajo,
     TimeProvider reloj) : ICommandHandler<AceptarSolicitudAperturaCommand>
 {
     public async Task<Result> HandleAsync(AceptarSolicitudAperturaCommand command, CancellationToken cancellationToken)
     {
-        var cargada = await SolicitudAperturaComandos.ObtenerEnAmbitoAsync(
-            repositorio,
-            experienciasEducativas,
-            command.Id,
-            e => e.AreaAcademicaId == actual.AreaAcademicaId,
-            cancellationToken);
-        if (cargada.IsFailure)
+        var solicitud = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
+        var experiencia = solicitud is null
+            ? null
+            : await ambito.ExperienciaDeSuAreaAsync(solicitud.ExperienciaEducativaId, cancellationToken);
+        if (solicitud is null || experiencia is null)
         {
-            return cargada;
+            return SolicitudAperturaErrors.NoEncontrada(command.Id);
         }
 
-        var (solicitud, experiencia) = cargada.Value;
+        var ahora = reloj.GetUtcNow().UtcDateTime;
+        var instante = ahora.AddTicks(-(ahora.Ticks % TimeSpan.TicksPerSecond));
         var aceptada = solicitud.Aceptar(
             command.Comentarios,
             experiencia.CupoMinimo,
             experiencia.CupoMaximo,
             actual.Id,
-            SolicitudAperturaComandos.Ahora(reloj));
+            instante);
         if (aceptada.IsFailure)
         {
             return aceptada;

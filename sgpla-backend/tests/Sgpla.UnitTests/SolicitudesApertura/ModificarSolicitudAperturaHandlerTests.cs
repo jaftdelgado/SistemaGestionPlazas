@@ -9,7 +9,7 @@ namespace Sgpla.UnitTests.SolicitudesApertura;
 public sealed class ModificarSolicitudAperturaHandlerTests
 {
     private readonly SolicitudAperturaRepositoryFalso _repositorio = new();
-    private readonly ExperienciasEducativasFalsas _experiencias = new();
+    private readonly AmbitoSolicitudesAperturaFalso _ambito = new();
     private readonly AlmacenamientoArchivosFalso _almacenamiento = new();
     private readonly UsuarioActualFalso _actual = new(44, Rol.EntidadAcademica, DatosDePrueba.EntidadId);
     private readonly UnitOfWorkFalso _unidadDeTrabajo = new();
@@ -18,7 +18,7 @@ public sealed class ModificarSolicitudAperturaHandlerTests
 
     public ModificarSolicitudAperturaHandlerTests()
     {
-        _experiencias.Resumenes.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
+        _ambito.DeSuEntidad.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
         _repositorio.Precargar(DatosDePrueba.SolicitudId, _solicitud);
     }
 
@@ -32,9 +32,9 @@ public sealed class ModificarSolicitudAperturaHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConSolicitudDeOtraEntidad_DevuelveNoEncontrada()
+    public async Task HandleAsync_ConSolicitudFueraDelAmbito_DevuelveNoEncontrada()
     {
-        _experiencias.Resumenes[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(entidadId: 8);
+        _ambito.DeSuEntidad.Remove(DatosDePrueba.ExperienciaId);
 
         var resultado = await Handler().HandleAsync(Comando(), CancellationToken.None);
 
@@ -168,7 +168,7 @@ public sealed class ModificarSolicitudAperturaHandlerTests
 
     private ModificarSolicitudAperturaHandler Handler() => new(
         _repositorio,
-        _experiencias,
+        _ambito,
         _almacenamiento,
         _actual,
         _unidadDeTrabajo,

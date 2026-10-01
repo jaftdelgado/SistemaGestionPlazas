@@ -10,7 +10,7 @@ public sealed class RechazarSolicitudAperturaHandlerTests
     private const int AreaDgaa = DatosDePrueba.AreaId;
 
     private readonly SolicitudAperturaRepositoryFalso _repositorio = new();
-    private readonly ExperienciasEducativasFalsas _experiencias = new();
+    private readonly AmbitoSolicitudesAperturaFalso _ambito = new();
     private readonly UsuarioActualFalso _actual = new(88, Rol.Dgaa, null, AreaDgaa);
     private readonly UnitOfWorkFalso _unidadDeTrabajo = new();
     private readonly RelojFalso _reloj = new(new DateTimeOffset(2026, 10, 2, 9, 30, 0, 987, TimeSpan.Zero));
@@ -18,7 +18,7 @@ public sealed class RechazarSolicitudAperturaHandlerTests
 
     public RechazarSolicitudAperturaHandlerTests()
     {
-        _experiencias.Resumenes.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
+        _ambito.DeSuArea.Add(DatosDePrueba.ExperienciaId, DatosDePrueba.Experiencia());
         _repositorio.Precargar(DatosDePrueba.SolicitudId, _solicitud);
     }
 
@@ -33,9 +33,9 @@ public sealed class RechazarSolicitudAperturaHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ConSolicitudDeOtraArea_DevuelveNoEncontrada()
+    public async Task HandleAsync_ConSolicitudFueraDelAmbito_DevuelveNoEncontrada()
     {
-        _experiencias.Resumenes[DatosDePrueba.ExperienciaId] = DatosDePrueba.Experiencia(areaId: AreaDgaa + 1);
+        _ambito.DeSuArea.Remove(DatosDePrueba.ExperienciaId);
 
         var resultado = await Handler().HandleAsync(Comando("No procede."), CancellationToken.None);
 
@@ -85,7 +85,7 @@ public sealed class RechazarSolicitudAperturaHandlerTests
 
     private RechazarSolicitudAperturaHandler Handler() => new(
         _repositorio,
-        _experiencias,
+        _ambito,
         _actual,
         _unidadDeTrabajo,
         _reloj);

@@ -1,5 +1,6 @@
 using Sgpla.BuildingBlocks.Application;
-using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.SolicitudesApertura.Application.Ambito;
+using Sgpla.Modules.SolicitudesApertura.Domain.SolicitudesApertura;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
@@ -8,26 +9,25 @@ internal sealed record CancelarSolicitudAperturaCommand(int Id, string? Motivo);
 
 internal sealed class CancelarSolicitudAperturaHandler(
     ISolicitudAperturaRepository repositorio,
-    IExperienciasEducativas experienciasEducativas,
+    IAmbitoSolicitudesApertura ambito,
     ICurrentUser actual,
     IUnitOfWork unidadDeTrabajo,
     TimeProvider reloj) : ICommandHandler<CancelarSolicitudAperturaCommand>
 {
     public async Task<Result> HandleAsync(CancelarSolicitudAperturaCommand command, CancellationToken cancellationToken)
     {
-        var cargada = await SolicitudAperturaComandos.ObtenerEnAmbitoAsync(
-            repositorio,
-            experienciasEducativas,
-            command.Id,
-            e => e.EntidadAcademicaId == actual.EntidadAcademicaId,
-            cancellationToken);
-        if (cargada.IsFailure)
+        var solicitud = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
+        var experiencia = solicitud is null
+            ? null
+            : await ambito.ExperienciaDeSuEntidadAsync(solicitud.ExperienciaEducativaId, cancellationToken);
+        if (solicitud is null || experiencia is null)
         {
-            return cargada;
+            return SolicitudAperturaErrors.NoEncontrada(command.Id);
         }
 
-        var cancelada = cargada.Value.Solicitud.Cancelar(
-            command.Motivo, actual.Id, SolicitudAperturaComandos.Ahora(reloj));
+        var ahora = reloj.GetUtcNow().UtcDateTime;
+        var instante = ahora.AddTicks(-(ahora.Ticks % TimeSpan.TicksPerSecond));
+        var cancelada = solicitud.Cancelar(command.Motivo, actual.Id, instante);
         if (cancelada.IsFailure)
         {
             return cancelada;

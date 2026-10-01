@@ -1,5 +1,6 @@
 using Sgpla.BuildingBlocks.Application;
-using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.SolicitudesApertura.Application.Ambito;
+using Sgpla.Modules.SolicitudesApertura.Domain.SolicitudesApertura;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
@@ -8,26 +9,25 @@ internal sealed record RechazarSolicitudAperturaCommand(int Id, string? Comentar
 
 internal sealed class RechazarSolicitudAperturaHandler(
     ISolicitudAperturaRepository repositorio,
-    IExperienciasEducativas experienciasEducativas,
+    IAmbitoSolicitudesApertura ambito,
     ICurrentUser actual,
     IUnitOfWork unidadDeTrabajo,
     TimeProvider reloj) : ICommandHandler<RechazarSolicitudAperturaCommand>
 {
     public async Task<Result> HandleAsync(RechazarSolicitudAperturaCommand command, CancellationToken cancellationToken)
     {
-        var cargada = await SolicitudAperturaComandos.ObtenerEnAmbitoAsync(
-            repositorio,
-            experienciasEducativas,
-            command.Id,
-            e => e.AreaAcademicaId == actual.AreaAcademicaId,
-            cancellationToken);
-        if (cargada.IsFailure)
+        var solicitud = await repositorio.ObtenerPorIdAsync(command.Id, cancellationToken);
+        var experiencia = solicitud is null
+            ? null
+            : await ambito.ExperienciaDeSuAreaAsync(solicitud.ExperienciaEducativaId, cancellationToken);
+        if (solicitud is null || experiencia is null)
         {
-            return cargada;
+            return SolicitudAperturaErrors.NoEncontrada(command.Id);
         }
 
-        var rechazada = cargada.Value.Solicitud.Rechazar(
-            command.Comentarios, actual.Id, SolicitudAperturaComandos.Ahora(reloj));
+        var ahora = reloj.GetUtcNow().UtcDateTime;
+        var instante = ahora.AddTicks(-(ahora.Ticks % TimeSpan.TicksPerSecond));
+        var rechazada = solicitud.Rechazar(command.Comentarios, actual.Id, instante);
         if (rechazada.IsFailure)
         {
             return rechazada;

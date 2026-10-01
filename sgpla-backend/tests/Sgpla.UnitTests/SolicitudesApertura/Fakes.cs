@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.Modules.OfertaEducativa.Application.Contracts;
+using Sgpla.Modules.SolicitudesApertura.Application.Ambito;
 using Sgpla.Modules.SolicitudesApertura.Application.Periodos;
 using Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
 using Sgpla.Modules.SolicitudesApertura.Domain.SolicitudesApertura;
@@ -54,6 +55,24 @@ internal sealed class ExperienciasEducativasFalsas : IExperienciasEducativas
             .Where(e => entidadAcademicaId is null || e.EntidadAcademicaId == entidadAcademicaId)
             .Select(e => e.Id)
             .AsQueryable());
+}
+
+/// <summary>Ámbito en memoria: solo las EE registradas están dentro del ámbito de cada rol.</summary>
+internal sealed class AmbitoSolicitudesAperturaFalso : IAmbitoSolicitudesApertura
+{
+    public Dictionary<int, ExperienciaEducativaResumen> DeSuEntidad { get; } = [];
+
+    public Dictionary<int, ExperienciaEducativaResumen> DeSuArea { get; } = [];
+
+    public Task<ExperienciaEducativaResumen?> ExperienciaDeSuEntidadAsync(
+        int experienciaEducativaId,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(DeSuEntidad.GetValueOrDefault(experienciaEducativaId));
+
+    public Task<ExperienciaEducativaResumen?> ExperienciaDeSuAreaAsync(
+        int experienciaEducativaId,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(DeSuArea.GetValueOrDefault(experienciaEducativaId));
 }
 
 internal sealed class PeriodosEscolaresFalsos : IPeriodosEscolares
