@@ -115,6 +115,36 @@ internal sealed class EscenarioSolicitud : IDisposable
         return formulario;
     }
 
+    /// <summary>Formulario de <c>PUT /{id}</c>: los datos completos y el oficio solo si se pide.</summary>
+    public static MultipartFormDataContent CrearFormularioModificacion(
+        int? cantidad = 25,
+        string? justificacion = "Justificación modificada.",
+        bool agregarOficio = false,
+        byte[]? bytes = null,
+        string nombreArchivo = "nuevo.pdf",
+        string tipoContenido = "application/pdf")
+    {
+        var formulario = new MultipartFormDataContent();
+        if (cantidad is not null)
+        {
+            Agregar(formulario, "cantidadEstudiantes", cantidad.Value);
+        }
+
+        if (justificacion is not null)
+        {
+            formulario.Add(new StringContent(justificacion, Encoding.UTF8), "justificacion");
+        }
+
+        if (agregarOficio)
+        {
+            var archivo = new ByteArrayContent(bytes ?? Pdf);
+            archivo.Headers.ContentType = MediaTypeHeaderValue.Parse(tipoContenido);
+            formulario.Add(archivo, "oficio", nombreArchivo);
+        }
+
+        return formulario;
+    }
+
     public async Task<(int Id, JsonElement Respuesta)> CrearSolicitudAsync(
         HttpClient? cliente = null,
         string? seccion = null,

@@ -1,10 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
+using Sgpla.BuildingBlocks.Application;
 using Sgpla.IntegrationTests.Infraestructura;
 using Sgpla.IntegrationTests.OfertaEducativa;
 
@@ -13,6 +16,7 @@ namespace Sgpla.IntegrationTests.SolicitudesApertura;
 public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/solicitudes-apertura/solicitudes";
+    private const string PatronInstanteUtc = @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$";
 
     private readonly SgplaApiFactory _api = new(sqlServer);
 
@@ -392,6 +396,399 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
             ?.Trim('"').ShouldBe("oficio.pdf");
     }
 
+    [Fact]
+    public async Task Modificar_SinOficio_Devuelve204YConservaElOficio()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, creada) = await escenario.CrearSolicitudAsync(cantidad: 20);
+        var oficioAntes = await LeerOficioAsync(id);
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion(25, "  Justificación nueva.  ");
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{id}"), formulario, Cancelacion);
+        var modificada = await ObtenerAsync(escenario.Entidad, id);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        modificada.GetProperty("cantidadEstudiantes").GetInt32().ShouldBe(25);
+        modificada.GetProperty("justificacion").GetString().ShouldBe("Justificación nueva.");
+        modificada.GetProperty("actualizadaEn").GetString().ShouldNotBeNull().ShouldMatch(PatronInstanteUtc);
+        modificada.GetProperty("actualizadaPorUsuarioId").ValueKind.ShouldBe(JsonValueKind.Number);
+        modificada.GetProperty("estado").GetString().ShouldBe("PENDIENTE");
+        modificada.GetProperty("oficio").GetRawText().ShouldBe(creada.GetProperty("oficio").GetRawText());
+        (await LeerOficioAsync(id)).ShouldBe(oficioAntes);
+    }
+
+    [Fact]
+    public async Task Modificar_ConOficio_Devuelve204YElOficioAnteriorDejaDeExistir()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        var (archivoAnteriorId, claveAnterior) = await LeerOficioAsync(id);
+        var nuevo = "%PDF-1.7\nOficio de reemplazo"u8.ToArray();
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion(agregarOficio: true, bytes: nuevo);
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{id}"), formulario, Cancelacion);
+        var modificada = await ObtenerAsync(escenario.Entidad, id);
+        using var descarga = await escenario.Entidad.GetAsync(Uri($"/{id}/oficio"), Cancelacion);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await ExisteArchivoAsync(archivoAnteriorId)).ShouldBeFalse();
+        var almacenamiento = _api.Services.GetRequiredService<IAlmacenamientoArchivos>();
+        (await almacenamiento.AbrirAsync(claveAnterior, Cancelacion)).ShouldBeNull();
+        modificada.GetProperty("oficio").GetProperty("nombre").GetString().ShouldBe("nuevo.pdf");
+        modificada.GetProperty("oficio").GetProperty("tamano").GetInt64().ShouldBe(nuevo.LongLength);
+        descarga.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await descarga.Content.ReadAsByteArrayAsync(Cancelacion)).ShouldBe(nuevo);
+        (await LeerOficioAsync(id)).Id.ShouldNotBe(archivoAnteriorId);
+    }
+
+    [Theory]
+    [InlineData(0, "Justificación.", false, "application/pdf", "%PDF-1234", "cantidadEstudiantes", "SolicitudApertura.CantidadNoPositiva")]
+    [InlineData(25, " ", false, "application/pdf", "%PDF-1234", "justificacion", "SolicitudApertura.JustificacionVacia")]
+    [InlineData(25, "Justificación.", true, "application/pdf", "", "oficio", "ArchivoSolicitudApertura.Vacio")]
+    [InlineData(25, "Justificación.", true, "text/plain", "%PDF-1234", "oficio", "ArchivoSolicitudApertura.NoEsPdf")]
+    [InlineData(25, "Justificación.", true, "application/pdf", "texto inválido", "oficio", "ArchivoSolicitudApertura.NoEsPdf")]
+    public async Task Modificar_ConDatosInvalidos_Devuelve400ConCodigoYCampo(
+        int cantidad,
+        string justificacion,
+        bool agregarOficio,
+        string mime,
+        string contenido,
+        string campo,
+        string codigo)
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion(
+            cantidad, justificacion, agregarOficio, Encoding.UTF8.GetBytes(contenido), tipoContenido: mime);
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{id}"), formulario, Cancelacion);
+
+        await VerificaErrorDeCampoAsync(respuesta, campo, codigo);
+    }
+
+    [Fact]
+    public async Task Modificar_ConJustificacionDeMasDeDosMilCaracteres_Devuelve400EnJustificacion()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion(justificacion: new string('x', 2001));
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{id}"), formulario, Cancelacion);
+
+        await VerificaErrorDeCampoAsync(respuesta, "justificacion", "SolicitudApertura.JustificacionDemasiadoLarga");
+    }
+
+    [Fact]
+    public async Task Modificar_ConCantidadFueraDeCupos_Devuelve409()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion(41);
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{id}"), formulario, Cancelacion);
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.CantidadFueraDeCupos");
+    }
+
+    [Fact]
+    public async Task Modificar_FueraDePendiente_Devuelve409NoPendiente()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var id = await InsertarTerminalAsync(escenario, "ACEPTADA");
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion();
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{id}"), formulario, Cancelacion);
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.NoPendiente");
+    }
+
+    [Fact]
+    public async Task Modificar_ConSolicitudDeOtraEntidad_Devuelve404()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        using var otro = await EscenarioSolicitud.CrearAsync(_api);
+        var (idAjeno, _) = await otro.CrearSolicitudAsync();
+        using var formulario = EscenarioSolicitud.CrearFormularioModificacion();
+
+        using var respuesta = await escenario.Entidad.PutAsync(Uri($"/{idAjeno}"), formulario, Cancelacion);
+
+        await VerificaNoEncontradoAsync(respuesta);
+        (await ObtenerAsync(otro.Entidad, idAjeno)).GetProperty("actualizadaEn").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task Modificar_SoloPermiteEntidadAcademica()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        using var formularioDgaa = EscenarioSolicitud.CrearFormularioModificacion();
+        using var formularioSuperusuario = EscenarioSolicitud.CrearFormularioModificacion();
+
+        using var dgaa = await escenario.Oferta.Dgaa.PutAsync(Uri($"/{id}"), formularioDgaa, Cancelacion);
+        using var superusuario = await escenario.Superusuario.PutAsync(Uri($"/{id}"), formularioSuperusuario, Cancelacion);
+
+        dgaa.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        superusuario.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("  Visto bueno.  ", "Visto bueno.")]
+    public async Task Aceptar_ConYSinComentarios_Devuelve204(string? comentarios, string? esperado)
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Oferta.Dgaa, id, "aceptar", new { comentarios });
+        var aceptada = await ObtenerAsync(escenario.Entidad, id);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        aceptada.GetProperty("estado").GetString().ShouldBe("ACEPTADA");
+        aceptada.GetProperty("resueltaEn").GetString().ShouldNotBeNull().ShouldMatch(PatronInstanteUtc);
+        aceptada.GetProperty("resueltaPorUsuarioId").ValueKind.ShouldBe(JsonValueKind.Number);
+        aceptada.GetProperty("comentariosResolucion").GetString().ShouldBe(esperado);
+        aceptada.GetProperty("canceladaEn").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task Aceptar_ConComentariosDemasiadoLargos_Devuelve400EnComentarios()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(
+            escenario.Oferta.Dgaa, id, "aceptar", new { comentarios = new string('x', 2001) });
+
+        await VerificaErrorDeCampoAsync(respuesta, "comentarios", "SolicitudApertura.ComentariosDemasiadoLargos");
+    }
+
+    [Fact]
+    public async Task Aceptar_ConExperienciaSinCupoMaximo_Devuelve409CuposIncompletos()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api, cupoMinimo: 10, cupoMaximo: null);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Oferta.Dgaa, id, "aceptar", new { comentarios = (string?)null });
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.CuposIncompletos");
+    }
+
+    [Fact]
+    public async Task Aceptar_DespuesDeReducirLosCuposDeLaExperiencia_Devuelve409CantidadFueraDeCupos()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync(cantidad: 20);
+        await ModificarCuposAsync(escenario, cupoMinimo: 10, cupoMaximo: 15);
+
+        using var respuesta = await EjecutarAsync(escenario.Oferta.Dgaa, id, "aceptar", new { comentarios = (string?)null });
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.CantidadFueraDeCupos");
+        (await ObtenerAsync(escenario.Entidad, id)).GetProperty("estado").GetString().ShouldBe("PENDIENTE");
+    }
+
+    [Fact]
+    public async Task Aceptar_FueraDePendiente_Devuelve409NoPendiente()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var id = await InsertarTerminalAsync(escenario, "RECHAZADA");
+
+        using var respuesta = await EjecutarAsync(escenario.Oferta.Dgaa, id, "aceptar", new { comentarios = (string?)null });
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.NoPendiente");
+    }
+
+    [Fact]
+    public async Task Aceptar_ConDgaaDeOtraArea_Devuelve404()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        using var otro = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(otro.Oferta.Dgaa, id, "aceptar", new { comentarios = (string?)null });
+
+        await VerificaNoEncontradoAsync(respuesta);
+        (await ObtenerAsync(escenario.Entidad, id)).GetProperty("estado").GetString().ShouldBe("PENDIENTE");
+    }
+
+    [Fact]
+    public async Task AceptarYRechazar_SoloPermitenDgaa()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var aceptarEntidad = await EjecutarAsync(escenario.Entidad, id, "aceptar", new { comentarios = (string?)null });
+        using var aceptarSuperusuario = await EjecutarAsync(
+            escenario.Superusuario, id, "aceptar", new { comentarios = (string?)null });
+        using var rechazarEntidad = await EjecutarAsync(escenario.Entidad, id, "rechazar", new { comentarios = "No procede." });
+        using var rechazarSuperusuario = await EjecutarAsync(
+            escenario.Superusuario, id, "rechazar", new { comentarios = "No procede." });
+
+        aceptarEntidad.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        aceptarSuperusuario.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        rechazarEntidad.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        rechazarSuperusuario.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Rechazar_ConComentarios_Devuelve204()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(
+            escenario.Oferta.Dgaa, id, "rechazar", new { comentarios = "  No hay profesor disponible.  " });
+        var rechazada = await ObtenerAsync(escenario.Entidad, id);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        rechazada.GetProperty("estado").GetString().ShouldBe("RECHAZADA");
+        rechazada.GetProperty("resueltaEn").GetString().ShouldNotBeNull().ShouldMatch(PatronInstanteUtc);
+        rechazada.GetProperty("comentariosResolucion").GetString().ShouldBe("No hay profesor disponible.");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public async Task Rechazar_SinComentarios_Devuelve400EnComentarios(string? comentarios)
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Oferta.Dgaa, id, "rechazar", new { comentarios });
+
+        await VerificaErrorDeCampoAsync(respuesta, "comentarios", "SolicitudApertura.ComentariosVacios");
+    }
+
+    [Fact]
+    public async Task Rechazar_FueraDePendiente_Devuelve409NoPendiente()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var id = await InsertarTerminalAsync(escenario, "ACEPTADA");
+
+        using var respuesta = await EjecutarAsync(escenario.Oferta.Dgaa, id, "rechazar", new { comentarios = "No procede." });
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.NoPendiente");
+    }
+
+    [Fact]
+    public async Task Rechazar_ConDgaaDeOtraArea_Devuelve404()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        using var otro = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(otro.Oferta.Dgaa, id, "rechazar", new { comentarios = "No procede." });
+
+        await VerificaNoEncontradoAsync(respuesta);
+    }
+
+    [Fact]
+    public async Task Cancelar_ConMotivo_Devuelve204()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Entidad, id, "cancelar", new { motivo = "  Ya no se necesita.  " });
+        var cancelada = await ObtenerAsync(escenario.Entidad, id);
+
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        cancelada.GetProperty("estado").GetString().ShouldBe("CANCELADA");
+        cancelada.GetProperty("canceladaEn").GetString().ShouldNotBeNull().ShouldMatch(PatronInstanteUtc);
+        cancelada.GetProperty("canceladaPorUsuarioId").ValueKind.ShouldBe(JsonValueKind.Number);
+        cancelada.GetProperty("motivoCancelacion").GetString().ShouldBe("Ya no se necesita.");
+        cancelada.GetProperty("resueltaEn").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public async Task Cancelar_SinMotivo_Devuelve400EnMotivo(string? motivo)
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Entidad, id, "cancelar", new { motivo });
+
+        await VerificaErrorDeCampoAsync(respuesta, "motivo", "SolicitudApertura.MotivoVacio");
+    }
+
+    [Fact]
+    public async Task Cancelar_ConMotivoDeMasDeMilCaracteres_Devuelve400EnMotivo()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Entidad, id, "cancelar", new { motivo = new string('x', 1001) });
+
+        await VerificaErrorDeCampoAsync(respuesta, "motivo", "SolicitudApertura.MotivoDemasiadoLargo");
+    }
+
+    [Fact]
+    public async Task Cancelar_FueraDePendiente_Devuelve409NoPendiente()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var id = await InsertarTerminalAsync(escenario, "RECHAZADA");
+
+        using var respuesta = await EjecutarAsync(escenario.Entidad, id, "cancelar", new { motivo = "Ya no se necesita." });
+
+        await VerificaConflictoAsync(respuesta, "SolicitudApertura.NoPendiente");
+    }
+
+    [Fact]
+    public async Task Cancelar_ConSolicitudDeOtraEntidad_Devuelve404()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        using var otro = await EscenarioSolicitud.CrearAsync(_api);
+        var (idAjeno, _) = await otro.CrearSolicitudAsync();
+
+        using var respuesta = await EjecutarAsync(escenario.Entidad, idAjeno, "cancelar", new { motivo = "Ya no se necesita." });
+
+        await VerificaNoEncontradoAsync(respuesta);
+        (await ObtenerAsync(otro.Entidad, idAjeno)).GetProperty("estado").GetString().ShouldBe("PENDIENTE");
+    }
+
+    [Fact]
+    public async Task Cancelar_SoloPermiteEntidadAcademica()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+
+        using var dgaa = await EjecutarAsync(escenario.Oferta.Dgaa, id, "cancelar", new { motivo = "Ya no se necesita." });
+        using var superusuario = await EjecutarAsync(escenario.Superusuario, id, "cancelar", new { motivo = "Ya no se necesita." });
+
+        dgaa.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        superusuario.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task BajaDeExperiencia_DespuesDeAceptar_Devuelve409TieneReferencias()
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        using var aceptar = await EjecutarAsync(escenario.Oferta.Dgaa, id, "aceptar", new { comentarios = (string?)null });
+        aceptar.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var baja = await escenario.Oferta.Dgaa.DeleteAsync(RutaExperiencia(escenario.ExperienciaId), Cancelacion);
+
+        await VerificaConflictoAsync(baja, "ExperienciaEducativa.TieneReferencias");
+    }
+
+    [Theory]
+    [InlineData("rechazar")]
+    [InlineData("cancelar")]
+    public async Task BajaDeExperiencia_DespuesDeRechazarOCancelar_Devuelve204(string accion)
+    {
+        using var escenario = await EscenarioSolicitud.CrearAsync(_api);
+        var (id, _) = await escenario.CrearSolicitudAsync();
+        using var transicion = accion == "rechazar"
+            ? await EjecutarAsync(escenario.Oferta.Dgaa, id, accion, new { comentarios = "No procede." })
+            : await EjecutarAsync(escenario.Entidad, id, accion, new { motivo = "Ya no se necesita." });
+        transicion.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        using var baja = await escenario.Oferta.Dgaa.DeleteAsync(RutaExperiencia(escenario.ExperienciaId), Cancelacion);
+
+        baja.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static Uri Uri(string sufijo = "") => new($"{Ruta}{sufijo}", UriKind.Relative);
@@ -462,6 +859,85 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         respuesta.StatusCode.ShouldBe(HttpStatusCode.Created);
         var cuerpo = await EscenarioOferta.Leer(respuesta);
         return (cuerpo.GetProperty("id").GetInt32(), cuerpo);
+    }
+
+    private static Uri RutaExperiencia(int id) => new($"/api/v1/oferta-educativa/experiencias-educativas/{id}", UriKind.Relative);
+
+    private static async Task<JsonElement> ObtenerAsync(HttpClient cliente, int id)
+    {
+        using var respuesta = await cliente.GetAsync(Uri($"/{id}"), Cancelacion);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.OK);
+        return await EscenarioOferta.Leer(respuesta);
+    }
+
+    private static Task<HttpResponseMessage> EjecutarAsync(HttpClient cliente, int id, string accion, object cuerpo) =>
+        cliente.PostAsJsonAsync(Uri($"/{id}/{accion}"), cuerpo, Cancelacion);
+
+    /// <summary>Una solicitud en estado terminal de la EE y el periodo del escenario, con una sección propia.</summary>
+    private Task<int> InsertarTerminalAsync(EscenarioSolicitud escenario, string estado) =>
+        DatosSolicitudesSql.InsertarAsync(
+            sqlServer.CadenaConexion,
+            escenario.ExperienciaId,
+            escenario.PeriodoSiguienteId,
+            estado,
+            $"T{DatosUnicos.ClaveAlfanumerica()[..8]}");
+
+    /// <summary>Cambia solo los cupos de la EE con los demás valores que ya tiene, como lo haría la DGAA.</summary>
+    private static async Task ModificarCuposAsync(EscenarioSolicitud escenario, int cupoMinimo, int cupoMaximo)
+    {
+        using var lectura = await escenario.Oferta.Dgaa.GetAsync(RutaExperiencia(escenario.ExperienciaId), Cancelacion);
+        lectura.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var ee = await EscenarioOferta.Leer(lectura);
+
+        using var modificacion = await escenario.Oferta.Dgaa.PutAsJsonAsync(
+            RutaExperiencia(escenario.ExperienciaId),
+            new
+            {
+                nombre = ee.GetProperty("nombre").GetString(),
+                horasTeoricas = ee.GetProperty("horasTeoricas").GetInt32(),
+                horasPracticas = ee.GetProperty("horasPracticas").GetInt32(),
+                creditos = ee.GetProperty("creditos").GetInt32(),
+                cupoMinimo,
+                cupoMaximo,
+                perfilDocente = ee.GetProperty("perfilDocente").GetString(),
+                areaFormacionId = ee.GetProperty("areaFormacion").GetProperty("id").GetInt32(),
+            },
+            Cancelacion);
+        modificacion.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    private async Task<(int Id, string Clave)> LeerOficioAsync(int solicitudId)
+    {
+        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await conexion.OpenAsync(Cancelacion);
+        await using var comando = conexion.CreateCommand();
+        comando.CommandText = """
+            SELECT archivo.id, archivo.clave_almacenamiento
+            FROM academico.solicitud_apertura AS solicitud
+            JOIN academico.archivo_solicitud_apertura AS archivo ON archivo.id = solicitud.oficio_respaldo_id
+            WHERE solicitud.id = @id
+            """;
+        comando.Parameters.AddWithValue("@id", solicitudId);
+        await using var lector = await comando.ExecuteReaderAsync(Cancelacion);
+        (await lector.ReadAsync(Cancelacion)).ShouldBeTrue();
+        return (lector.GetInt32(0), lector.GetString(1));
+    }
+
+    private async Task<bool> ExisteArchivoAsync(int archivoId)
+    {
+        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await conexion.OpenAsync(Cancelacion);
+        await using var comando = conexion.CreateCommand();
+        comando.CommandText = "SELECT COUNT(*) FROM academico.archivo_solicitud_apertura WHERE id = @id";
+        comando.Parameters.AddWithValue("@id", archivoId);
+        return (int)(await comando.ExecuteScalarAsync(Cancelacion))! > 0;
+    }
+
+    private static async Task VerificaConflictoAsync(HttpResponseMessage respuesta, string codigo)
+    {
+        var problema = await EscenarioOferta.Leer(respuesta);
+        respuesta.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        problema.GetProperty("codigo").GetString().ShouldBe(codigo);
     }
 
     private static async Task VerificaErrorDeCampoAsync(HttpResponseMessage respuesta, string campo, string codigo)
