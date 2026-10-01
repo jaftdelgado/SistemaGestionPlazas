@@ -28,6 +28,43 @@ internal sealed class ArchivoSolicitudApertura : Entity
 
     public int CargadoPorUsuarioId { get; private set; }
 
+    public static Result<string> ValidarOficio(string? nombre, string? tipoContenido, long tamano, long tamanoMaximoBytes)
+    {
+        var texto = nombre ?? string.Empty;
+        var separador = Math.Max(texto.LastIndexOf('/'), texto.LastIndexOf('\'));
+        texto = Normalizacion.Recortar(texto[(separador + 1)..]);
+
+        if (texto.Length == 0)
+        {
+            return ArchivoSolicitudAperturaErrors.NombreVacio;
+        }
+
+        if (texto.Length > LongitudMaximaNombre)
+        {
+            return ArchivoSolicitudAperturaErrors.NombreDemasiadoLargo;
+        }
+
+        if (tamano <= 0)
+        {
+            return ArchivoSolicitudAperturaErrors.Vacio;
+        }
+
+        if (tamano > tamanoMaximoBytes)
+        {
+            return ArchivoSolicitudAperturaErrors.DemasiadoGrande(tamanoMaximoBytes);
+        }
+
+        if (!string.Equals(tipoContenido, MimePdf, StringComparison.OrdinalIgnoreCase))
+        {
+            return ArchivoSolicitudAperturaErrors.NoEsPdf;
+        }
+
+        return texto;
+    }
+
+    public static bool TieneFirmaPdf(ReadOnlySpan<byte> encabezado) =>
+        encabezado.Length >= 5 && encabezado[..5].SequenceEqual("%PDF-"u8);
+
     public static ArchivoSolicitudApertura Crear(
         string nombre,
         long tamano,

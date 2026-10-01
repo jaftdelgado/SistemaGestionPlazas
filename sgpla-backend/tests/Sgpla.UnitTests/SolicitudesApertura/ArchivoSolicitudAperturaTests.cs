@@ -1,31 +1,20 @@
-using Sgpla.BuildingBlocks.Application;
-using Sgpla.Modules.SolicitudesApertura.Application.SolicitudesApertura;
 using Sgpla.Modules.SolicitudesApertura.Domain.SolicitudesApertura;
 
 namespace Sgpla.UnitTests.SolicitudesApertura;
 
-public sealed class OficioSolicitudAperturaTests
+public sealed class ArchivoSolicitudAperturaTests
 {
-    [Fact]
-    public void ValidarOficio_SinArchivo_FallaComoObligatorio()
-    {
-        var resultado = OficioSolicitudApertura.Validar(null, 100);
-
-        resultado.Error.ShouldBe(ArchivoSolicitudAperturaErrors.Obligatorio);
-        resultado.Error.Campo.ShouldBe("Oficio");
-    }
-
     [Fact]
     public void ValidarOficio_ExtraeNombreDeWindowsYDeLinux()
     {
-        OficioSolicitudApertura.Validar(Recibido("C:\\fakepath\\oficio.pdf"), 100).Value.ShouldBe("oficio.pdf");
-        OficioSolicitudApertura.Validar(Recibido("carpeta/oficio.pdf"), 100).Value.ShouldBe("oficio.pdf");
+        ArchivoSolicitudApertura.ValidarOficio("C:\fakepath\oficio.pdf", "application/pdf", 5, 100).Value.ShouldBe("oficio.pdf");
+        ArchivoSolicitudApertura.ValidarOficio("carpeta/oficio.pdf", "application/pdf", 5, 100).Value.ShouldBe("oficio.pdf");
     }
 
     [Fact]
     public void ValidarOficio_AceptaMimePdfSinDistinguirMayusculas()
     {
-        var resultado = OficioSolicitudApertura.Validar(Recibido(tipo: "application/PDF"), 100);
+        var resultado = ArchivoSolicitudApertura.ValidarOficio("oficio.pdf", "application/PDF", 5, 100);
 
         resultado.IsSuccess.ShouldBeTrue();
         resultado.Value.ShouldBe("oficio.pdf");
@@ -38,7 +27,7 @@ public sealed class OficioSolicitudAperturaTests
     [InlineData("oficio.pdf", 5, "text/plain", "ArchivoSolicitudApertura.NoEsPdf")]
     public void ValidarOficio_DetectaElPrimerError(string nombre, long tamano, string tipo, string codigo)
     {
-        var resultado = OficioSolicitudApertura.Validar(Recibido(nombre, tamano, tipo), 100);
+        var resultado = ArchivoSolicitudApertura.ValidarOficio(nombre, tipo, tamano, 100);
 
         resultado.Error.Code.ShouldBe(codigo);
         resultado.Error.Campo.ShouldBe("Oficio");
@@ -47,8 +36,8 @@ public sealed class OficioSolicitudAperturaTests
     [Fact]
     public void ValidarOficio_NombreDemasiadoLargoFallaAntesDeRevisarTamano()
     {
-        var resultado = OficioSolicitudApertura.Validar(
-            Recibido(new string('x', ArchivoSolicitudApertura.LongitudMaximaNombre + 1), 0, "text/plain"), 100);
+        var resultado = ArchivoSolicitudApertura.ValidarOficio(
+            new string('x', ArchivoSolicitudApertura.LongitudMaximaNombre + 1), "text/plain", 0, 100);
 
         resultado.Error.ShouldBe(ArchivoSolicitudAperturaErrors.NombreDemasiadoLargo);
     }
@@ -56,7 +45,7 @@ public sealed class OficioSolicitudAperturaTests
     [Fact]
     public void ValidarOficio_ElErrorDeTamanoIncluyeElMaximoEnFormatoInvariante()
     {
-        var resultado = OficioSolicitudApertura.Validar(Recibido(tamano: 101), 100);
+        var resultado = ArchivoSolicitudApertura.ValidarOficio("oficio.pdf", "application/pdf", 101, 100);
 
         resultado.Error.Message.ShouldBe("El oficio supera el tamaño máximo de 100 bytes.");
     }
@@ -67,11 +56,6 @@ public sealed class OficioSolicitudAperturaTests
     [InlineData("{PDF-1234", false)]
     public void TieneFirmaPdf_ValidaLosPrimerosCincoBytes(string contenido, bool esperado)
     {
-        OficioSolicitudApertura.TieneFirmaPdf(System.Text.Encoding.ASCII.GetBytes(contenido)).ShouldBe(esperado);
+        ArchivoSolicitudApertura.TieneFirmaPdf(System.Text.Encoding.ASCII.GetBytes(contenido)).ShouldBe(esperado);
     }
-
-    private static ArchivoRecibido Recibido(
-        string nombre = "oficio.pdf",
-        long tamano = 5,
-        string tipo = "application/pdf") => new(nombre, tipo, tamano, () => new MemoryStream("%PDF-"u8.ToArray()));
 }

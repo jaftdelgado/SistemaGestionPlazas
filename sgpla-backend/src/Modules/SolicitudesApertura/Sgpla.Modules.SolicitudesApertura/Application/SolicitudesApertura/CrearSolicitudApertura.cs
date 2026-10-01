@@ -34,13 +34,19 @@ internal sealed class CrearSolicitudAperturaHandler(
             return datos.Error;
         }
 
-        var validacionOficio = OficioSolicitudApertura.Validar(command.Oficio, almacenamiento.TamanoMaximoBytes);
+        if (command.Oficio is not { } oficio)
+        {
+            return ArchivoSolicitudAperturaErrors.Obligatorio;
+        }
+
+        var validacionOficio = ArchivoSolicitudApertura.ValidarOficio(
+            oficio.Nombre, oficio.TipoContenido, oficio.Tamano, almacenamiento.TamanoMaximoBytes);
         if (validacionOficio.IsFailure)
         {
             return validacionOficio.Error;
         }
 
-        await using (var stream = command.Oficio!.AbrirLectura())
+        await using (var stream = oficio.AbrirLectura())
         {
             var encabezado = new byte[5];
             var leidos = 0;
@@ -55,7 +61,7 @@ internal sealed class CrearSolicitudAperturaHandler(
                 leidos += cantidad;
             }
 
-            if (!OficioSolicitudApertura.TieneFirmaPdf(encabezado.AsSpan(0, leidos)))
+            if (!ArchivoSolicitudApertura.TieneFirmaPdf(encabezado.AsSpan(0, leidos)))
             {
                 return ArchivoSolicitudAperturaErrors.NoEsPdf;
             }
@@ -101,18 +107,17 @@ internal sealed class CrearSolicitudAperturaHandler(
             return SolicitudAperturaErrors.SeccionDuplicada;
         }
 
-        var oficioRecibido = command.Oficio!;
-        await using var contenido = oficioRecibido.AbrirLectura();
+        await using var contenido = oficio.AbrirLectura();
         var guardado = await almacenamiento.GuardarAsync("solicitudes-apertura", ".pdf", contenido, cancellationToken);
         var utc = TruncarASegundos(reloj.GetUtcNow().UtcDateTime);
-        var oficio = ArchivoSolicitudApertura.Crear(
+        var archivo = ArchivoSolicitudApertura.Crear(
             validacionOficio.Value,
             guardado.Tamano,
             guardado.ChecksumSha256.ToArray(),
             guardado.Clave,
             actual.Id,
             utc);
-        var solicitud = SolicitudApertura.Crear(datos.Value, experiencia.Id, periodo.Id, oficio, actual.Id, utc);
+        var solicitud = SolicitudApertura.Crear(datos.Value, experiencia.Id, periodo.Id, archivo, actual.Id, utc);
         repositorio.Agregar(solicitud);
 
         try
