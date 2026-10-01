@@ -16,6 +16,7 @@ public sealed class PoliticasTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     [Theory]
     [InlineData(Politicas.Superusuario, Rol.Superusuario)]
     [InlineData(Politicas.Dgaa, Rol.Dgaa)]
+    [InlineData(Politicas.EntidadAcademica, Rol.EntidadAcademica)]
     public async Task Politica_ExigeElRolQueLeCorresponde(string politica, Rol rol)
     {
         var proveedor = _api.Services.GetRequiredService<IAuthorizationPolicyProvider>();
@@ -26,6 +27,24 @@ public sealed class PoliticasTests(SqlServerFixture sqlServer) : IAsyncDisposabl
         var claimRol = registrada.Requirements.OfType<ClaimsAuthorizationRequirement>().ShouldHaveSingleItem();
         claimRol.ClaimType.ShouldBe("rol");
         claimRol.AllowedValues.ShouldBe([((byte)rol).ToString(CultureInfo.InvariantCulture)]);
+        registrada.Requirements.OfType<DenyAnonymousAuthorizationRequirement>().ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public async Task Politica_DgaaOEntidadAcademica_ExigeAmbosRoles()
+    {
+        var proveedor = _api.Services.GetRequiredService<IAuthorizationPolicyProvider>();
+
+        var registrada = await proveedor.GetPolicyAsync(Politicas.DgaaOEntidadAcademica);
+
+        registrada.ShouldNotBeNull();
+        var claimRol = registrada.Requirements.OfType<ClaimsAuthorizationRequirement>().ShouldHaveSingleItem();
+        claimRol.ClaimType.ShouldBe("rol");
+        claimRol.AllowedValues.ShouldBe(
+        [
+            ((byte)Rol.Dgaa).ToString(CultureInfo.InvariantCulture),
+            ((byte)Rol.EntidadAcademica).ToString(CultureInfo.InvariantCulture),
+        ]);
         registrada.Requirements.OfType<DenyAnonymousAuthorizationRequirement>().ShouldHaveSingleItem();
     }
 

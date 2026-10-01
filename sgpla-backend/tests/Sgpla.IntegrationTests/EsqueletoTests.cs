@@ -101,6 +101,30 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     }
 
     [Fact]
+    public async Task Migraciones_SolicitudAperturaSinVinculacionYConVersion()
+    {
+        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await conexion.OpenAsync(TestContext.Current.CancellationToken);
+        await using var comando = new SqlCommand(
+            """
+            SELECT c.name, TYPE_NAME(c.user_type_id)
+            FROM sys.columns AS c
+            WHERE c.object_id = OBJECT_ID(N'academico.solicitud_apertura')
+              AND c.name IN (N'programacion_academica_id', N'vinculada_en', N'vinculada_por_usuario_id', N'version')
+            """,
+            conexion);
+
+        var columnas = new Dictionary<string, string>(StringComparer.Ordinal);
+        await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        while (await lector.ReadAsync(TestContext.Current.CancellationToken))
+        {
+            columnas.Add(lector.GetString(0), lector.GetString(1));
+        }
+
+        columnas.ShouldBe(new Dictionary<string, string>(StringComparer.Ordinal) { ["version"] = "timestamp" });
+    }
+
+    [Fact]
     public void Persistencia_NoRegistraValoresDeParametros()
     {
         // EnableSensitiveDataLogging nunca se activa.

@@ -8,6 +8,7 @@ using Sgpla.BuildingBlocks.Infrastructure.Handlers;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.Modules.Institucional.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.Ambito;
+using Sgpla.Modules.OfertaEducativa.Application.Contracts;
 using Sgpla.Modules.OfertaEducativa.Application.ExperienciasEducativas;
 using Sgpla.Modules.OfertaEducativa.Application.PeriodosEscolares;
 using Sgpla.Modules.OfertaEducativa.Application.PlanesEstudio;
@@ -45,9 +46,11 @@ public static class OfertaEducativaModule
         services.AddScoped<IPlanEstudiosRepository, PlanEstudiosRepository>();
         services.AddScoped<IExperienciaEducativaRepository, ExperienciaEducativaRepository>();
 
-        // Contratos para otros módulos (Institucional). IReferenciasPeriodoEscolar e IReferenciasExperienciaEducativa los
-        // registra cada módulo que los implementa.
+        // Contratos para otros módulos (Institucional y SolicitudesApertura). IReferenciasPeriodoEscolar e
+        // IReferenciasExperienciaEducativa los registra cada módulo que los implementa.
         services.AddScoped<IProgramasDeEntidadAcademica, ProgramasDeEntidadAcademica>();
+        services.AddScoped<IExperienciasEducativas, ExperienciasEducativas>();
+        services.AddScoped<IPeriodosEscolares, PeriodosEscolares>();
 
         return services;
     }

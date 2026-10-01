@@ -450,20 +450,16 @@ CREATE TABLE academico.solicitud_apertura
     cancelada_en               datetime2(0)      NULL,
     cancelada_por_usuario_id   int               NULL,
     motivo_cancelacion         nvarchar(1000)    NULL,
-    programacion_academica_id  int               NULL,
-    vinculada_en               datetime2(0)      NULL,
-    vinculada_por_usuario_id   int               NULL,
+    version                    rowversion        NOT NULL,
     CONSTRAINT pk_solicitud_apertura PRIMARY KEY CLUSTERED (id),
     CONSTRAINT uq_solicitud_apertura__oficio_respaldo_id UNIQUE (oficio_respaldo_id),
     CONSTRAINT fk_solicitud_apertura__experiencia_educativa FOREIGN KEY (experiencia_educativa_id) REFERENCES academico.experiencia_educativa (id),
     CONSTRAINT fk_solicitud_apertura__periodo_escolar FOREIGN KEY (periodo_escolar_id) REFERENCES academico.periodo_escolar (id),
     CONSTRAINT fk_solicitud_apertura__archivo_solicitud_apertura FOREIGN KEY (oficio_respaldo_id) REFERENCES academico.archivo_solicitud_apertura (id),
-    CONSTRAINT fk_solicitud_apertura__programacion_academica FOREIGN KEY (programacion_academica_id) REFERENCES academico.programacion_academica (id),
     CONSTRAINT fk_solicitud_apertura__usuario__creada_por FOREIGN KEY (creada_por_usuario_id) REFERENCES usuarios.usuario (id),
     CONSTRAINT fk_solicitud_apertura__usuario__actualizada_por FOREIGN KEY (actualizada_por_usuario_id) REFERENCES usuarios.usuario (id),
     CONSTRAINT fk_solicitud_apertura__usuario__resuelta_por FOREIGN KEY (resuelta_por_usuario_id) REFERENCES usuarios.usuario (id),
     CONSTRAINT fk_solicitud_apertura__usuario__cancelada_por FOREIGN KEY (cancelada_por_usuario_id) REFERENCES usuarios.usuario (id),
-    CONSTRAINT fk_solicitud_apertura__usuario__vinculada_por FOREIGN KEY (vinculada_por_usuario_id) REFERENCES usuarios.usuario (id),
     CONSTRAINT ck_solicitud_apertura__estado CHECK (estado IN ('PENDIENTE', 'ACEPTADA', 'RECHAZADA', 'CANCELADA')),
     CONSTRAINT ck_solicitud_apertura__seccion_formato CHECK (
             LEN(seccion) > 0
@@ -479,26 +475,20 @@ CREATE TABLE academico.solicitud_apertura
     CONSTRAINT ck_solicitud_apertura__cancelacion_conjunta CHECK (
            (cancelada_en IS NULL AND cancelada_por_usuario_id IS NULL AND motivo_cancelacion IS NULL)
         OR (cancelada_en IS NOT NULL AND cancelada_por_usuario_id IS NOT NULL AND motivo_cancelacion IS NOT NULL AND LEN(TRIM(motivo_cancelacion)) > 0)),
-    CONSTRAINT ck_solicitud_apertura__vinculacion_conjunta CHECK (
-           (programacion_academica_id IS NULL AND vinculada_en IS NULL AND vinculada_por_usuario_id IS NULL)
-        OR (programacion_academica_id IS NOT NULL AND vinculada_en IS NOT NULL AND vinculada_por_usuario_id IS NOT NULL)),
-    CONSTRAINT ck_solicitud_apertura__vinculacion_posterior CHECK (vinculada_en IS NULL OR (resuelta_en IS NOT NULL AND vinculada_en >= resuelta_en)),
     CONSTRAINT ck_solicitud_apertura__estado_consistente CHECK (
-           (estado = 'PENDIENTE' AND resuelta_en IS NULL AND comentarios_resolucion IS NULL AND cancelada_en IS NULL AND programacion_academica_id IS NULL)
+           (estado = 'PENDIENTE' AND resuelta_en IS NULL AND comentarios_resolucion IS NULL AND cancelada_en IS NULL)
         OR (estado = 'ACEPTADA' AND resuelta_en IS NOT NULL AND cancelada_en IS NULL)
-        OR (estado = 'RECHAZADA' AND resuelta_en IS NOT NULL AND comentarios_resolucion IS NOT NULL AND LEN(TRIM(comentarios_resolucion)) > 0 AND cancelada_en IS NULL AND programacion_academica_id IS NULL)
-        OR (estado = 'CANCELADA' AND cancelada_en IS NOT NULL AND resuelta_en IS NULL AND comentarios_resolucion IS NULL AND programacion_academica_id IS NULL))
+        OR (estado = 'RECHAZADA' AND resuelta_en IS NOT NULL AND comentarios_resolucion IS NOT NULL AND LEN(TRIM(comentarios_resolucion)) > 0 AND cancelada_en IS NULL)
+        OR (estado = 'CANCELADA' AND cancelada_en IS NOT NULL AND resuelta_en IS NULL AND comentarios_resolucion IS NULL))
 );
 
 CREATE UNIQUE INDEX ux_solicitud_apertura__pendiente ON academico.solicitud_apertura (experiencia_educativa_id, periodo_escolar_id, seccion) WHERE estado = 'PENDIENTE';
-CREATE UNIQUE INDEX ux_solicitud_apertura__programacion_academica_id ON academico.solicitud_apertura (programacion_academica_id) WHERE programacion_academica_id IS NOT NULL;
 CREATE INDEX ix_solicitud_apertura__experiencia_educativa_id_estado ON academico.solicitud_apertura (experiencia_educativa_id, estado);
 CREATE INDEX ix_solicitud_apertura__periodo_escolar_id_estado ON academico.solicitud_apertura (periodo_escolar_id, estado);
 CREATE INDEX ix_solicitud_apertura__creada_por_usuario_id ON academico.solicitud_apertura (creada_por_usuario_id);
 CREATE INDEX ix_solicitud_apertura__actualizada_por_usuario_id ON academico.solicitud_apertura (actualizada_por_usuario_id) WHERE actualizada_por_usuario_id IS NOT NULL;
 CREATE INDEX ix_solicitud_apertura__resuelta_por_usuario_id ON academico.solicitud_apertura (resuelta_por_usuario_id) WHERE resuelta_por_usuario_id IS NOT NULL;
 CREATE INDEX ix_solicitud_apertura__cancelada_por_usuario_id ON academico.solicitud_apertura (cancelada_por_usuario_id) WHERE cancelada_por_usuario_id IS NOT NULL;
-CREATE INDEX ix_solicitud_apertura__vinculada_por_usuario_id ON academico.solicitud_apertura (vinculada_por_usuario_id) WHERE vinculada_por_usuario_id IS NOT NULL;
 
 -- 8. Catálogos permanentes (§6.21, §6.22, §15.2). Sin baja lógica.
 

@@ -65,6 +65,16 @@ Se levantan tres servicios:
 | `migraciones` | Aplica los scripts de DbUp cuando SQL Server está listo y termina. Si no hay scripts nuevos, no hace nada. |
 | `api` | Arranca solo si las migraciones terminaron bien. |
 
+### Solicitudes de apertura y archivos
+
+| Configuración | Uso |
+|---|---|
+| `SGPLA_PERIODO_ACTUAL` | Clave del periodo actual configurado para las solicitudes de apertura; `202601` por omisión. |
+| `SGPLA_PERIODO_SIGUIENTE` | Clave del periodo siguiente configurado para las solicitudes de apertura; `202651` por omisión. |
+| `archivos-data` | Volumen del servicio `api` donde se conservan los oficios PDF. |
+
+La especificación del módulo ajustó el baseline para quitar la vinculación con programación y agregar `rowversion`; una base local anterior a este cambio se recrea con `docker compose down -v`.
+
 Con la API en marcha:
 - **Documentación interactiva:** `http://localhost:8180/scalar/v1`
 - **Estado:** `http://localhost:8180/health`

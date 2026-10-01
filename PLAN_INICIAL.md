@@ -65,7 +65,7 @@ Refinamiento 1 (acordado con el usuario):
 | **Docentes** | docente, formacion_docente, documento_docente, version_documento_docente, asignacion_docente (`academico`) | CRUD de docente y formaciones; documentos versionados; asignaciones sin CRUD directo (se derivan de PLANEA o del aval de un Acta) |
 | **Usuarios** | rol, usuario, usuario_dgaa, usuario_entidad_academica, credencial_superusuario (`usuarios`) | Alta/consulta/edición de nombre/baja, sin restauración; `rol` es fijo; login LDAP y local, cambio/restablecimiento de contraseña, comando de bootstrap |
 | **Integracion** | sincronizacion_planea (`integracion`) | Sin CRUD: disparar sincronización y consultar la bitácora |
-| **SolicitudesApertura** | solicitud_apertura, archivo_solicitud_apertura (`academico`) | Crear/editar en PENDIENTE; comandos aceptar/rechazar/cancelar/vincular; sin eliminación |
+| **SolicitudesApertura** | solicitud_apertura, archivo_solicitud_apertura (`academico`) | Crear/editar en PENDIENTE; comandos aceptar/rechazar/cancelar; sin eliminación ni vinculación |
 | **Publicacion** | oferta, aviso, horario_recepcion_requisito, aviso_oferta, documento_aviso, revision_aviso (`plazas`) | CRUD de Oferta y de Aviso en borrador; alta y retiro de Ofertas en un Aviso; comandos enviar/avalar/devolver/firmar/publicar/cancelar/archivar; documentos versionados |
 | **Aspirantes** | aspirante, perfil_aspirante, formacion_aspirante, documento_aspirante, version_documento_aspirante, solicitud, solicitud_documento (`plazas`) | Alta de Aspirante junto con su primera Solicitud; nuevas versiones de perfil y documentos; comandos admitir/no admitir/retirar la Solicitud; búsqueda exacta por correo |
 | **ConsejoTecnico** | integrante_consejo_tecnico, acta_consejo_tecnico, acta_oferta, votacion_solicitud, acta_asistencia, documento_acta, revision_acta (`plazas`) | CRUD de integrantes (vigencias); Acta en borrador con resultados, asistencia y votación; comandos enviar/avalar/devolver/firmar/archivar; baja lógica en CREADA |
@@ -130,7 +130,7 @@ sgpla-backend/
     Sgpla.Database/              DbUp: Scripts/*.sql embebidos, DatabaseMigrator (librería) + CLI (Program.cs)
     BuildingBlocks/
       Sgpla.SharedKernel/        Entity base, ISoftDeletable, Result/Error, IClock, Rol (constantes tipadas 1/2/3), Normalizacion, paginación
-      Sgpla.BuildingBlocks.Infrastructure/  SgplaDbContext único, IAlmacenamientoArchivos (+ impl. en sistema de archivos local), SHA-256, SystemClock, helpers de endpoints/validación
+      Sgpla.BuildingBlocks.Infrastructure/  SgplaDbContext único, almacenamiento local de archivos, SHA-256, SystemClock, helpers de endpoints/validación
     Modules/
       Institucional/Sgpla.Modules.Institucional/
         Domain/ Application/ Infrastructure/ Endpoints/  InstitucionalModule.cs
@@ -171,7 +171,7 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 - **LDAP UV** (módulo Usuarios/Infrastructure): `ILdapAutenticador` implementado con `System.DirectoryServices.Protocols`, con bind directo por correo (sin base DN ni cuenta de servicio, igual que el sistema anterior de la UV). La seguridad del canal es configurable (`Ldaps`, `StartTls` o `SinTls`); `SinTls` solo se acepta en Development (`DECISIONES.md`, USU-D2). La contraseña nunca se registra.
 - **Hash local**: `IHasherContrasenas` con Argon2id en formato PHC (`Isopoh.Cryptography.Argon2`), con parámetros configurables y detección de rehash.
 - **PLANEA** (módulo Integracion/Infrastructure): `IPlaneaClient` como typed `HttpClient`, con `Microsoft.Extensions.Http.Resilience`, `PlaneaOptions.BaseUrl` y validación de status/Content-Type/arreglo no vacío. El proceso de sincronización atómica queda como caso de uso por implementar.
-- **Almacenamiento de binarios**: la interfaz `IAlmacenamientoArchivos` se implementa en el sistema de archivos local para dev y test. El proveedor definitivo está pendiente, según `DATABASE.md` §17.
+- **Almacenamiento de binarios**: `IAlmacenamientoArchivos`, `ArchivoGuardado` y `ArchivoRecibido` viven en `BuildingBlocks.Application`; `BuildingBlocks.Infrastructure` implementa almacenamiento local usando `Almacenamiento:RutaBase` y `Almacenamiento:TamanoMaximoBytes`. El volumen `archivos-data` persiste los binarios del entorno Docker. El proveedor definitivo sigue pendiente (`DATABASE.md` §17).
 - **Configuración de periodos** (actual/siguiente): `PeriodosOptions` en SolicitudesApertura.
 - **Bootstrap del primer Superusuario**: subcomando `bootstrap-superusuario` de la imagen de la API (`docker compose run --rm api bootstrap-superusuario`), no del CLI de migraciones (`DECISIONES.md`, USU-D7).
 
