@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error"
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "src/routeTree.gen.ts",
+    "src/lib/api/schema.d.ts",
+    "tools/"
+  ]
+}
