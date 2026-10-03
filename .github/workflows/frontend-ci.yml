@@ -1,0 +1,64 @@
+name: frontend-ci
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "sgpla-web/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "sgpla-web/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Formato, lint, tipos, pruebas y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: sgpla-web
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: sgpla-web/package.json
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: sgpla-web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: |
+            sgpla-web/pnpm-lock.yaml
+            sgpla-web/tools/openapi/pnpm-lock.yaml
+
+      - name: Instalación de la aplicación
+        run: pnpm install --frozen-lockfile
+
+      - name: Instalación del generador de tipos
+        run: pnpm install --frozen-lockfile
+        working-directory: sgpla-web/tools/openapi
+
+      - name: Formato
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Pruebas
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
