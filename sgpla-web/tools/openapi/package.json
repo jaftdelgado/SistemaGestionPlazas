@@ -1,0 +1,13 @@
+{
+  "name": "sgpla-openapi",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "scripts": {
+    "generar": "openapi-typescript $SGPLA_OPENAPI_URL -o ../../src/lib/api/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

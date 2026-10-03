@@ -6,7 +6,12 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
-    tanstackRouter({ target: "react", autoCodeSplitting: true }),
+    tanstackRouter({
+      target: "react",
+      autoCodeSplitting: true,
+      // Las pruebas de rutas conviven con ellas y no son rutas.
+      routeFileIgnorePattern: "\\.test\\.",
+    }),
     react(),
     tailwindcss(),
   ],
