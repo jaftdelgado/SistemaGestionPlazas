@@ -1765,7 +1765,7 @@ PENDIENTE -> CANCELADA
 
 Cualquier DGAA activa del Área Académica derivada puede aceptar o rechazar. Aceptar exige que ambos cupos vigentes de la EE existan y que la cantidad esté dentro del intervalo inclusivo. Crear, editar y aceptar usan los cupos vigentes; si un cambio de cupos deja una pendiente fuera de rango, la aceptación queda bloqueada hasta corregirla.
 
-Cancelar solo está permitido desde PENDIENTE, requiere motivo y es ejecutado por un usuario EA del mismo ámbito. ACEPTADA, RECHAZADA y CANCELADA no se editan ni revierten. El Superusuario consulta las solicitudes, pero no descarga el oficio ni escribe (`Modulo_SolicitudesApertura.md`, D12).
+Cancelar solo está permitido desde PENDIENTE, requiere motivo y es ejecutado por un usuario EA del mismo ámbito. ACEPTADA, RECHAZADA y CANCELADA no se editan ni revierten. El Superusuario consulta las solicitudes, pero no descarga el oficio ni escribe (`DECISIONES.md`, SOL-D12).
 
 ### 16.5 Bajas e integridad de padres
 
@@ -1782,7 +1782,7 @@ No existen decisiones funcionales pendientes para implementar este modelo base. 
 - implementación del adaptador y la sincronización atómica con PLANEA, incluidos Docentes y asignaciones iniciales;
 - implementación del bootstrap, autenticación LDAP y verificación local de Superusuarios;
 - implementación transaccional de los ciclos de Aviso y Acta, revisiones, votación, designación y republicación;
-- definición del proveedor definitivo del almacenamiento externo de binarios (Avisos, Actas, Docentes y Solicitudes de Apertura; el plan de estudios no tiene archivo). Hoy se usa el sistema de archivos local, con compensación de cargas fallidas (`Modulo_SolicitudesApertura.md`, D3 y D4);
+- definición del proveedor definitivo del almacenamiento externo de binarios (Avisos, Actas, Docentes y Solicitudes de Apertura; el plan de estudios no tiene archivo). Hoy se usa el sistema de archivos local, con compensación de cargas fallidas (`DECISIONES.md`, SOL-D3 y SOL-D4);
 - confirmación institucional de si se requiere criptografía FIPS antes de implementar el hash local;
 - pruebas de integración contra SQL Server;
 - revisión de índices con datos y consultas representativas.
