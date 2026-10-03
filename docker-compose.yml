@@ -1,4 +1,4 @@
-# Entorno local de SGPLa: SQL Server + migraciones (DbUp) + API REST.
+# Entorno local de SGPLa: SQL Server + migraciones (DbUp) + API REST + frontend (Vite).
 #   docker compose up -d --build
 # Las variables se leen de .env (ver .env.example); todas tienen un valor por defecto para desarrollo.
 name: sgpla
@@ -62,6 +62,23 @@ services:
       migraciones:
         condition: service_completed_successfully
 
+  # Servidor de desarrollo de Vite con recarga en caliente. node_modules queda en sgpla-web/ del host.
+  web:
+    image: node:24.21.0-alpine
+    working_dir: /app
+    command: ["sh", "-c", "corepack enable && pnpm install --frozen-lockfile && pnpm dev"]
+    environment:
+      pnpm_config_store_dir: /pnpm/store
+      VITE_API_URL: "http://localhost:${SGPLA_API_PORT:-8180}"
+      SGPLA_WEB_POLLING: "${SGPLA_WEB_POLLING:-true}"
+      SGPLA_OPENAPI_URL: "http://api:8080/openapi/v1.json"
+    ports:
+      - "${SGPLA_WEB_PORT:-5173}:5173"
+    volumes:
+      - ./sgpla-web:/app
+      - pnpm-store:/pnpm/store
+
 volumes:
   sqlserver-data:
   archivos-data:
+  pnpm-store:

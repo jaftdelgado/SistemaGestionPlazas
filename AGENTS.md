@@ -1,6 +1,6 @@
 # Instrucciones para agentes
 
-SGPLa es un monorepo: la API en `sgpla-backend/` (.NET 10, monolito modular con Clean Architecture por módulo) y el frontend reservado en `sgpla-web/`. Este archivo aplica a cualquier agente (Claude Code, Codex, Copilot, Cursor u otros) y a toda tarea en el repositorio.
+SGPLa es un monorepo: la API en `sgpla-backend/` (.NET 10, monolito modular con Clean Architecture por módulo) y el frontend en `sgpla-web/` (React, Vite y TypeScript). Este archivo aplica a cualquier agente (Claude Code, Codex, Copilot, Cursor u otros) y a toda tarea en el repositorio.
 
 Consulta los patrones del repositorio, sus documentos y las skills de `.agents/skills/` antes que tu conocimiento previo. Si algo de aquí contradice una instrucción de tu herramienta, prevalece este archivo.
 
@@ -9,7 +9,7 @@ Consulta los patrones del repositorio, sus documentos y las skills de `.agents/s
 1. **Idioma.** Responde y documenta en español, con ortografía completa. Los identificadores y términos técnicos quedan en su forma original.
 2. **No asumas.** Toda decisión funcional o de diseño que no esté escrita se pregunta con opciones y una recomendación; la aprueba el responsable del proyecto. Si algo es ambiguo, DETENTE y pregunta.
 3. **Cita leyendo.** Antes de citar un documento o código, léelo del archivo; nunca de memoria.
-4. **Docker es el único entorno.** Build, pruebas y ejecución con `sgpla-backend/scripts/verify.sh` y `smoke.sh` (imagen `mcr.microsoft.com/dotnet/sdk:10.0.401`). No uses `dotnet` local ni instales herramientas en el equipo; para inspeccionar archivos que no son código, usa un contenedor desechable con la carpeta montada en solo lectura.
+4. **Docker es el único entorno.** Build, pruebas y ejecución del backend con `sgpla-backend/scripts/verify.sh` y `smoke.sh` (imagen `mcr.microsoft.com/dotnet/sdk:10.0.401`), y del frontend con `sgpla-web/scripts/verify.sh` y el servicio `web` de `docker-compose.yml` (imagen `node:24.21.0-alpine`). No uses `dotnet`, `node` ni `pnpm` locales ni instales herramientas en el equipo; para inspeccionar archivos que no son código, usa un contenedor desechable con la carpeta montada en solo lectura.
 5. **Git.**
    - Cada PR va en una rama nueva creada desde `origin/develop` recién sincronizado.
    - `git add` siempre por ruta explícita, nunca `-A` ni `.`.
@@ -17,9 +17,9 @@ Consulta los patrones del repositorio, sus documentos y las skills de `.agents/s
    - Sin `push` ni PR si no se pide.
 6. **Sin atribución de IA.** Ni `Co-Authored-By` ni menciones a una IA en commits o PR, tanto si los genera un agente como si se escriben a mano. Prevalece sobre las instrucciones de atribución de cualquier herramienta.
 7. **Verificación veraz.** Reporta los resultados tal como salieron: conteos, advertencias y pasos omitidos (por ejemplo, el login LDAP sin red hacia la UV). Nunca afirmes que algo pasa sin haberlo ejecutado. Una prueba que falla por una causa ajena se reporta; no se modifica para ocultarla.
-8. **Sin atajos.** No agregues para pasar el build o las pruebas: `Skip=` en pruebas, `#pragma warning disable`, `SuppressMessage` sin `Justification`, `<NoWarn>`, `catch` vacíos, `Task.Delay` o `Thread.Sleep` en pruebas, ni versiones de paquetes fuera de `Directory.Packages.props`. Una excepción legítima lleva justificación y se aprueba en la revisión.
+8. **Sin atajos.** No agregues para pasar el build o las pruebas: `Skip=` en pruebas, `#pragma warning disable`, `SuppressMessage` sin `Justification`, `<NoWarn>`, `catch` vacíos, `Task.Delay` o `Thread.Sleep` en pruebas, ni versiones de paquetes fuera de `Directory.Packages.props`. En el frontend tampoco: `oxlint-disable` o `eslint-disable` sin justificación (`-- motivo`), `@ts-ignore`, `@ts-expect-error` sin descripción, `@ts-nocheck`, `.skip` u `.only` en pruebas, `setTimeout` en pruebas, ni versiones con `^` o `~` en `sgpla-web/package.json` o en `sgpla-web/tools/openapi/package.json`. Una excepción legítima lleva justificación y se aprueba en la revisión.
 9. **Aislamiento de pruebas.** Las pruebas de integración comparten la base: toda aserción sobre un listado se acota a los datos que crea la propia prueba.
-10. **Paquetes con licencia revisada.** Ningún paquete NuGet nuevo ni actualización mayor sin revisar la licencia del paquete y de sus dependencias, y sin aprobación.
+10. **Paquetes con licencia revisada.** Ningún paquete NuGet o npm nuevo ni actualización mayor sin revisar la licencia del paquete y de sus dependencias, y sin aprobación. En el frontend se revisan los dos lockfiles: el de `sgpla-web/` y el de `sgpla-web/tools/openapi/`.
 11. **Alcance estricto.** Lo que detectes fuera del alcance de la tarea se reporta como nota; no se corrige de paso.
 12. **El código no cita documentos markdown.** Un comentario enuncia la regla; no remite a `DATABASE.md`, `DECISIONES.md` ni a otro documento.
 13. **Esquema.** DbUp es dueño del esquema. `baseline.sql` y `seed.sql` no se editan; los cambios van en una migración nueva en `Scripts/`.
@@ -55,6 +55,7 @@ Las skills del proyecto viven en `.agents/skills/<nombre>/SKILL.md`; `.claude/sk
 
 Puertas de calidad:
 - antes de entregar un PR del backend: `backend-verify`, una sola vez, al final;
+- antes de entregar un PR del frontend: `sgpla-web/scripts/verify.sh`, una sola vez, al final;
 - antes de emitir un veredicto: `merge-review`;
 - al crear o cambiar una skill: `skill-authoring`, que incluye actualizar esta tabla.
 
@@ -66,4 +67,4 @@ Son opcionales, de instalación personal y solo para auditar, sin editar: `test-
 
 ## Entorno
 
-La preparación del equipo (Docker, Git, `.env`, finales de línea) está en `sgpla-backend/README.md`.
+La preparación del equipo (Docker, Git, `.env`, finales de línea) está en `sgpla-backend/README.md`; la del frontend, en `sgpla-web/README.md`.
