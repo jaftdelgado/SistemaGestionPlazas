@@ -1,4 +1,4 @@
-# Entorno local de SGPLa: SQL Server + migraciones (DbUp) + API REST.
+# Entorno local de SGPLa: SQL Server + migraciones (DbUp) + API REST + frontend (Vite).
 #   docker compose up -d --build
 # Las variables se leen de .env (ver .env.example); todas tienen un valor por defecto para desarrollo.
 name: sgpla

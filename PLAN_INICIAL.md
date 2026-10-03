@@ -114,7 +114,7 @@ sgpla/
 ```
 
 - La configuración específica de .NET (`global.json`, `Directory.Build.props`, `Directory.Packages.props`) vive dentro de `sgpla-backend/`, para que no afecte al frontend.
-- `frontend-ci.yml` se agregará cuando se cree el esqueleto de `sgpla-web/`, con filtro `sgpla-web/**`.
+- `frontend-ci.yml` se ejecuta con cambios en `sgpla-web/**`; se agregó con la configuración inicial del frontend.
 - CORS en la API se configura desde settings (`Cors:OrigenesPermitidos`). En Development admite el origen del servidor de desarrollo del frontend.
 
 ### `sgpla-backend/`
