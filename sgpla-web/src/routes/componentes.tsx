@@ -1,6 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Copy, Mail, Plus, Search } from "lucide-react";
-import type { ReactNode } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Copy,
+  Folder,
+  Home,
+  Mail,
+  Plus,
+  Search,
+} from "lucide-react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +39,16 @@ const variantes = ["default", "secondary", "ghost", "destructive"] as const;
 
 const tamanos = ["sm", "default"] as const;
 const tamanosIcono = ["icon-xs", "icon-sm", "icon", "icon-lg"] as const;
+
+const rutaEjemplo = [
+  "Inicio",
+  "Ofertas educativas",
+  "Licenciaturas",
+  "Ingeniería de Software",
+  "Plan 2024",
+  "Programación",
+  "Horarios",
+] as const;
 
 function Componentes() {
   return (
@@ -206,7 +233,189 @@ function Componentes() {
           </InputGroup>
         </Subseccion>
       </Seccion>
+
+      <Seccion titulo="Breadcrumb">
+        <Subseccion titulo="Básico">
+          <Breadcrumb className="w-full max-w-lg">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="#inicio">Inicio</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbLink href="#ofertas">
+                  Ofertas educativas
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbPage>Programación</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </Subseccion>
+
+        <Subseccion titulo="Con ícono">
+          <Breadcrumb className="w-full max-w-lg">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="#inicio">
+                  <Home aria-hidden="true" />
+                  Inicio
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbLink href="#ofertas">
+                  Ofertas educativas
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbPage>Programación</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </Subseccion>
+
+        <Subseccion titulo="Separador personalizado">
+          <Breadcrumb className="w-full max-w-lg">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="#inicio">Inicio</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                <BreadcrumbLink href="#ofertas">
+                  Ofertas educativas
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                <BreadcrumbPage>Programación</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </Subseccion>
+
+        <Subseccion titulo="Colapsado (maxItems = 3)">
+          <Breadcrumb className="w-full max-w-lg">
+            <BreadcrumbList maxItems={3}>
+              {rutaEjemplo.map((etiqueta, indice) => (
+                <BreadcrumbItem key={etiqueta}>
+                  {indice > 0 && <BreadcrumbSeparator />}
+                  {indice === rutaEjemplo.length - 1 ? (
+                    <BreadcrumbPage>{etiqueta}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={`#${etiqueta.toLowerCase()}`}>
+                      {etiqueta}
+                    </BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </Subseccion>
+
+        <Subseccion titulo="Con enrutador">
+          <Breadcrumb className="w-full max-w-lg">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={(props) => <Link to="/" {...props} />}>
+                  Inicio
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbPage>Componentes</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </Subseccion>
+
+        <Subseccion titulo="Interactivo">
+          <BreadcrumbInteractivo />
+        </Subseccion>
+      </Seccion>
     </main>
+  );
+}
+
+function BreadcrumbInteractivo() {
+  const [profundidad, setProfundidad] = useState(5);
+  const paginaActual = useRef<HTMLSpanElement>(null);
+  const enfocarEn = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (enfocarEn.current === profundidad) {
+      paginaActual.current?.focus();
+      enfocarEn.current = null;
+    }
+  }, [profundidad]);
+
+  return (
+    <div className="w-full max-w-lg space-y-8">
+      <Breadcrumb className="min-h-[4.25rem] sm:min-h-8">
+        <BreadcrumbList maxItems={3}>
+          {rutaEjemplo.slice(0, profundidad + 1).map((etiqueta, indice) => (
+            <BreadcrumbItem key={etiqueta}>
+              {indice > 0 && <BreadcrumbSeparator />}
+              {indice === profundidad ? (
+                <BreadcrumbPage ref={paginaActual} tabIndex={-1}>
+                  {indice === 0 && <Home aria-hidden="true" />}
+                  {etiqueta}
+                </BreadcrumbPage>
+              ) : (
+                <BreadcrumbLink
+                  href={`#${etiqueta.toLowerCase()}`}
+                  onClick={(evento) => {
+                    if (
+                      evento.metaKey ||
+                      evento.ctrlKey ||
+                      evento.shiftKey ||
+                      evento.altKey ||
+                      evento.button !== 0
+                    )
+                      return;
+                    evento.preventDefault();
+                    enfocarEn.current = indice;
+                    setProfundidad(indice);
+                  }}
+                >
+                  {indice === 0 && <Home aria-hidden="true" />}
+                  {etiqueta}
+                </BreadcrumbLink>
+              )}
+            </BreadcrumbItem>
+          ))}
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="min-h-20 border-t pt-5">
+        {profundidad < rutaEjemplo.length - 1 ? (
+          <Button
+            variant="ghost"
+            className="h-auto w-full justify-start gap-3 border-border px-4 py-3 text-start"
+            onClick={() => {
+              enfocarEn.current = profundidad + 1;
+              setProfundidad((valor) =>
+                Math.min(valor + 1, rutaEjemplo.length - 1),
+              );
+            }}
+          >
+            <Folder aria-hidden="true" className="text-muted-foreground" />
+            <span className="flex-1">{rutaEjemplo[profundidad + 1]}</span>
+            <ArrowUpRight
+              aria-hidden="true"
+              className="text-muted-foreground"
+            />
+          </Button>
+        ) : (
+          <p className="py-3 text-center text-sm text-muted-foreground">
+            Elige una ruta superior para regresar.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
