@@ -77,8 +77,10 @@ services:
     volumes:
       - ./sgpla-web:/app
       - pnpm-store:/pnpm/store
+      - web-node-modules:/app/node_modules
 
 volumes:
   sqlserver-data:
   archivos-data:
   pnpm-store:
+  web-node-modules:

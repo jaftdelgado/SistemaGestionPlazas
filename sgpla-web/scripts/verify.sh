@@ -52,6 +52,7 @@ ${sin_conversion[@]+"${sin_conversion[@]}"} docker run --rm \
   -v "$RAIZ_HOST/sgpla-web:/src:ro" \
   -v "$RAIZ_HOST/.editorconfig:/.editorconfig:ro" \
   -v sgpla-pnpm-store:/pnpm/store \
+  -v sgpla-verify-node-modules:/w/app/node_modules \
   -e pnpm_config_store_dir=/pnpm/store \
   "$IMAGEN_NODE" sh -c "
     mkdir -p /w/app && cp /.editorconfig /w/ && cd /src &&
