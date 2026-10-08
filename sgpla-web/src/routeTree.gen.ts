@@ -9,12 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as PanelRouteImport } from './routes/_panel'
 import { Route as ComponentesRouteImport } from './routes/componentes'
+import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PanelRoute = PanelRouteImport.update({
+  id: '/_panel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComponentesRoute = ComponentesRouteImport.update({
@@ -22,40 +22,46 @@ const ComponentesRoute = ComponentesRouteImport.update({
   path: '/componentes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PanelIndexRoute = PanelIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PanelRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof PanelIndexRoute
   '/componentes': typeof ComponentesRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/componentes': typeof ComponentesRoute
+  '/': typeof PanelIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_panel': typeof PanelRouteWithChildren
   '/componentes': typeof ComponentesRoute
+  '/_panel/': typeof PanelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/componentes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/componentes'
-  id: '__root__' | '/' | '/componentes'
+  to: '/componentes' | '/'
+  id: '__root__' | '/_panel' | '/componentes' | '/_panel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  PanelRoute: typeof PanelRouteWithChildren
   ComponentesRoute: typeof ComponentesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_panel': {
+      id: '/_panel'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof PanelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/componentes': {
@@ -65,11 +71,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_panel/': {
+      id: '/_panel/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PanelIndexRouteImport
+      parentRoute: typeof PanelRoute
+    }
   }
 }
 
+interface PanelRouteChildren {
+  PanelIndexRoute: typeof PanelIndexRoute
+}
+
+const PanelRouteChildren: PanelRouteChildren = {
+  PanelIndexRoute: PanelIndexRoute,
+}
+
+const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  PanelRoute: PanelRouteWithChildren,
   ComponentesRoute: ComponentesRoute,
 }
 export const routeTree = rootRouteImport
