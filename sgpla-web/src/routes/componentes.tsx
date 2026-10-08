@@ -57,7 +57,7 @@ export const Route = createFileRoute("/componentes")({
 const variantes = ["default", "secondary", "ghost", "destructive"] as const;
 
 const tamanos = ["sm", "default"] as const;
-const tamanosIcono = ["icon-xs", "icon-sm", "icon", "icon-lg"] as const;
+const tamanosIcono = ["icon-sm", "icon"] as const;
 
 const rutaEjemplo = [
   "Inicio",
