@@ -8,6 +8,7 @@ import {
   Mail,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -28,6 +29,23 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SidebarDemo } from "./-sidebar-demo";
 
 // Página provisional de desarrollo: galería para probar y ajustar los componentes.
@@ -336,6 +354,81 @@ function Componentes() {
 
         <Subseccion titulo="Interactivo">
           <BreadcrumbInteractivo />
+        </Subseccion>
+      </Seccion>
+
+      <Seccion titulo="Tooltip">
+        <Subseccion titulo="Lados">
+          {(["top", "right", "bottom", "left"] as const).map((lado) => (
+            <Tooltip key={lado}>
+              <TooltipTrigger render={<Button variant="secondary" />}>
+                {lado}
+              </TooltipTrigger>
+              <TooltipContent side={lado}>Tooltip hacia {lado}</TooltipContent>
+            </Tooltip>
+          ))}
+        </Subseccion>
+
+        <Subseccion titulo="Con ícono">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button variant="ghost" size="icon" aria-label="Agregar" />
+              }
+            >
+              <Plus />
+            </TooltipTrigger>
+            <TooltipContent>Agregar elemento</TooltipContent>
+          </Tooltip>
+        </Subseccion>
+      </Seccion>
+
+      <Seccion titulo="Alert Dialog">
+        <Subseccion titulo="Predeterminado">
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button variant="secondary" />}>
+              Eliminar plan
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  ¿Eliminar el plan de estudios?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction variant="destructive">
+                  Eliminar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </Subseccion>
+
+        <Subseccion titulo="Tamaño sm con ícono">
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button variant="secondary" />}>
+              Descartar cambios
+            </AlertDialogTrigger>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogMedia>
+                  <Trash2 />
+                </AlertDialogMedia>
+                <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Se perderá lo que no hayas guardado.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Seguir editando</AlertDialogCancel>
+                <AlertDialogAction>Descartar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Subseccion>
       </Seccion>
 
