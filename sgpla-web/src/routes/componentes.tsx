@@ -28,6 +28,7 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
+import { SidebarDemo } from "./-sidebar-demo";
 
 // Página provisional de desarrollo: galería para probar y ajustar los componentes.
 // Cada componente nuevo agrega una <Seccion> con sus variantes y tamaños.
@@ -335,6 +336,12 @@ function Componentes() {
 
         <Subseccion titulo="Interactivo">
           <BreadcrumbInteractivo />
+        </Subseccion>
+      </Seccion>
+
+      <Seccion titulo="Sidebar">
+        <Subseccion titulo="Interactivo">
+          <SidebarDemo />
         </Subseccion>
       </Seccion>
     </main>
