@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
 import {
   Sidebar,
@@ -32,13 +33,25 @@ export function PanelSidebar() {
           <SidebarGroupLabel>General</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {elementos.map(({ id, titulo, icono: Icono }) => (
-                <SidebarMenuItem key={id}>
-                  <SidebarMenuButton isActive={id === activo} icon={<Icono />}>
-                    {titulo}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {elementos.map((elemento) => {
+                const { id, titulo, icono: Icono } = elemento;
+                const to = "to" in elemento ? elemento.to : undefined;
+                return (
+                  <SidebarMenuItem key={id}>
+                    <SidebarMenuButton
+                      isActive={id === activo}
+                      icon={<Icono />}
+                      render={
+                        to
+                          ? (props) => <Link to={to} {...props} />
+                          : undefined
+                      }
+                    >
+                      {titulo}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

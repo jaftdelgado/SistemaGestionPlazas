@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PanelRouteImport } from './routes/_panel'
 import { Route as ComponentesRouteImport } from './routes/componentes'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
+import { Route as PanelUsuariosRouteImport } from './routes/_panel/usuarios'
 
 const PanelRoute = PanelRouteImport.update({
   id: '/_panel',
@@ -27,27 +28,35 @@ const PanelIndexRoute = PanelIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PanelRoute,
 } as any)
+const PanelUsuariosRoute = PanelUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => PanelRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
   '/componentes': typeof ComponentesRoute
+  '/usuarios': typeof PanelUsuariosRoute
 }
 export interface FileRoutesByTo {
   '/componentes': typeof ComponentesRoute
+  '/usuarios': typeof PanelUsuariosRoute
   '/': typeof PanelIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_panel': typeof PanelRouteWithChildren
   '/componentes': typeof ComponentesRoute
+  '/_panel/usuarios': typeof PanelUsuariosRoute
   '/_panel/': typeof PanelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/componentes'
+  fullPaths: '/' | '/componentes' | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/componentes' | '/'
-  id: '__root__' | '/_panel' | '/componentes' | '/_panel/'
+  to: '/componentes' | '/usuarios' | '/'
+  id: '__root__' | '/_panel' | '/componentes' | '/_panel/usuarios' | '/_panel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -78,14 +87,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelIndexRouteImport
       parentRoute: typeof PanelRoute
     }
+    '/_panel/usuarios': {
+      id: '/_panel/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof PanelUsuariosRouteImport
+      parentRoute: typeof PanelRoute
+    }
   }
 }
 
 interface PanelRouteChildren {
+  PanelUsuariosRoute: typeof PanelUsuariosRoute
   PanelIndexRoute: typeof PanelIndexRoute
 }
 
 const PanelRouteChildren: PanelRouteChildren = {
+  PanelUsuariosRoute: PanelUsuariosRoute,
   PanelIndexRoute: PanelIndexRoute,
 }
 

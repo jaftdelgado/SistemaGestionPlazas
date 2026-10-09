@@ -4,6 +4,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { PanelBreadcrumb } from "../components/panel-breadcrumb";
 import { PanelSidebar } from "../components/panel-sidebar";
 
 export function PanelLayout() {
@@ -13,9 +14,7 @@ export function PanelLayout() {
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <span className="text-sm text-muted-foreground">
-            Sistema de Gestión de Plazas
-          </span>
+          <PanelBreadcrumb />
         </header>
         <div className="flex-1 p-6">
           <Outlet />
