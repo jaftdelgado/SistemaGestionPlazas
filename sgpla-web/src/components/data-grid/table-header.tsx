@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { SelectionCheckbox } from "./selection-checkbox";
+import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { type DataGridColumn } from "@/components/data-grid/types";
 

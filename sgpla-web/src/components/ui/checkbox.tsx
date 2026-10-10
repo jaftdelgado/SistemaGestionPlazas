@@ -54,7 +54,7 @@ function Checkbox({
         checked ? "checked" : indeterminate ? "indeterminate" : "unchecked"
       }
       className={cn(
-        "flex size-4 shrink-0 items-center justify-center rounded-sm border-[1.5px] outline-none transition-colors duration-200 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex size-4 shrink-0 items-center justify-center rounded-sm border-[1.5px] transition-colors duration-200 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
         showMark
           ? "border-primary bg-primary text-primary-foreground"
           : "border-ring bg-input",

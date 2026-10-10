@@ -7,6 +7,7 @@ interface SelectionCheckboxProps {
   tabIndex?: number;
   "aria-label": string;
   onToggle: (checked: boolean) => void;
+  onDragStart?: () => void;
 }
 
 // Todo el área de la celda activa el checkbox y su animación de presión.
@@ -16,6 +17,7 @@ function SelectionCheckbox({
   tabIndex,
   "aria-label": ariaLabel,
   onToggle,
+  onDragStart,
 }: SelectionCheckboxProps) {
   const [pressed, setPressed] = useState(false);
   const release = () => setPressed(false);
@@ -23,7 +25,10 @@ function SelectionCheckbox({
   return (
     <div
       className="flex h-10 w-full cursor-pointer items-center justify-center"
-      onPointerDown={() => setPressed(true)}
+      onPointerDown={(event) => {
+        setPressed(true);
+        if (event.button === 0) onDragStart?.();
+      }}
       onPointerUp={release}
       onPointerLeave={release}
       onPointerCancel={release}

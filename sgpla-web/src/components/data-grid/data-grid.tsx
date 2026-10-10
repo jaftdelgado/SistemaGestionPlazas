@@ -10,7 +10,9 @@ import {
   type EditingCell,
 } from "@/components/data-grid/types";
 import { useGridColumns } from "@/components/data-grid/use-grid-columns";
+import { useDragSelection } from "@/components/data-grid/use-drag-selection";
 import { useGridEditing } from "@/components/data-grid/use-grid-editing";
+import { useStableCallback } from "@/components/data-grid/use-stable-callback";
 import { Table } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
@@ -141,6 +143,13 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
     [onSelectedRowIdsChange, selectedRowIds],
   );
 
+  const startSelectionDrag = useDragSelection({
+    gridRef,
+    rows,
+    selectedRowIds,
+    onSelectedRowIdsChange,
+  });
+
   const toggleAllRows = React.useCallback(
     (checked: boolean) => {
       onSelectedRowIdsChange(checked ? rows.map((row) => row.id) : []);
@@ -245,6 +254,28 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
     closeDrawer,
   };
 
+  // Las filas están memoizadas: estos manejadores mantienen su identidad para que un cambio de selección,
+  // foco o edición solo renderice las filas afectadas. `renderCell` debe depender únicamente de `row` y `column`.
+  const stableGetRowLabel = useStableCallback(getRowLabel);
+  const stableRenderCell = useStableCallback(renderCell);
+  const stableRowKeyDown = useStableCallback(handleRowKeyDown);
+  const stableToggleRowSelection = useStableCallback(toggleRowSelection);
+  const stableStartSelectionDrag = useStableCallback(startSelectionDrag);
+  const stableCanEditColumn = useStableCallback(canEditColumn);
+  const stableStartEditing = useStableCallback(startEditing);
+  const stableSetDraftValue = useStableCallback(setDraftValue);
+  const stableCommitEdit = useStableCallback(commitEdit);
+  const stableCancelEdit = useStableCallback(cancelEdit);
+  const stableCanOpenDrawer = useStableCallback(canOpenDrawer);
+  const stableOpenDrawer = useStableCallback((cell: EditingCell<ColumnId>) => {
+    if (onOpenDrawerCell) {
+      onOpenDrawerCell(cell);
+      return;
+    }
+
+    setDrawerCell(cell);
+  });
+
   return (
     <DialogPrimitive.Root
       open={drawerCell !== null}
@@ -283,30 +314,24 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               rows={rows}
               columns={columns}
               columnWidths={columnWidths}
-              getRowLabel={getRowLabel}
-              renderCell={renderCell}
+              getRowLabel={stableGetRowLabel}
+              renderCell={stableRenderCell}
               activeRowId={activeRowId}
               onActiveRowChange={setFocusedRowId}
-              onRowKeyDown={handleRowKeyDown}
+              onRowKeyDown={stableRowKeyDown}
               selectedRowIds={selectedRowIdSet}
-              onToggleRowSelection={toggleRowSelection}
+              onToggleRowSelection={stableToggleRowSelection}
+              onSelectionDragStart={stableStartSelectionDrag}
               editingCell={editingCell}
-              canEditColumn={canEditColumn}
-              startEditing={startEditing}
+              canEditColumn={stableCanEditColumn}
+              startEditing={stableStartEditing}
               inputRef={inputRef}
               draftValue={draftValue}
-              setDraftValue={setDraftValue}
-              commitEdit={commitEdit}
-              cancelEdit={cancelEdit}
-              canOpenDrawer={canOpenDrawer}
-              onOpenDrawer={(cell) => {
-                if (onOpenDrawerCell) {
-                  onOpenDrawerCell(cell);
-                  return;
-                }
-
-                setDrawerCell(cell);
-              }}
+              setDraftValue={stableSetDraftValue}
+              commitEdit={stableCommitEdit}
+              cancelEdit={stableCancelEdit}
+              canOpenDrawer={stableCanOpenDrawer}
+              onOpenDrawer={stableOpenDrawer}
             />
           </Table>
         </div>
