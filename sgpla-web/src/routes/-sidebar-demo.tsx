@@ -1,13 +1,13 @@
 import {
-  Bell,
-  BookOpen,
-  GraduationCap,
-  Home,
-  MoreHorizontal,
-  Pencil,
-  Settings,
-  Trash2,
-} from "lucide-react";
+  AlertRegular,
+  BookOpenRegular,
+  HatGraduationRegular,
+  HomeRegular,
+  MoreHorizontalRegular,
+  EditRegular,
+  SettingsRegular,
+  DeleteRegular,
+} from "@fluentui/react-icons";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,7 +95,7 @@ export function SidebarDemo() {
             <SidebarHeader>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton size="lg" icon={<GraduationCap />}>
+                  <SidebarMenuButton size="lg" icon={<HatGraduationRegular />}>
                     SGPLa
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -107,19 +107,22 @@ export function SidebarDemo() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton isActive icon={<Home />}>
+                      <SidebarMenuButton isActive icon={<HomeRegular />}>
                         Inicio
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton icon={<Bell />} status="unread">
+                      <SidebarMenuButton
+                        icon={<AlertRegular />}
+                        status="unread"
+                      >
                         Notificaciones
                       </SidebarMenuButton>
                       <SidebarMenuBadge>12</SidebarMenuBadge>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        icon={<BookOpen />}
+                        icon={<BookOpenRegular />}
                         aria-expanded={ofertasAbierto}
                         onClick={() => setOfertasAbierto((valor) => !valor)}
                       >
@@ -127,13 +130,13 @@ export function SidebarDemo() {
                       </SidebarMenuButton>
                       <SidebarMenuActions showOnHover>
                         <SidebarMenuAction aria-label="Editar">
-                          <Pencil />
+                          <EditRegular />
                         </SidebarMenuAction>
                         <SidebarMenuAction aria-label="Eliminar">
-                          <Trash2 />
+                          <DeleteRegular />
                         </SidebarMenuAction>
                         <SidebarMenuAction aria-label="Más">
-                          <MoreHorizontal />
+                          <MoreHorizontalRegular />
                         </SidebarMenuAction>
                       </SidebarMenuActions>
                       <SidebarMenuSub open={ofertasAbierto}>
@@ -168,7 +171,7 @@ export function SidebarDemo() {
             <SidebarFooter>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton icon={<Settings />} status="idle">
+                  <SidebarMenuButton icon={<SettingsRegular />} status="idle">
                     Configuración
                   </SidebarMenuButton>
                 </SidebarMenuItem>

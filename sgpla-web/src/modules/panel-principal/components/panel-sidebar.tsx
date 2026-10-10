@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { GraduationCap } from "lucide-react";
+import { HatGraduationRegular } from "@fluentui/react-icons";
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +22,7 @@ export function PanelSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" icon={<GraduationCap />}>
+            <SidebarMenuButton size="lg" icon={<HatGraduationRegular />}>
               SGPLa
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -42,9 +42,7 @@ export function PanelSidebar() {
                       isActive={id === activo}
                       icon={<Icono />}
                       render={
-                        to
-                          ? (props) => <Link to={to} {...props} />
-                          : undefined
+                        to ? (props) => <Link to={to} {...props} /> : undefined
                       }
                     >
                       {titulo}

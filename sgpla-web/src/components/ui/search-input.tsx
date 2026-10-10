@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { SearchRegular } from "@fluentui/react-icons";
 import type { ComponentPropsWithRef } from "react";
 import {
   InputGroup,
@@ -14,7 +14,7 @@ export function SearchInput({ className, size, ...props }: SearchInputProps) {
   return (
     <InputGroup data-slot="search-input" size={size} className={className}>
       <InputGroupAddon>
-        <Search aria-hidden="true" />
+        <SearchRegular aria-hidden="true" />
       </InputGroupAddon>
       <InputGroupInput type="search" {...props} />
     </InputGroup>

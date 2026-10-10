@@ -1,11 +1,16 @@
 import { useRouterState } from "@tanstack/react-router";
-import { BookOpen, Home, Settings, Users } from "lucide-react";
+import {
+  BookOpenRegular,
+  HomeRegular,
+  SettingsRegular,
+  PeopleRegular,
+} from "@fluentui/react-icons";
 
 export const elementosNavegacion = [
-  { id: "inicio", titulo: "Inicio", icono: Home, to: "/" },
-  { id: "ofertas", titulo: "Ofertas educativas", icono: BookOpen },
-  { id: "usuarios", titulo: "Usuarios", icono: Users, to: "/usuarios" },
-  { id: "configuracion", titulo: "Configuración", icono: Settings },
+  { id: "inicio", titulo: "Inicio", icono: HomeRegular, to: "/" },
+  { id: "ofertas", titulo: "Ofertas educativas", icono: BookOpenRegular },
+  { id: "usuarios", titulo: "Usuarios", icono: PeopleRegular, to: "/usuarios" },
+  { id: "configuracion", titulo: "Configuración", icono: SettingsRegular },
 ] as const;
 
 // Los elementos sin `to` esperan a que exista su módulo.
