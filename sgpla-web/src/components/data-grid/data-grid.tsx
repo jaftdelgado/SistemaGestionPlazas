@@ -1,0 +1,329 @@
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import * as React from "react";
+import { DrawerPanel } from "@/components/data-grid/drawer-panel";
+import { DataGridTableBody } from "@/components/data-grid/table-body";
+import { DataGridTableHeader } from "@/components/data-grid/table-header";
+import {
+  type DataGridDrawerPanelProps,
+  type DataGridProps,
+  type DataGridRowBase,
+  type EditingCell,
+} from "@/components/data-grid/types";
+import { useGridColumns } from "@/components/data-grid/use-grid-columns";
+import { useGridEditing } from "@/components/data-grid/use-grid-editing";
+import { Table } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+
+export type {
+  DataGridColumn,
+  DataGridDrawerPanelProps,
+  DataGridIcon,
+  DataGridProps,
+  DataGridRowBase,
+  EditingCell,
+} from "@/components/data-grid/types";
+
+const MIN_COLUMN_WIDTH = 96;
+const CONTROL_COLUMN_WIDTH = 40;
+
+function isEmptyValue(value: React.ReactNode) {
+  if (value === null || value === undefined) return true;
+  if (typeof value === "string") return value.trim().length === 0;
+  return false;
+}
+
+function neverEditable() {
+  return false;
+}
+
+function alwaysOpenDrawer() {
+  return true;
+}
+
+export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
+  rows,
+  columns,
+  getRowLabel,
+  renderCell,
+  selectedRowIds,
+  onSelectedRowIdsChange,
+  isEditableColumn = neverEditable,
+  getCellEditValue,
+  applyCellEdit,
+  onRowsChange,
+  getDrawerCellValue,
+  canOpenDrawer = alwaysOpenDrawer,
+  renderDrawerPanel,
+  onOpenDrawerCell,
+  drawerModal = false,
+  disablePointerDismissal = true,
+  fillAvailableHeight = false,
+  tableContainerClassName,
+}: DataGridProps<Row, ColumnId>) {
+  const [drawerCell, setDrawerCell] =
+    React.useState<EditingCell<ColumnId> | null>(null);
+  const [focusedRowId, setFocusedRowId] = React.useState<string | null>(null);
+
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const { columnWidths, gridMinWidth, beginResize } = useGridColumns({
+    columns,
+    minColumnWidth: MIN_COLUMN_WIDTH,
+    controlColumnWidth: CONTROL_COLUMN_WIDTH,
+  });
+
+  const drawerRow = React.useMemo(() => {
+    if (!drawerCell) return null;
+    return rows.find((row) => row.id === drawerCell.rowId) ?? null;
+  }, [drawerCell, rows]);
+
+  const drawerRowIndex = React.useMemo(() => {
+    if (!drawerRow) return -1;
+    return rows.findIndex((row) => row.id === drawerRow.id);
+  }, [drawerRow, rows]);
+
+  const drawerColumn = React.useMemo(() => {
+    if (!drawerCell) return null;
+    return columns.find((column) => column.id === drawerCell.columnId) ?? null;
+  }, [columns, drawerCell]);
+
+  const drawerCellValue = React.useMemo(() => {
+    if (!drawerCell || !drawerRow) return null;
+    return getDrawerCellValue(drawerRow, drawerCell.columnId);
+  }, [drawerCell, drawerRow, getDrawerCellValue]);
+
+  const commitRows = React.useCallback(
+    (updater: (currentRows: Row[]) => Row[]) => {
+      const nextRows = updater(rows);
+      onRowsChange?.(nextRows);
+    },
+    [onRowsChange, rows],
+  );
+
+  const {
+    editingCell,
+    draftValue,
+    setDraftValue,
+    canEditColumn,
+    startEditing,
+    commitEdit,
+    cancelEdit,
+  } = useGridEditing<Row, ColumnId>({
+    inputRef,
+    isEditableColumn,
+    getCellEditValue,
+    applyCellEdit,
+    commitRows,
+  });
+
+  const closeDrawer = React.useCallback(() => {
+    setDrawerCell(null);
+  }, []);
+
+  const selectedRowIdSet = React.useMemo(
+    () => new Set(selectedRowIds),
+    [selectedRowIds],
+  );
+
+  const toggleRowSelection = React.useCallback(
+    (rowId: string, checked: boolean) => {
+      if (checked) {
+        if (selectedRowIds.includes(rowId)) return;
+        onSelectedRowIdsChange([...selectedRowIds, rowId]);
+        return;
+      }
+
+      onSelectedRowIdsChange(
+        selectedRowIds.filter((currentRowId) => currentRowId !== rowId),
+      );
+    },
+    [onSelectedRowIdsChange, selectedRowIds],
+  );
+
+  const toggleAllRows = React.useCallback(
+    (checked: boolean) => {
+      onSelectedRowIdsChange(checked ? rows.map((row) => row.id) : []);
+    },
+    [onSelectedRowIdsChange, rows],
+  );
+
+  // La selección es del consumidor y puede incluir filas que ya no están: el encabezado solo cuenta las visibles.
+  const selectedVisibleRowCount = rows.filter((row) =>
+    selectedRowIdSet.has(row.id),
+  ).length;
+  const allRowsSelected =
+    rows.length > 0 && selectedVisibleRowCount === rows.length;
+  const someRowsSelected = selectedVisibleRowCount > 0 && !allRowsSelected;
+
+  // Siempre hay una fila en el orden de tabulación: la última enfocada o, si ya no existe, la primera.
+  const activeRowId =
+    focusedRowId !== null && rows.some((row) => row.id === focusedRowId)
+      ? focusedRowId
+      : (rows[0]?.id ?? null);
+
+  const focusRow = React.useCallback((rowIndex: number) => {
+    const targetRow = gridRef.current?.querySelector<HTMLElement>(
+      `[data-grid-row="true"][data-row-index="${rowIndex}"]`,
+    );
+    targetRow?.focus();
+  }, []);
+
+  const handleRowKeyDown = React.useCallback(
+    (
+      event: React.KeyboardEvent<HTMLTableRowElement>,
+      row: Row,
+      rowIndex: number,
+    ) => {
+      // Las teclas de la fila no aplican cuando el foco está en un control interno (casilla, botón o input).
+      if (event.target !== event.currentTarget) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        focusRow(Math.min(rowIndex + 1, rows.length - 1));
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        focusRow(Math.max(rowIndex - 1, 0));
+        return;
+      }
+
+      if (event.key === " ") {
+        event.preventDefault();
+        toggleRowSelection(row.id, !selectedRowIdSet.has(row.id));
+      }
+    },
+    [focusRow, rows.length, selectedRowIdSet, toggleRowSelection],
+  );
+
+  const updateRow = React.useCallback(
+    (rowId: string, updater: (row: Row) => Row) => {
+      commitRows((currentRows) =>
+        currentRows.map((row) => (row.id === rowId ? updater(row) : row)),
+      );
+    },
+    [commitRows],
+  );
+
+  const openDrawerRowAt = React.useCallback(
+    (rowIndex: number) => {
+      if (!drawerCell) return;
+
+      const nextRow = rows[rowIndex];
+      if (!nextRow) return;
+
+      setDrawerCell({
+        rowId: nextRow.id,
+        columnId: drawerCell.columnId,
+      });
+    },
+    [drawerCell, rows],
+  );
+
+  const openPreviousRow = React.useCallback(() => {
+    openDrawerRowAt(drawerRowIndex - 1);
+  }, [drawerRowIndex, openDrawerRowAt]);
+
+  const openNextRow = React.useCallback(() => {
+    openDrawerRowAt(drawerRowIndex + 1);
+  }, [drawerRowIndex, openDrawerRowAt]);
+
+  const drawerPanelProps: DataGridDrawerPanelProps<Row, ColumnId> = {
+    drawerRow,
+    drawerRowIndex,
+    drawerRowCount: rows.length,
+    drawerColumn,
+    drawerCellValue,
+    getRowLabel,
+    isEditableColumn: canEditColumn,
+    isEmptyValue,
+    updateRow,
+    openPreviousRow,
+    openNextRow,
+    closeDrawer,
+  };
+
+  return (
+    <DialogPrimitive.Root
+      open={drawerCell !== null}
+      modal={drawerModal}
+      disablePointerDismissal={disablePointerDismissal}
+      onOpenChange={(open) => {
+        if (!open) closeDrawer();
+      }}
+    >
+      <div
+        data-slot="data-grid"
+        className={cn("min-h-0", fillAvailableHeight && "flex h-full flex-col")}
+        ref={gridRef}
+      >
+        <div className={cn(fillAvailableHeight && "min-h-0 flex-1")}>
+          <Table
+            className="table-fixed"
+            containerClassName={cn(
+              "rounded-2xl border border-transparent bg-card shadow-border",
+              fillAvailableHeight && "h-full",
+              tableContainerClassName,
+            )}
+            style={{ width: `max(100%, ${gridMinWidth}px)` }}
+          >
+            <DataGridTableHeader
+              columns={columns}
+              columnWidths={columnWidths}
+              controlColumnWidth={CONTROL_COLUMN_WIDTH}
+              allRowsSelected={allRowsSelected}
+              someRowsSelected={someRowsSelected}
+              onToggleAllRows={toggleAllRows}
+              onResizeStart={beginResize}
+            />
+
+            <DataGridTableBody
+              rows={rows}
+              columns={columns}
+              columnWidths={columnWidths}
+              getRowLabel={getRowLabel}
+              renderCell={renderCell}
+              activeRowId={activeRowId}
+              onActiveRowChange={setFocusedRowId}
+              onRowKeyDown={handleRowKeyDown}
+              selectedRowIds={selectedRowIdSet}
+              onToggleRowSelection={toggleRowSelection}
+              editingCell={editingCell}
+              canEditColumn={canEditColumn}
+              startEditing={startEditing}
+              inputRef={inputRef}
+              draftValue={draftValue}
+              setDraftValue={setDraftValue}
+              commitEdit={commitEdit}
+              cancelEdit={cancelEdit}
+              canOpenDrawer={canOpenDrawer}
+              onOpenDrawer={(cell) => {
+                if (onOpenDrawerCell) {
+                  onOpenDrawerCell(cell);
+                  return;
+                }
+
+                setDrawerCell(cell);
+              }}
+            />
+          </Table>
+        </div>
+      </div>
+
+      {renderDrawerPanel ? (
+        renderDrawerPanel(drawerPanelProps)
+      ) : (
+        <DrawerPanel
+          drawerRow={drawerRow}
+          drawerColumn={drawerColumn}
+          drawerCellValue={drawerCellValue}
+          getRowLabel={getRowLabel}
+          isEditableColumn={canEditColumn}
+          isEmptyValue={isEmptyValue}
+        />
+      )}
+    </DialogPrimitive.Root>
+  );
+}
