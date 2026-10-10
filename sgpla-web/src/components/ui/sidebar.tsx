@@ -1,7 +1,11 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cva } from "class-variance-authority";
-import { ChevronRight, PanelLeft, PanelRight } from "lucide-react";
+import {
+  ChevronRightRegular,
+  PanelLeftRegular,
+  PanelRightRegular,
+} from "@fluentui/react-icons";
 import {
   Children,
   createContext,
@@ -525,7 +529,7 @@ export function SidebarTrigger({
   ...props
 }: ComponentProps<typeof Button>) {
   const { toggle, open, openMobile, isMobile, side } = useSidebar();
-  const Icon = side === "right" ? PanelRight : PanelLeft;
+  const Icon = side === "right" ? PanelRightRegular : PanelLeftRegular;
   return (
     <Button
       data-slot="sidebar-trigger"
@@ -721,7 +725,7 @@ export function SidebarGroupLabel({
       )}
     >
       <span className="min-w-0 flex-1 truncate text-start">{children}</span>
-      <ChevronRight
+      <ChevronRightRegular
         aria-hidden="true"
         className={cn(
           "size-3.5 shrink-0 transition-[transform,opacity] duration-200 group-hover/group-label:opacity-100 group-focus-visible/group-label:opacity-100 motion-reduce:transition-none",

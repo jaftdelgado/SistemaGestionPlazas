@@ -27,11 +27,11 @@ async function renderizarEn(ruta: string) {
   );
 }
 
-it("muestra el encabezado en la ruta raíz", async () => {
+it("muestra el panel principal en la ruta raíz", async () => {
   await renderizarEn("/");
 
   expect(
-    await screen.findByRole("heading", { name: "SGPLa" }),
+    await screen.findByRole("heading", { name: "Panel principal" }),
   ).toBeInTheDocument();
 });
 

@@ -1,4 +1,7 @@
-import { ChevronRight, Ellipsis } from "lucide-react";
+import {
+  ChevronRightRegular,
+  MoreHorizontalRegular,
+} from "@fluentui/react-icons";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -222,7 +225,7 @@ export function BreadcrumbSeparator({
         className,
       )}
     >
-      {children ?? <ChevronRight />}
+      {children ?? <ChevronRightRegular />}
     </span>
   );
 }
@@ -346,7 +349,7 @@ export function BreadcrumbEllipsis({
               }
             }}
           >
-            <Ellipsis aria-hidden="true" className="size-4" />
+            <MoreHorizontalRegular aria-hidden="true" className="size-4" />
           </button>
         </MorphPopoverTrigger>
         <MorphPopoverContent

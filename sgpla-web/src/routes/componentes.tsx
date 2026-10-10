@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ArrowRight,
-  ArrowUpRight,
-  Copy,
-  Folder,
-  Home,
-  Mail,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
+  ArrowRightRegular,
+  ArrowUpRightRegular,
+  CopyRegular,
+  FolderRegular,
+  HomeRegular,
+  MailRegular,
+  AddRegular,
+  SearchRegular,
+  DeleteRegular,
+} from "@fluentui/react-icons";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   Breadcrumb,
@@ -104,19 +104,19 @@ function Componentes() {
               variant="secondary"
               aria-label={tamano}
             >
-              <Plus />
+              <AddRegular />
             </Button>
           ))}
         </Subseccion>
 
         <Subseccion titulo="Con ícono">
           <Button>
-            <Plus data-icon="inline-start" />
+            <AddRegular data-icon="inline-start" />
             Agregar
           </Button>
           <Button variant="secondary">
             Siguiente
-            <ArrowRight data-icon="inline-end" />
+            <ArrowRightRegular data-icon="inline-end" />
           </Button>
         </Subseccion>
 
@@ -164,7 +164,7 @@ function Componentes() {
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Buscar..." />
             <InputGroupAddon>
-              <Search />
+              <SearchRegular />
             </InputGroupAddon>
           </InputGroup>
         </Subseccion>
@@ -173,7 +173,7 @@ function Componentes() {
           <InputGroup className="max-w-xs">
             <InputGroupInput type="email" placeholder="Correo" />
             <InputGroupAddon align="inline-end">
-              <Mail />
+              <MailRegular />
             </InputGroupAddon>
           </InputGroup>
         </Subseccion>
@@ -213,7 +213,7 @@ function Componentes() {
             <InputGroupInput defaultValue="https://uv.mx" readOnly />
             <InputGroupAddon align="inline-end">
               <InputGroupButton size="icon-xs" aria-label="Copiar">
-                <Copy />
+                <CopyRegular />
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
@@ -241,13 +241,13 @@ function Componentes() {
           <InputGroup className="max-w-xs" data-disabled="true">
             <InputGroupInput placeholder="Deshabilitado" disabled />
             <InputGroupAddon>
-              <Search />
+              <SearchRegular />
             </InputGroupAddon>
           </InputGroup>
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Inválido" aria-invalid />
             <InputGroupAddon>
-              <Search />
+              <SearchRegular />
             </InputGroupAddon>
           </InputGroup>
         </Subseccion>
@@ -279,7 +279,7 @@ function Componentes() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink href="#inicio">
-                  <Home aria-hidden="true" />
+                  <HomeRegular aria-hidden="true" />
                   Inicio
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -376,7 +376,7 @@ function Componentes() {
                 <Button variant="ghost" size="icon" aria-label="Agregar" />
               }
             >
-              <Plus />
+              <AddRegular />
             </TooltipTrigger>
             <TooltipContent>Agregar elemento</TooltipContent>
           </Tooltip>
@@ -416,7 +416,7 @@ function Componentes() {
             <AlertDialogContent size="sm">
               <AlertDialogHeader>
                 <AlertDialogMedia>
-                  <Trash2 />
+                  <DeleteRegular />
                 </AlertDialogMedia>
                 <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -462,7 +462,7 @@ function BreadcrumbInteractivo() {
               {indice > 0 && <BreadcrumbSeparator />}
               {indice === profundidad ? (
                 <BreadcrumbPage ref={paginaActual} tabIndex={-1}>
-                  {indice === 0 && <Home aria-hidden="true" />}
+                  {indice === 0 && <HomeRegular aria-hidden="true" />}
                   {etiqueta}
                 </BreadcrumbPage>
               ) : (
@@ -482,7 +482,7 @@ function BreadcrumbInteractivo() {
                     setProfundidad(indice);
                   }}
                 >
-                  {indice === 0 && <Home aria-hidden="true" />}
+                  {indice === 0 && <HomeRegular aria-hidden="true" />}
                   {etiqueta}
                 </BreadcrumbLink>
               )}
@@ -502,9 +502,12 @@ function BreadcrumbInteractivo() {
               );
             }}
           >
-            <Folder aria-hidden="true" className="text-muted-foreground" />
+            <FolderRegular
+              aria-hidden="true"
+              className="text-muted-foreground"
+            />
             <span className="flex-1">{rutaEjemplo[profundidad + 1]}</span>
-            <ArrowUpRight
+            <ArrowUpRightRegular
               aria-hidden="true"
               className="text-muted-foreground"
             />
