@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 
 export type PageHeaderProps = ComponentPropsWithRef<"header">;
 
-/** Encabezado de página: el título a la izquierda y las acciones a la derecha. */
 export function PageHeader({ className, ...props }: PageHeaderProps) {
   return (
     <header
@@ -25,7 +24,7 @@ export function PageHeaderTitle({ className, ...props }: PageHeaderTitleProps) {
       data-slot="page-header-title"
       {...props}
       className={cn(
-        "min-w-0 text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] text-foreground",
+        "min-w-0 text-3xl font-medium tracking-tight wrap-anywhere text-foreground",
         className,
       )}
     />
@@ -34,7 +33,6 @@ export function PageHeaderTitle({ className, ...props }: PageHeaderTitleProps) {
 
 export type PageHeaderActionsProps = ComponentPropsWithRef<"div">;
 
-/** Contenedor de las acciones de la página (botones, menús…), alineado a la derecha. */
 export function PageHeaderActions({
   className,
   ...props

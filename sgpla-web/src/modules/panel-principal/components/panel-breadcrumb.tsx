@@ -23,7 +23,8 @@ export function PanelBreadcrumb() {
             Inicio
           </BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbItem>
+        {/* La key por ruta hace que el item saliente y el entrante se animen al navegar. */}
+        <BreadcrumbItem key={activo}>
           <BreadcrumbSeparator />
           <BreadcrumbPage>{pagina}</BreadcrumbPage>
         </BreadcrumbItem>
