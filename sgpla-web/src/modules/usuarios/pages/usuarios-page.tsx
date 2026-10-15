@@ -1,4 +1,5 @@
 import {
+  CheckmarkCircleRegular,
   MailRegular,
   PersonRegular,
   ShieldRegular,
@@ -31,7 +32,13 @@ const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
   { id: "nombre", label: "Nombre", icon: PersonRegular, defaultWidth: 260 },
   { id: "correo", label: "Correo", icon: MailRegular, defaultWidth: 280 },
   { id: "rol", label: "Rol", icon: ShieldRegular, defaultWidth: 200 },
-  { id: "estado", label: "Estado", defaultWidth: 140, minWidth: 120 },
+  {
+    id: "estado",
+    label: "Estado",
+    icon: CheckmarkCircleRegular,
+    defaultWidth: 140,
+    minWidth: 120,
+  },
 ];
 
 const USUARIOS_EJEMPLO: UsuarioEjemplo[] = [

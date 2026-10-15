@@ -11,7 +11,7 @@ export type DataGridRowBase = {
 export type DataGridColumn<ColumnId extends string> = {
   id: ColumnId;
   label: string;
-  icon?: DataGridIcon;
+  icon: DataGridIcon;
   defaultWidth: number;
   minWidth?: number;
 };

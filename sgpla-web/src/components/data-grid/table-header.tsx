@@ -36,7 +36,7 @@ export function DataGridTableHeader<ColumnId extends string>({
 
       <TableHeader>
         <TableRow>
-          <TableHead className="h-10 w-10 border-r px-0 text-center">
+          <TableHead className="h-10 w-10 border-r bg-table-header px-0 text-center">
             <SelectionCheckbox
               aria-label="Seleccionar todas las filas"
               checked={allRowsSelected}
@@ -51,13 +51,11 @@ export function DataGridTableHeader<ColumnId extends string>({
             return (
               <TableHead
                 key={column.id}
-                className="relative h-10 overflow-hidden border-r px-2 text-sm"
+                className="relative h-10 overflow-hidden border-r bg-table-header px-2 text-sm"
                 style={{ width, minWidth: width }}
               >
                 <span className="flex min-w-0 items-center gap-1.5 leading-none">
-                  {Icon ? (
-                    <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                  ) : null}
+                  <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="truncate">{column.label}</span>
                 </span>
                 <button
