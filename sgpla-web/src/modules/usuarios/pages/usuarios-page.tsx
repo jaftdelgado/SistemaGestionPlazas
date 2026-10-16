@@ -16,6 +16,7 @@ import {
 } from "@/components/page-header/page-header";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+import { PaginationSummary } from "@/components/ui/pagination-summary";
 import { SearchInput } from "@/components/ui/search-input";
 
 // Datos de ejemplo para verificar el DataGrid a mano; se sustituyen por la consulta real de usuarios.
@@ -104,7 +105,7 @@ const USUARIOS_RELLENO: UsuarioEjemplo[] = Array.from(
 
 const TODOS_LOS_USUARIOS = [...USUARIOS_EJEMPLO, ...USUARIOS_RELLENO];
 
-const TAMANO_PAGINA = 4;
+const TAMANO_PAGINA_INICIAL = 10;
 
 function esColumnaEditable(columnId: ColumnaUsuario) {
   return columnId === "nombre";
@@ -130,17 +131,26 @@ export function UsuariosPage() {
   const [usuarios, setUsuarios] = React.useState(TODOS_LOS_USUARIOS);
   const [seleccionados, setSeleccionados] = React.useState<string[]>([]);
   const [pagina, setPagina] = React.useState(1);
+  const [tamanoPagina, setTamanoPagina] = React.useState(
+    TAMANO_PAGINA_INICIAL,
+  );
 
-  const totalPaginas = Math.ceil(usuarios.length / TAMANO_PAGINA);
-  const inicio = (pagina - 1) * TAMANO_PAGINA;
-  const usuariosDePagina = usuarios.slice(inicio, inicio + TAMANO_PAGINA);
+  const totalPaginas = Math.ceil(usuarios.length / tamanoPagina);
+  const inicio = (pagina - 1) * tamanoPagina;
+  const usuariosDePagina = usuarios.slice(inicio, inicio + tamanoPagina);
+
+  // Al cambiar el tamaño, la página actual podría no existir; se vuelve a la primera.
+  function cambiarTamanoPagina(tamano: number) {
+    setTamanoPagina(tamano);
+    setPagina(1);
+  }
 
   // El grid devuelve solo las filas de la página; se reinsertan en su posición.
   function aplicarFilasDePagina(filas: UsuarioEjemplo[]) {
     setUsuarios((actuales) => [
       ...actuales.slice(0, inicio),
       ...filas,
-      ...actuales.slice(inicio + TAMANO_PAGINA),
+      ...actuales.slice(inicio + tamanoPagina),
     ]);
   }
 
@@ -174,12 +184,18 @@ export function UsuariosPage() {
         getDrawerCellValue={valorDeCelda}
         canOpenDrawer={abreDetalle}
       />
-      <Pagination
-        page={pagina}
-        pageCount={totalPaginas}
-        onPageChange={setPagina}
-        className="justify-end"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <PaginationSummary
+          pageSize={tamanoPagina}
+          total={usuarios.length}
+          onPageSizeChange={cambiarTamanoPagina}
+        />
+        <Pagination
+          page={pagina}
+          pageCount={totalPaginas}
+          onPageChange={setPagina}
+        />
+      </div>
     </section>
   );
 }

@@ -74,11 +74,11 @@ function Pagination({
   return (
     <nav
       aria-label={label}
-      className={cn("flex flex-wrap items-center", className)}
+      className={cn("flex flex-wrap items-center gap-1", className)}
     >
       <Button
         variant="ghost"
-        size="default"
+        size="sm"
         aria-label="Página anterior"
         disabled={actual === 1}
         onClick={() => onPageChange(actual - 1)}
@@ -94,7 +94,7 @@ function Pagination({
                 <span
                   key={clave}
                   aria-hidden
-                  className="flex size-10 items-center justify-center text-muted-foreground"
+                  className="flex size-8 items-center justify-center text-muted-foreground"
                 >
                   …
                 </span>
@@ -105,7 +105,7 @@ function Pagination({
               <Button
                 key={clave}
                 variant="ghost"
-                size="icon"
+                size="icon-sm"
                 aria-label={`Página ${numero}`}
                 aria-current={esActual ? "page" : undefined}
                 onClick={() => onPageChange(numero)}
@@ -133,7 +133,7 @@ function Pagination({
       </LayoutGroup>
       <Button
         variant="ghost"
-        size="default"
+        size="sm"
         aria-label="Página siguiente"
         disabled={actual === pageCount}
         onClick={() => onPageChange(actual + 1)}
