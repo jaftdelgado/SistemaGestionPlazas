@@ -15,6 +15,7 @@ import {
   PageHeaderTitle,
 } from "@/components/page-header/page-header";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
 
 // Datos de ejemplo para verificar el DataGrid a mano; se sustituyen por la consulta real de usuarios.
@@ -86,6 +87,25 @@ const USUARIOS_EJEMPLO: UsuarioEjemplo[] = [
   },
 ];
 
+// Relleno temporal para probar la paginación con muchas páginas.
+const USUARIOS_RELLENO: UsuarioEjemplo[] = Array.from(
+  { length: 94 },
+  (_, i) => {
+    const base = USUARIOS_EJEMPLO[i % USUARIOS_EJEMPLO.length];
+    const numero = i + 7;
+    return {
+      ...base,
+      id: String(numero),
+      nombre: `${base.nombre} ${numero}`,
+      correo: `usuario${numero}@uv.mx`,
+    };
+  },
+);
+
+const TODOS_LOS_USUARIOS = [...USUARIOS_EJEMPLO, ...USUARIOS_RELLENO];
+
+const TAMANO_PAGINA = 4;
+
 function esColumnaEditable(columnId: ColumnaUsuario) {
   return columnId === "nombre";
 }
@@ -107,8 +127,22 @@ function aplicarEdicion(
 }
 
 export function UsuariosPage() {
-  const [usuarios, setUsuarios] = React.useState(USUARIOS_EJEMPLO);
+  const [usuarios, setUsuarios] = React.useState(TODOS_LOS_USUARIOS);
   const [seleccionados, setSeleccionados] = React.useState<string[]>([]);
+  const [pagina, setPagina] = React.useState(1);
+
+  const totalPaginas = Math.ceil(usuarios.length / TAMANO_PAGINA);
+  const inicio = (pagina - 1) * TAMANO_PAGINA;
+  const usuariosDePagina = usuarios.slice(inicio, inicio + TAMANO_PAGINA);
+
+  // El grid devuelve solo las filas de la página; se reinsertan en su posición.
+  function aplicarFilasDePagina(filas: UsuarioEjemplo[]) {
+    setUsuarios((actuales) => [
+      ...actuales.slice(0, inicio),
+      ...filas,
+      ...actuales.slice(inicio + TAMANO_PAGINA),
+    ]);
+  }
 
   return (
     <section className="flex flex-col gap-4">
@@ -127,7 +161,7 @@ export function UsuariosPage() {
         {seleccionados.length} de {usuarios.length} seleccionados
       </p>
       <DataGrid
-        rows={usuarios}
+        rows={usuariosDePagina}
         columns={COLUMNAS}
         getRowLabel={(usuario) => usuario.nombre}
         renderCell={(usuario, columna) => usuario[columna.id]}
@@ -136,9 +170,15 @@ export function UsuariosPage() {
         isEditableColumn={esColumnaEditable}
         getCellEditValue={valorDeCelda}
         applyCellEdit={aplicarEdicion}
-        onRowsChange={setUsuarios}
+        onRowsChange={aplicarFilasDePagina}
         getDrawerCellValue={valorDeCelda}
         canOpenDrawer={abreDetalle}
+      />
+      <Pagination
+        page={pagina}
+        pageCount={totalPaginas}
+        onPageChange={setPagina}
+        className="justify-end"
       />
     </section>
   );
