@@ -131,9 +131,7 @@ export function UsuariosPage() {
   const [usuarios, setUsuarios] = React.useState(TODOS_LOS_USUARIOS);
   const [seleccionados, setSeleccionados] = React.useState<string[]>([]);
   const [pagina, setPagina] = React.useState(1);
-  const [tamanoPagina, setTamanoPagina] = React.useState(
-    TAMANO_PAGINA_INICIAL,
-  );
+  const [tamanoPagina, setTamanoPagina] = React.useState(TAMANO_PAGINA_INICIAL);
 
   const totalPaginas = Math.ceil(usuarios.length / tamanoPagina);
   const inicio = (pagina - 1) * tamanoPagina;
@@ -155,7 +153,7 @@ export function UsuariosPage() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-1 flex-col gap-4">
       <PageHeader>
         <PageHeaderTitle>Usuarios</PageHeaderTitle>
         <PageHeaderActions>
@@ -184,7 +182,8 @@ export function UsuariosPage() {
         getDrawerCellValue={valorDeCelda}
         canOpenDrawer={abreDetalle}
       />
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* Fijo al borde inferior; los márgenes negativos compensan el p-6 del layout. */}
+      <div className="sticky bottom-0 z-10 mt-auto -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-4 px-6 pt-14 pb-6 before:absolute before:inset-0 before:-z-10 before:bg-background before:[mask-image:linear-gradient(to_top,black_55%,transparent)]">
         <PaginationSummary
           pageSize={tamanoPagina}
           total={usuarios.length}
