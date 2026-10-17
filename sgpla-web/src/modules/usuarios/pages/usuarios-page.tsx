@@ -15,6 +15,11 @@ import {
   PageHeaderTitle,
 } from "@/components/page-header/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  FilterToolbar,
+  type FilterChip,
+  type FilterField,
+} from "@/components/ui/filter-toolbar";
 import { Pagination } from "@/components/ui/pagination";
 import { PaginationSummary } from "@/components/ui/pagination-summary";
 import { SearchInput } from "@/components/ui/search-input";
@@ -105,6 +110,25 @@ const USUARIOS_RELLENO: UsuarioEjemplo[] = Array.from(
 
 const TODOS_LOS_USUARIOS = [...USUARIOS_EJEMPLO, ...USUARIOS_RELLENO];
 
+const CAMPOS_FILTRO: FilterField[] = [
+  {
+    id: "rol",
+    label: "Rol",
+    options: ["Superusuario", "Coordinador", "Académico"].map((rol) => ({
+      value: rol,
+      label: rol,
+    })),
+  },
+  {
+    id: "estado",
+    label: "Estado",
+    options: ["Activo", "Inactivo"].map((estado) => ({
+      value: estado,
+      label: estado,
+    })),
+  },
+];
+
 const TAMANO_PAGINA_INICIAL = 10;
 
 function esColumnaEditable(columnId: ColumnaUsuario) {
@@ -133,9 +157,20 @@ export function UsuariosPage() {
   const [pagina, setPagina] = React.useState(1);
   const [tamanoPagina, setTamanoPagina] = React.useState(TAMANO_PAGINA_INICIAL);
 
-  const totalPaginas = Math.ceil(usuarios.length / tamanoPagina);
+  const [filtros, setFiltros] = React.useState<FilterChip[]>([]);
+
+  const usuariosFiltrados = usuarios.filter((usuario) =>
+    filtros.every((filtro) => usuario[filtro.id as ColumnaUsuario] === filtro.value),
+  );
+  const totalPaginas = Math.ceil(usuariosFiltrados.length / tamanoPagina);
   const inicio = (pagina - 1) * tamanoPagina;
-  const usuariosDePagina = usuarios.slice(inicio, inicio + tamanoPagina);
+  const usuariosDePagina = usuariosFiltrados.slice(inicio, inicio + tamanoPagina);
+
+  // Al cambiar los filtros, la página actual podría no existir; se vuelve a la primera.
+  function cambiarFiltros(siguientes: FilterChip[]) {
+    setFiltros(siguientes);
+    setPagina(1);
+  }
 
   // Al cambiar el tamaño, la página actual podría no existir; se vuelve a la primera.
   function cambiarTamanoPagina(tamano: number) {
@@ -143,13 +178,11 @@ export function UsuariosPage() {
     setPagina(1);
   }
 
-  // El grid devuelve solo las filas de la página; se reinsertan en su posición.
+  // El grid devuelve solo las filas de la página; se reemplazan por id.
   function aplicarFilasDePagina(filas: UsuarioEjemplo[]) {
-    setUsuarios((actuales) => [
-      ...actuales.slice(0, inicio),
-      ...filas,
-      ...actuales.slice(inicio + tamanoPagina),
-    ]);
+    setUsuarios((actuales) =>
+      actuales.map((usuario) => filas.find((f) => f.id === usuario.id) ?? usuario),
+    );
   }
 
   return (
@@ -160,14 +193,22 @@ export function UsuariosPage() {
           <Button>Registrar usuario</Button>
         </PageHeaderActions>
       </PageHeader>
-      <SearchInput
-        aria-label="Buscar usuarios"
-        placeholder="Buscar usuarios"
-        className="max-w-xs"
-      />
-      <p className="text-sm text-muted-foreground">
-        {seleccionados.length} de {usuarios.length} seleccionados
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SearchInput
+          aria-label="Buscar usuarios"
+          placeholder="Buscar usuarios"
+          className="max-w-xs"
+        />
+        <FilterToolbar
+          filters={filtros}
+          fields={CAMPOS_FILTRO}
+          onAdd={(filtro) =>
+            cambiarFiltros([...filtros.filter((f) => f.id !== filtro.id), filtro])
+          }
+          onRemove={(id) => cambiarFiltros(filtros.filter((f) => f.id !== id))}
+          onClearAll={() => cambiarFiltros([])}
+        />
+      </div>
       <DataGrid
         rows={usuariosDePagina}
         columns={COLUMNAS}
@@ -186,7 +227,7 @@ export function UsuariosPage() {
       <div className="sticky bottom-0 z-10 mt-auto -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-4 px-6 pt-14 pb-6 before:absolute before:inset-0 before:-z-10 before:bg-background before:[mask-image:linear-gradient(to_top,black_55%,transparent)]">
         <PaginationSummary
           pageSize={tamanoPagina}
-          total={usuarios.length}
+          total={usuariosFiltrados.length}
           onPageSizeChange={cambiarTamanoPagina}
         />
         <Pagination
