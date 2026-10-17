@@ -1,6 +1,10 @@
 import type * as React from "react";
 import { DataGridRow } from "@/components/data-grid/table-row";
-import { TableBody } from "@/components/ui/table";
+import {
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import {
   type DataGridColumn,
   type DataGridRowBase,
@@ -12,6 +16,9 @@ type DataGridTableBodyProps<
   ColumnId extends string,
 > = {
   rows: Row[];
+  // Se muestra en una sola fila que abarca todas las columnas cuando no hay filas, con una altura fija
+  // (h-80) que no depende del tamaño de página.
+  emptyState?: React.ReactNode;
   columns: DataGridColumn<ColumnId>[];
   columnWidths: Record<ColumnId, number>;
   getRowLabel: (row: Row) => string;
@@ -43,6 +50,7 @@ export function DataGridTableBody<
   ColumnId extends string,
 >({
   rows,
+  emptyState,
   columns,
   columnWidths,
   getRowLabel,
@@ -64,6 +72,20 @@ export function DataGridTableBody<
   canOpenDrawer,
   onOpenDrawer,
 }: DataGridTableBodyProps<Row, ColumnId>) {
+  if (rows.length === 0 && emptyState) {
+    return (
+      <TableBody>
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={columns.length + 1} className="p-0">
+            <div className="flex h-80 items-center justify-center">
+              {emptyState}
+            </div>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    );
+  }
+
   return (
     <TableBody>
       {rows.map((row, rowIndex) => {

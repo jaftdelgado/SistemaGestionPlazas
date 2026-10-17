@@ -59,6 +59,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   onOpenDrawerCell,
   drawerModal = false,
   disablePointerDismissal = true,
+  emptyState,
   fillAvailableHeight = false,
   tableContainerClassName,
 }: DataGridProps<Row, ColumnId>) {
@@ -312,6 +313,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
 
             <DataGridTableBody
               rows={rows}
+              emptyState={emptyState}
               columns={columns}
               columnWidths={columnWidths}
               getRowLabel={stableGetRowLabel}

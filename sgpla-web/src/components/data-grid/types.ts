@@ -66,6 +66,8 @@ export type DataGridProps<
   onOpenDrawerCell?: (cell: EditingCell<ColumnId>) => void;
   drawerModal?: boolean;
   disablePointerDismissal?: boolean;
+  // Se muestra en lugar de las filas cuando no hay ninguna; sin él, la tabla queda solo con el encabezado.
+  emptyState?: React.ReactNode;
   fillAvailableHeight?: boolean;
   tableContainerClassName?: string;
 };

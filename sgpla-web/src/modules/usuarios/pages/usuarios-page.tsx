@@ -15,6 +15,7 @@ import {
   PageHeaderTitle,
 } from "@/components/page-header/page-header";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   FilterToolbar,
   type FilterChip,
@@ -222,6 +223,24 @@ export function UsuariosPage() {
         onRowsChange={aplicarFilasDePagina}
         getDrawerCellValue={valorDeCelda}
         canOpenDrawer={abreDetalle}
+        emptyState={
+          <EmptyState
+            label="Sin usuarios"
+            title={filtros.length > 0 ? "Sin resultados" : "Aún no hay usuarios"}
+            description={
+              filtros.length > 0
+                ? "Ningún usuario coincide con los filtros aplicados."
+                : "Cuando registres usuarios, aparecerán aquí."
+            }
+            action={
+              filtros.length > 0 ? (
+                <Button variant="secondary" onClick={() => cambiarFiltros([])}>
+                  Limpiar filtros
+                </Button>
+              ) : undefined
+            }
+          />
+        }
       />
       {/* Fijo al borde inferior; los márgenes negativos compensan el p-6 del layout. */}
       <div className="sticky bottom-0 z-10 mt-auto -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-4 px-6 pt-14 pb-6 before:absolute before:inset-0 before:-z-10 before:bg-background before:[mask-image:linear-gradient(to_top,black_55%,transparent)]">
