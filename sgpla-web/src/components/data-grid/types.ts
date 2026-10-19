@@ -14,7 +14,19 @@ export type DataGridColumn<ColumnId extends string> = {
   icon: DataGridIcon;
   defaultWidth: number;
   minWidth?: number;
+  // Permite ordenar por la columna al hacer clic en su encabezado; requiere onSortChange en el grid.
+  sortable?: boolean;
 };
+
+export type SortDirection = "asc" | "desc";
+
+type ActiveSort<ColumnId extends string> = {
+  columnId: ColumnId;
+  direction: SortDirection;
+};
+
+// Solo se ordena por una columna a la vez; null es sin orden.
+export type DataGridSort<ColumnId extends string> = ActiveSort<ColumnId> | null;
 
 export type EditingCell<ColumnId extends string> = {
   rowId: string;
@@ -48,6 +60,9 @@ export type DataGridProps<
 > = {
   rows: Row[];
   columns: DataGridColumn<ColumnId>[];
+  // El orden es del consumidor: el grid solo lo dibuja y avisa del siguiente (asc, desc, sin orden) en onSortChange.
+  sort?: DataGridSort<ColumnId>;
+  onSortChange?: (sort: DataGridSort<ColumnId>) => void;
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
   selectedRowIds: string[];

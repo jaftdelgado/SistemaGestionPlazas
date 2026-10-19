@@ -8,6 +8,7 @@ import * as React from "react";
 import {
   DataGrid,
   type DataGridColumn,
+  type DataGridSort,
 } from "@/components/data-grid/data-grid";
 import {
   PageHeader,
@@ -37,15 +38,34 @@ type UsuarioEjemplo = {
 type ColumnaUsuario = "nombre" | "correo" | "rol" | "estado";
 
 const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
-  { id: "nombre", label: "Nombre", icon: PersonRegular, defaultWidth: 260 },
-  { id: "correo", label: "Correo", icon: MailRegular, defaultWidth: 280 },
-  { id: "rol", label: "Rol", icon: ShieldRegular, defaultWidth: 200 },
+  {
+    id: "nombre",
+    label: "Nombre",
+    icon: PersonRegular,
+    defaultWidth: 260,
+    sortable: true,
+  },
+  {
+    id: "correo",
+    label: "Correo",
+    icon: MailRegular,
+    defaultWidth: 280,
+    sortable: true,
+  },
+  {
+    id: "rol",
+    label: "Rol",
+    icon: ShieldRegular,
+    defaultWidth: 200,
+    sortable: true,
+  },
   {
     id: "estado",
     label: "Estado",
     icon: CheckmarkCircleRegular,
     defaultWidth: 140,
     minWidth: 120,
+    sortable: true,
   },
 ];
 
@@ -162,18 +182,33 @@ export function UsuariosPage() {
   const [tamanoPagina, setTamanoPagina] = React.useState(TAMANO_PAGINA_INICIAL);
 
   const [filtros, setFiltros] = React.useState<FilterChip[]>([]);
+  const [orden, setOrden] = React.useState<DataGridSort<ColumnaUsuario>>(null);
 
   const usuariosFiltrados = usuarios.filter((usuario) =>
     filtros.every(
       (filtro) => usuario[filtro.id as ColumnaUsuario] === filtro.value,
     ),
   );
+  // El orden se aplica a todo el conjunto filtrado, antes de paginar.
+  const usuariosOrdenados = orden
+    ? [...usuariosFiltrados].sort(
+        (a, b) =>
+          a[orden.columnId].localeCompare(b[orden.columnId], "es") *
+          (orden.direction === "asc" ? 1 : -1),
+      )
+    : usuariosFiltrados;
   const totalPaginas = Math.ceil(usuariosFiltrados.length / tamanoPagina);
   const inicio = (pagina - 1) * tamanoPagina;
-  const usuariosDePagina = usuariosFiltrados.slice(
+  const usuariosDePagina = usuariosOrdenados.slice(
     inicio,
     inicio + tamanoPagina,
   );
+
+  // Al cambiar el orden se vuelve a la primera página.
+  function cambiarOrden(siguiente: DataGridSort<ColumnaUsuario>) {
+    setOrden(siguiente);
+    setPagina(1);
+  }
 
   // Al cambiar los filtros, la página actual podría no existir; se vuelve a la primera.
   function cambiarFiltros(siguientes: FilterChip[]) {
@@ -226,6 +261,8 @@ export function UsuariosPage() {
       <DataGrid
         rows={usuariosDePagina}
         columns={COLUMNAS}
+        sort={orden}
+        onSortChange={cambiarOrden}
         getRowLabel={(usuario) => usuario.nombre}
         renderCell={(usuario, columna) => usuario[columna.id]}
         selectedRowIds={seleccionados}

@@ -22,7 +22,9 @@ export type {
   DataGridIcon,
   DataGridProps,
   DataGridRowBase,
+  DataGridSort,
   EditingCell,
+  SortDirection,
 } from "@/components/data-grid/types";
 
 const MIN_COLUMN_WIDTH = 96;
@@ -45,6 +47,8 @@ function alwaysOpenDrawer() {
 export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   rows,
   columns,
+  sort = null,
+  onSortChange,
   getRowLabel,
   renderCell,
   selectedRowIds,
@@ -120,6 +124,18 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
     applyCellEdit,
     commitRows,
   });
+
+  // Cada clic avanza el ciclo de la columna: ascendente, descendente y sin orden.
+  function toggleSort(columnId: ColumnId) {
+    if (sort?.columnId !== columnId) {
+      onSortChange?.({ columnId, direction: "asc" });
+      return;
+    }
+
+    onSortChange?.(
+      sort.direction === "asc" ? { columnId, direction: "desc" } : null,
+    );
+  }
 
   const closeDrawer = React.useCallback(() => {
     setDrawerCell(null);
@@ -309,6 +325,8 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
             <DataGridTableHeader
               columns={columns}
               columnWidths={columnWidths}
+              sort={sort}
+              onSortToggle={onSortChange ? toggleSort : undefined}
               controlColumnWidth={CONTROL_COLUMN_WIDTH}
               allRowsSelected={allRowsSelected}
               someRowsSelected={someRowsSelected}
