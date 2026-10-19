@@ -13,7 +13,7 @@ import {
 } from "motion/react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from "@/lib/ease";
+import { EASE_OUT, SPRING_SWAP } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
 export type FilterChip = {
@@ -68,9 +68,7 @@ function pasos(reducir: boolean): Variants {
       opacity: 1,
       x: 0,
       filter: "blur(0px)",
-      transition: reducir
-        ? { duration: 0.1 }
-        : { duration: 0.22, ease: EASE, x: SPRING_SWAP },
+      transition: reducir ? { duration: 0.1 } : { duration: 0.22, ease: EASE },
     },
     sale: (direccion: number) =>
       reducir
@@ -104,7 +102,7 @@ function FilterToolbar({
   const [alto, setAlto] = React.useState<number | null>(null);
   const lista = React.useRef<HTMLDivElement>(null);
   // Fila que recibe el foco tras cambiar de paso; null si no hay cambio pendiente.
-  const enfocar = React.useRef<string | "primera" | null>(null);
+  const enfocar = React.useRef<string | null>(null);
 
   const campo = fields.find((f) => f.id === campoId) ?? null;
 
@@ -251,7 +249,9 @@ function FilterToolbar({
                 className="relative overflow-hidden"
                 initial={false}
                 animate={alto === null ? undefined : { height: alto }}
-                transition={reducir ? INSTANTANEO : SPRING_LAYOUT}
+                transition={
+                  reducir ? INSTANTANEO : { duration: 0.22, ease: EASE }
+                }
               >
                 <AnimatePresence
                   mode="popLayout"
