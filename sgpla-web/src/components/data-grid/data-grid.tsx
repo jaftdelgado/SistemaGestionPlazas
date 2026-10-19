@@ -70,11 +70,12 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   const gridRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const { columnWidths, gridMinWidth, beginResize } = useGridColumns({
-    columns,
-    minColumnWidth: MIN_COLUMN_WIDTH,
-    controlColumnWidth: CONTROL_COLUMN_WIDTH,
-  });
+  const { columnWidths, gridMinWidth, beginResize, resetWidth } =
+    useGridColumns({
+      columns,
+      minColumnWidth: MIN_COLUMN_WIDTH,
+      controlColumnWidth: CONTROL_COLUMN_WIDTH,
+    });
 
   const drawerRow = React.useMemo(() => {
     if (!drawerCell) return null;
@@ -159,18 +160,22 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   );
 
   // La selección es del consumidor y puede incluir filas que ya no están: el encabezado solo cuenta las visibles.
-  const selectedVisibleRowCount = rows.filter((row) =>
-    selectedRowIdSet.has(row.id),
-  ).length;
+  const selectedVisibleRowCount = React.useMemo(
+    () => rows.filter((row) => selectedRowIdSet.has(row.id)).length,
+    [rows, selectedRowIdSet],
+  );
   const allRowsSelected =
     rows.length > 0 && selectedVisibleRowCount === rows.length;
   const someRowsSelected = selectedVisibleRowCount > 0 && !allRowsSelected;
 
   // Siempre hay una fila en el orden de tabulación: la última enfocada o, si ya no existe, la primera.
-  const activeRowId =
-    focusedRowId !== null && rows.some((row) => row.id === focusedRowId)
-      ? focusedRowId
-      : (rows[0]?.id ?? null);
+  const activeRowId = React.useMemo(
+    () =>
+      focusedRowId !== null && rows.some((row) => row.id === focusedRowId)
+        ? focusedRowId
+        : (rows[0]?.id ?? null),
+    [focusedRowId, rows],
+  );
 
   const focusRow = React.useCallback((rowIndex: number) => {
     const targetRow = gridRef.current?.querySelector<HTMLElement>(
@@ -309,13 +314,13 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               someRowsSelected={someRowsSelected}
               onToggleAllRows={toggleAllRows}
               onResizeStart={beginResize}
+              onResizeReset={resetWidth}
             />
 
             <DataGridTableBody
               rows={rows}
               emptyState={emptyState}
               columns={columns}
-              columnWidths={columnWidths}
               getRowLabel={stableGetRowLabel}
               renderCell={stableRenderCell}
               activeRowId={activeRowId}

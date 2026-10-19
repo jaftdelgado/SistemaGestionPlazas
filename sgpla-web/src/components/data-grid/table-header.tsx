@@ -1,7 +1,7 @@
-import type * as React from "react";
 import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { type DataGridColumn } from "@/components/data-grid/types";
+import { type GridResizeEvent } from "@/components/data-grid/use-grid-columns";
 
 type DataGridTableHeaderProps<ColumnId extends string> = {
   columns: DataGridColumn<ColumnId>[];
@@ -10,10 +10,8 @@ type DataGridTableHeaderProps<ColumnId extends string> = {
   allRowsSelected: boolean;
   someRowsSelected: boolean;
   onToggleAllRows: (checked: boolean) => void;
-  onResizeStart: (
-    event: React.PointerEvent<HTMLButtonElement>,
-    columnId: ColumnId,
-  ) => void;
+  onResizeStart: (event: GridResizeEvent, columnId: ColumnId) => void;
+  onResizeReset: (columnId: ColumnId) => void;
 };
 
 export function DataGridTableHeader<ColumnId extends string>({
@@ -24,13 +22,22 @@ export function DataGridTableHeader<ColumnId extends string>({
   someRowsSelected,
   onToggleAllRows,
   onResizeStart,
+  onResizeReset,
 }: DataGridTableHeaderProps<ColumnId>) {
   return (
     <>
       <colgroup>
         <col style={{ width: controlColumnWidth }} />
-        {columns.map((column) => (
-          <col key={column.id} style={{ width: columnWidths[column.id] }} />
+        {columns.map((column, index) => (
+          // La última columna no fija su ancho: es la única que absorbe el sobrante de la tabla.
+          <col
+            key={column.id}
+            style={
+              index === columns.length - 1
+                ? undefined
+                : { width: columnWidths[column.id] }
+            }
+          />
         ))}
       </colgroup>
 
@@ -44,7 +51,7 @@ export function DataGridTableHeader<ColumnId extends string>({
               onToggle={(checked) => onToggleAllRows(checked)}
             />
           </TableHead>
-          {columns.map((column) => {
+          {columns.map((column, index) => {
             const Icon = column.icon;
             const width = columnWidths[column.id];
 
@@ -52,7 +59,11 @@ export function DataGridTableHeader<ColumnId extends string>({
               <TableHead
                 key={column.id}
                 className="relative h-10 overflow-hidden border-r bg-table-header px-2 text-sm"
-                style={{ width, minWidth: width }}
+                style={
+                  index === columns.length - 1
+                    ? undefined
+                    : { width, minWidth: width }
+                }
               >
                 <span className="flex min-w-0 items-center gap-1.5 leading-none">
                   <Icon className="size-3.5 shrink-0 text-muted-foreground" />
@@ -62,8 +73,10 @@ export function DataGridTableHeader<ColumnId extends string>({
                   type="button"
                   tabIndex={-1}
                   aria-label={`Redimensionar la columna ${column.label}`}
-                  className="absolute top-0 right-0 h-full w-3 cursor-col-resize"
-                  onPointerDown={(event) => onResizeStart(event, column.id)}
+                  className="absolute top-0 right-0 h-full w-3 cursor-col-resize touch-none"
+                  onMouseDown={(event) => onResizeStart(event, column.id)}
+                  onTouchStart={(event) => onResizeStart(event, column.id)}
+                  onDoubleClick={() => onResizeReset(column.id)}
                 />
               </TableHead>
             );

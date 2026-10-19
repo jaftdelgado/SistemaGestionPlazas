@@ -1,10 +1,6 @@
 import type * as React from "react";
 import { DataGridRow } from "@/components/data-grid/table-row";
-import {
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   type DataGridColumn,
   type DataGridRowBase,
@@ -20,7 +16,6 @@ type DataGridTableBodyProps<
   // (h-80) que no depende del tamaño de página.
   emptyState?: React.ReactNode;
   columns: DataGridColumn<ColumnId>[];
-  columnWidths: Record<ColumnId, number>;
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
   activeRowId: string | null;
@@ -52,7 +47,6 @@ export function DataGridTableBody<
   rows,
   emptyState,
   columns,
-  columnWidths,
   getRowLabel,
   renderCell,
   activeRowId,
@@ -97,7 +91,6 @@ export function DataGridTableBody<
             row={row}
             rowIndex={rowIndex}
             columns={columns}
-            columnWidths={columnWidths}
             isSelected={selectedRowIds.has(row.id)}
             isActive={row.id === activeRowId}
             editingColumnId={isEditingRow ? editingCell.columnId : null}

@@ -15,7 +15,6 @@ type DataGridRowProps<Row extends DataGridRowBase, ColumnId extends string> = {
   row: Row;
   rowIndex: number;
   columns: DataGridColumn<ColumnId>[];
-  columnWidths: Record<ColumnId, number>;
   isSelected: boolean;
   isActive: boolean;
   // Solo la fila en edición recibe la columna y el borrador; el resto mantiene props idénticas y no se renderiza.
@@ -48,7 +47,6 @@ function DataGridRowInner<
   row,
   rowIndex,
   columns,
-  columnWidths,
   isSelected,
   isActive,
   editingColumnId,
@@ -103,10 +101,6 @@ function DataGridRowInner<
               "group/cell relative h-10 overflow-hidden border-r px-2 py-1 whitespace-nowrap",
               editable && "cursor-text",
             )}
-            style={{
-              width: columnWidths[column.id],
-              minWidth: columnWidths[column.id],
-            }}
             onDoubleClick={() => {
               if (editable) startEditing(row, column.id);
             }}

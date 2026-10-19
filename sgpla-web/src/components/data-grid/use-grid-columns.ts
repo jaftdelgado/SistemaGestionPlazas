@@ -1,3 +1,10 @@
+import {
+  columnResizingFeature,
+  columnSizingFeature,
+  tableFeatures,
+  useTable,
+  type ColumnDef,
+} from "@tanstack/react-table";
 import * as React from "react";
 import { type DataGridColumn } from "@/components/data-grid/types";
 
@@ -7,96 +14,75 @@ type UseGridColumnsParams<ColumnId extends string> = {
   controlColumnWidth: number;
 };
 
+// La tabla de TanStack solo administra los anchos; las filas las renderiza el grid.
+const features = tableFeatures({ columnSizingFeature, columnResizingFeature });
+type FilaVacia = Record<string, never>;
+const SIN_FILAS: FilaVacia[] = [];
+
+export type GridResizeEvent = React.MouseEvent | React.TouchEvent;
+
 export function useGridColumns<ColumnId extends string>({
   columns,
   minColumnWidth,
   controlColumnWidth,
 }: UseGridColumnsParams<ColumnId>) {
-  // Solo guarda los anchos que el usuario cambió; el resto sale de defaultWidth.
-  const [resizedWidths, setResizedWidths] = React.useState<
-    Partial<Record<ColumnId, number>>
-  >({});
+  const columnDefs = React.useMemo<ColumnDef<typeof features, FilaVacia>[]>(
+    () =>
+      columns.map((column) => ({
+        id: column.id,
+        size: column.defaultWidth,
+        minSize: column.minWidth ?? minColumnWidth,
+      })),
+    [columns, minColumnWidth],
+  );
 
-  const resizingRef = React.useRef<{
-    columnId: ColumnId;
-    startX: number;
-    startWidth: number;
-  } | null>(null);
+  const table = useTable({
+    features,
+    columns: columnDefs,
+    data: SIN_FILAS,
+    columnResizeMode: "onChange",
+  });
 
-  const columnWidths = React.useMemo(() => {
-    return Object.fromEntries(
-      columns.map((column) => [
-        column.id,
-        resizedWidths[column.id] ?? column.defaultWidth,
-      ]),
-    ) as Record<ColumnId, number>;
-  }, [columns, resizedWidths]);
+  const columnWidths = Object.fromEntries(
+    table.getAllLeafColumns().map((column) => [column.id, column.getSize()]),
+  ) as Record<ColumnId, number>;
+
+  const gridMinWidth =
+    controlColumnWidth +
+    columns.reduce((sum, column) => sum + columnWidths[column.id], 0);
+
+  const resizingColumnId = table.state.columnResizing.isResizingColumn;
+  const isResizing = resizingColumnId !== false;
 
   React.useEffect(() => {
-    const handlePointerMove = (event: PointerEvent) => {
-      const activeResize = resizingRef.current;
-      if (!activeResize) return;
-
-      const column = columns.find((item) => item.id === activeResize.columnId);
-      const resolvedMinWidth = column?.minWidth ?? minColumnWidth;
-      const deltaX = event.clientX - activeResize.startX;
-      const nextWidth = Math.max(
-        resolvedMinWidth,
-        activeResize.startWidth + deltaX,
-      );
-
-      setResizedWidths((currentWidths) => ({
-        ...currentWidths,
-        [activeResize.columnId]: nextWidth,
-      }));
-    };
-
-    const handlePointerUp = () => {
-      if (!resizingRef.current) return;
-      resizingRef.current = null;
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-
+    if (!isResizing) return;
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
     return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     };
-  }, [columns, minColumnWidth]);
+  }, [isResizing]);
 
-  const gridMinWidth = React.useMemo(() => {
-    const contentWidth = columns.reduce((sum, column) => {
-      return sum + columnWidths[column.id];
-    }, 0);
+  function beginResize(event: GridResizeEvent, columnId: ColumnId) {
+    const header = table
+      .getFlatHeaders()
+      .find((candidate) => candidate.column.id === columnId);
+    if (!header) return;
+    // Evita que el arrastre inicie una selección de texto o una acción de la celda.
+    event.stopPropagation();
+    if (event.type === "mousedown") event.preventDefault();
+    header.getResizeHandler()(event);
+  }
 
-    return controlColumnWidth + contentWidth;
-  }, [columnWidths, columns, controlColumnWidth]);
-
-  const beginResize = React.useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>, columnId: ColumnId) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      resizingRef.current = {
-        columnId,
-        startX: event.clientX,
-        startWidth: columnWidths[columnId],
-      };
-
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = "col-resize";
-    },
-    [columnWidths],
-  );
+  function resetWidth(columnId: ColumnId) {
+    table.getColumn(columnId)?.resetSize();
+  }
 
   return {
     columnWidths,
     gridMinWidth,
     beginResize,
+    resetWidth,
   };
 }
