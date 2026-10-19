@@ -20,7 +20,7 @@ export function PanelLayout() {
             <PanelAvatar />
           </div>
         </header>
-        <div className="flex-1 p-6">
+        <div className="flex flex-1 flex-col p-6">
           <Outlet />
         </div>
       </SidebarInset>
