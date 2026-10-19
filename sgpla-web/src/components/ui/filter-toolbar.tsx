@@ -209,12 +209,21 @@ function FilterToolbar({
         <PopoverPrimitive.Trigger
           data-slot="filter-toolbar-trigger"
           className={cn(
-            "inline-flex h-10 w-32 items-center gap-2 rounded-full border border-transparent bg-input px-4 py-1 text-base font-medium shadow-border transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm [&_svg]:size-4 [&_svg]:shrink-0",
+            "relative inline-flex h-10 w-32 items-center gap-2 rounded-full border border-transparent bg-input px-4 py-1 text-base font-medium shadow-border transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm [&_svg]:size-4 [&_svg]:shrink-0",
             esSm && "h-8 w-32 px-3",
+            filters.length > 0 ? "justify-start" : "justify-center",
           )}
         >
-          <FilterRegular aria-hidden="true" />
-          {addLabel}
+          {/* Al aparecer la insignia el grupo pasa del centro al inicio con un resorte ligero. La insignia está fuera
+              del flujo para que su salida no retrase el regreso del grupo al centro. */}
+          <motion.span
+            layout="position"
+            transition={reducir ? INSTANTANEO : SPRING_SWAP}
+            className="inline-flex items-center gap-2"
+          >
+            <FilterRegular aria-hidden="true" />
+            {addLabel}
+          </motion.span>
           <AnimatePresence initial={false}>
             {filters.length > 0 && (
               <motion.span
@@ -225,10 +234,17 @@ function FilterToolbar({
                 exit={
                   reducir
                     ? { opacity: 0, transition: INSTANTANEO }
-                    : { opacity: 0, scale: 0.6 }
+                    : {
+                        opacity: 0,
+                        scale: 0.6,
+                        transition: { duration: 0.12, ease: EASE },
+                      }
                 }
                 transition={reducir ? INSTANTANEO : SPRING_SWAP}
-                className="-mr-1.5 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground tabular-nums"
+                className={cn(
+                  "absolute top-1/2 -mt-2.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground tabular-nums",
+                  esSm ? "right-1.5" : "right-2.5",
+                )}
               >
                 {filters.length}
               </motion.span>
