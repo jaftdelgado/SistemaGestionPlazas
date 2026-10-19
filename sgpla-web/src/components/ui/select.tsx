@@ -66,7 +66,7 @@ function Select({
                   key={option.value}
                   value={option.value}
                   disabled={option.disabled}
-                  className="relative flex min-h-8 cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-base outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-muted md:text-sm"
+                  className="relative flex min-h-8 cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-base outline-none select-none data-highlighted:bg-muted md:text-sm data-disabled:pointer-events-none data-disabled:opacity-50"
                 >
                   <SelectPrimitive.ItemText className="truncate">
                     {option.label}

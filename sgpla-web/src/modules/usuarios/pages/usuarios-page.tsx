@@ -97,17 +97,20 @@ const USUARIOS_EJEMPLO: UsuarioEjemplo[] = [
 // Relleno temporal para probar la paginación con muchas páginas.
 const USUARIOS_RELLENO: UsuarioEjemplo[] = Array.from(
   { length: 94 },
-  (_, i) => {
-    const base = USUARIOS_EJEMPLO[i % USUARIOS_EJEMPLO.length];
-    const numero = i + 7;
-    return {
+  (_, i) => i,
+).flatMap((i) => {
+  const base = USUARIOS_EJEMPLO[i % USUARIOS_EJEMPLO.length];
+  if (!base) return [];
+  const numero = i + 7;
+  return [
+    {
       ...base,
       id: String(numero),
       nombre: `${base.nombre} ${numero}`,
       correo: `usuario${numero}@uv.mx`,
-    };
-  },
-);
+    },
+  ];
+});
 
 const TODOS_LOS_USUARIOS = [...USUARIOS_EJEMPLO, ...USUARIOS_RELLENO];
 
@@ -161,11 +164,16 @@ export function UsuariosPage() {
   const [filtros, setFiltros] = React.useState<FilterChip[]>([]);
 
   const usuariosFiltrados = usuarios.filter((usuario) =>
-    filtros.every((filtro) => usuario[filtro.id as ColumnaUsuario] === filtro.value),
+    filtros.every(
+      (filtro) => usuario[filtro.id as ColumnaUsuario] === filtro.value,
+    ),
   );
   const totalPaginas = Math.ceil(usuariosFiltrados.length / tamanoPagina);
   const inicio = (pagina - 1) * tamanoPagina;
-  const usuariosDePagina = usuariosFiltrados.slice(inicio, inicio + tamanoPagina);
+  const usuariosDePagina = usuariosFiltrados.slice(
+    inicio,
+    inicio + tamanoPagina,
+  );
 
   // Al cambiar los filtros, la página actual podría no existir; se vuelve a la primera.
   function cambiarFiltros(siguientes: FilterChip[]) {
@@ -182,7 +190,9 @@ export function UsuariosPage() {
   // El grid devuelve solo las filas de la página; se reemplazan por id.
   function aplicarFilasDePagina(filas: UsuarioEjemplo[]) {
     setUsuarios((actuales) =>
-      actuales.map((usuario) => filas.find((f) => f.id === usuario.id) ?? usuario),
+      actuales.map(
+        (usuario) => filas.find((f) => f.id === usuario.id) ?? usuario,
+      ),
     );
   }
 
@@ -204,7 +214,10 @@ export function UsuariosPage() {
           filters={filtros}
           fields={CAMPOS_FILTRO}
           onAdd={(filtro) =>
-            cambiarFiltros([...filtros.filter((f) => f.id !== filtro.id), filtro])
+            cambiarFiltros([
+              ...filtros.filter((f) => f.id !== filtro.id),
+              filtro,
+            ])
           }
           onRemove={(id) => cambiarFiltros(filtros.filter((f) => f.id !== id))}
           onClearAll={() => cambiarFiltros([])}
@@ -226,7 +239,9 @@ export function UsuariosPage() {
         emptyState={
           <EmptyState
             label="Sin usuarios"
-            title={filtros.length > 0 ? "Sin resultados" : "Aún no hay usuarios"}
+            title={
+              filtros.length > 0 ? "Sin resultados" : "Aún no hay usuarios"
+            }
             description={
               filtros.length > 0
                 ? "Ningún usuario coincide con los filtros aplicados."
@@ -243,7 +258,7 @@ export function UsuariosPage() {
         }
       />
       {/* Fijo al borde inferior; los márgenes negativos compensan el p-6 del layout. */}
-      <div className="sticky bottom-0 z-10 mt-auto -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-4 px-6 pt-14 pb-6 before:absolute before:inset-0 before:-z-10 before:bg-background before:[mask-image:linear-gradient(to_top,black_55%,transparent)]">
+      <div className="sticky bottom-0 z-10 -mx-6 mt-auto -mb-6 flex flex-wrap items-center justify-between gap-4 px-6 pt-14 pb-6 before:absolute before:inset-0 before:-z-10 before:bg-background before:[mask-image:linear-gradient(to_top,black_55%,transparent)]">
         <PaginationSummary
           pageSize={tamanoPagina}
           total={usuariosFiltrados.length}
