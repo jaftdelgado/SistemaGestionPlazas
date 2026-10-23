@@ -23,6 +23,6 @@ function hash(texto: string): number {
 
 // El color depende solo de la parte local del correo (antes del @), sin distinguir mayúsculas.
 export function colorAvatar(correo: string): string {
-  const usuario = correo.split("@")[0].trim().toLowerCase();
-  return COLORES[hash(usuario) % COLORES.length];
+  const usuario = (correo.split("@")[0] ?? "").trim().toLowerCase();
+  return COLORES[hash(usuario) % COLORES.length] ?? COLORES[0];
 }
