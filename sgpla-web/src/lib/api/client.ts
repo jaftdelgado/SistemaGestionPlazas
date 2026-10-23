@@ -1,9 +1,11 @@
 import createClient, { type Middleware } from "openapi-fetch";
+import { leerToken as leerTokenGuardado } from "@/lib/api/sesion-token";
 import type { paths } from "@/lib/api/schema";
 
-// Cómo se guarda el token se decide en el PR del login: por ahora no hay sesión.
-export function obtenerToken(): string | null {
-  return null;
+let alVencerSesion: () => void = () => {};
+
+export function registrarAlVencerSesion(fn: () => void): void {
+  alVencerSesion = fn;
 }
 
 export function crearMiddlewareAutorizacion(
@@ -20,8 +22,19 @@ export function crearMiddlewareAutorizacion(
   };
 }
 
+// Un 401 a una petición con token significa sesión vencida o revocada; el inicio de sesión no envía token.
+const middlewareSesionVencida: Middleware = {
+  onResponse({ request, response }) {
+    if (response.status === 401 && request.headers.has("Authorization")) {
+      alVencerSesion();
+    }
+    return response;
+  },
+};
+
 export const client = createClient<paths>({
   baseUrl: import.meta.env.VITE_API_URL,
 });
 
-client.use(crearMiddlewareAutorizacion(obtenerToken));
+client.use(crearMiddlewareAutorizacion(leerTokenGuardado));
+client.use(middlewareSesionVencida);
