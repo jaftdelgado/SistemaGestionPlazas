@@ -49,7 +49,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
     <span
       data-slot="avatar-badge"
       className={cn(
-        "absolute right-0 bottom-0.5 z-10 inline-flex size-2.5 items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background select-none [&>svg]:size-2",
+        "absolute right-0 bottom-0 z-10 inline-flex size-2.5 items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background select-none [&>svg]:size-2",
         className,
       )}
       {...props}

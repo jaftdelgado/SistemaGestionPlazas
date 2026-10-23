@@ -15,6 +15,7 @@ import {
   PageHeaderActions,
   PageHeaderTitle,
 } from "@/components/page-header/page-header";
+import { AvatarUsuario } from "@/components/ui/avatar-usuario";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -163,6 +164,24 @@ function abreDetalle(columnId: ColumnaUsuario) {
   return columnId === "nombre" || columnId === "correo";
 }
 
+function renderizarCelda(
+  usuario: UsuarioEjemplo,
+  columna: DataGridColumn<ColumnaUsuario>,
+) {
+  if (columna.id !== "nombre") return usuario[columna.id];
+  return (
+    <span className="flex items-center gap-2">
+      <AvatarUsuario
+        nombre={usuario.nombre}
+        correo={usuario.correo}
+        className="size-6"
+        fallbackClassName="text-[10px]"
+      />
+      <span className="truncate">{usuario.nombre}</span>
+    </span>
+  );
+}
+
 function valorDeCelda(usuario: UsuarioEjemplo, columnId: ColumnaUsuario) {
   return usuario[columnId];
 }
@@ -264,7 +283,7 @@ export function UsuariosPage() {
         sort={orden}
         onSortChange={cambiarOrden}
         getRowLabel={(usuario) => usuario.nombre}
-        renderCell={(usuario, columna) => usuario[columna.id]}
+        renderCell={renderizarCelda}
         selectedRowIds={seleccionados}
         onSelectedRowIdsChange={setSeleccionados}
         isEditableColumn={esColumnaEditable}

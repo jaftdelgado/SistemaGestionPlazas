@@ -98,3 +98,228 @@
     scrollbar-gutter: stable;
   }
 }
+
+/* ══ Toast stack (components/ui/toast-stack.tsx) ══════════════════════════
+   Three toasts stacked, fanning into a list on hover. Tones are the
+   reference's: the front one white, the tucked ones a barely-there
+   2% grey — both the same, so they read as paper behind paper rather
+   than a darkening ramp. Where the reference separates them with a
+   soft shadow, this uses a faint hairline (no drop shadows on the
+   bench). Status icons are their own solid colours, never faded.
+   Bencho's tokens map to this project's: --font-ui → --font-sans,
+   --fill-on and --ink → --foreground, --fill-slab → --card,
+   --signal → --primary. --tst-r is the corner radius, set here on
+   the viewport. */
+.tst {
+  --tst-r: 20px;
+  --tst-mute: color-mix(in srgb, var(--foreground) 52%, var(--card));
+  --tst-wash: color-mix(in srgb, var(--foreground) 6%, var(--card));
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 60;
+  width: 300px;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+}
+
+/* Base UI gives each toast its place in line (--toast-index, 0 at the
+   front) and, once the stack is open, how far up it sits
+   (--toast-offset-y). Everything else is worked out from those two.
+   Behind the third, toasts stay put: they are limited and fade out. */
+.tst-toast {
+  --peek: 14px;
+  --gap: 10px;
+  --back: min(var(--toast-index), 2);
+  position: absolute;
+  right: 0;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  height: 64px;
+  border-radius: var(--tst-r);
+  z-index: calc(1000 - var(--toast-index));
+  /* the stack: front at the top, each one behind a peek lower
+     and a step smaller, hanging from its bottom edge */
+  transform: translateX(var(--toast-swipe-movement-x, 0px))
+    translateY(
+      calc(var(--toast-swipe-movement-y, 0px) + var(--back) * var(--peek))
+    )
+    scale(calc(1 - var(--back) * 0.05));
+  transform-origin: 50% 100%;
+  /* tucked: the same near-white for both, and a faint edge so each
+     sliver has a line to read by; the front one has neither */
+  background: color-mix(
+    in srgb,
+    var(--foreground) calc(min(var(--toast-index), 1) * 6%),
+    var(--card)
+  );
+  box-shadow: 0 0 0 1px
+    color-mix(
+      in srgb,
+      var(--foreground) calc(min(var(--toast-index), 1) * 6%),
+      transparent
+    );
+  /* the same settle for every move, a touch under critical */
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    translate 220ms ease,
+    opacity 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+/* the list: front at the top, the rest below it */
+.tst-toast[data-expanded] {
+  transform: translateX(var(--toast-swipe-movement-x, 0px))
+    translateY(
+      calc(
+        var(--toast-swipe-movement-y, 0px) + var(--toast-offset-y) +
+          var(--toast-index) * var(--gap)
+      )
+    );
+  background: var(--card);
+  box-shadow: none;
+}
+
+/* a new one drops in from above the front; a dismissed one slides back up */
+.tst-toast[data-starting-style] {
+  opacity: 0;
+  translate: 0 -24px;
+}
+
+.tst-toast[data-ending-style] {
+  opacity: 0;
+  translate: 0 -24px;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+.tst-toast[data-limited] {
+  opacity: 0;
+}
+
+/* keeps the pointer inside the stack while it crosses the gap between
+   two toasts of the open list */
+.tst-toast::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: calc(var(--gap) + 1px);
+}
+
+.tst-content {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 0 12px 0 16px;
+  transition: opacity 220ms ease;
+}
+
+/* only the front one is read while stacked; the rest are slivers */
+.tst-content[data-behind]:not([data-expanded]) {
+  opacity: 0;
+}
+
+.tst-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.tst-toast[data-kind="success"] .tst-icon {
+  color: #1f9d55;
+}
+
+.tst-toast[data-kind="error"] .tst-icon {
+  color: var(--destructive);
+}
+
+.tst-toast[data-kind="warning"] .tst-icon {
+  color: #e09a12;
+}
+
+.tst-toast[data-kind="info"] .tst-icon {
+  color: var(--tst-mute);
+}
+
+.tst-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tst-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.tst-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--tst-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0em;
+}
+
+.tst-act {
+  flex: none;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--tst-wash);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: scale 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  letter-spacing: 0em;
+}
+
+.tst-act:active {
+  scale: 0.96;
+}
+
+.tst-x {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--tst-mute);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.tst-x:hover {
+  background: var(--tst-wash);
+  color: var(--foreground);
+}
+
+.tst-act:focus-visible,
+.tst-x:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary);
+}

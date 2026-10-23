@@ -1,6 +1,6 @@
 # sgpla-web
 
-Frontend de SGPLa. Esta carpeta contiene solo la configuración inicial: sin pantallas de negocio ni inicio de sesión.
+Frontend de SGPLa: el panel principal y el inicio de sesión contra la API REST de `../sgpla-backend`.
 
 ## Stack
 
@@ -33,6 +33,34 @@ sgpla-web/
 
 Los nombres de módulo van en español; el resto de las carpetas, en inglés. Los identificadores de dominio van en español sin acentos, los términos técnicos en inglés, y la interfaz y los comentarios en español.
 
+### Arquitectura de un módulo
+
+Cada módulo replica las capas de los módulos del backend, con la ceremonia proporcional a su lógica: una capa sin contenido no se crea.
+
+```text
+modules/<modulo>/
+  domain/           reglas en TypeScript puro: sin React, TanStack ni la API
+  application/      casos de uso: queryOptions, hooks de mutación y guardas de ruta
+  infrastructure/   adaptadores del navegador (localStorage, por ejemplo)
+  pages/            lo que monta una ruta: páginas, layouts y la validación de su búsqueda
+  components/       piezas de presentación del módulo y sus hooks de interfaz
+  <modulo>-module.ts  raíz de composición, si el módulo se conecta al cliente de la API u otra pieza global
+  index.ts          contrato: lo único que importan las rutas y los demás módulos
+```
+
+| Capa             | Equivale en el backend  | Puede depender de                                                                    | Nunca depende de                                             |
+| ---------------- | ----------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `domain`         | `Domain`                | Nada fuera del módulo                                                                | React, TanStack, `lib/api`, `components`, las otras capas    |
+| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                           | `pages`, `components`                                        |
+| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                      | `pages`, `components`                                        |
+| `pages`          | `Endpoints`             | `components`, `application`, `domain`, `components/` compartidos, `lib/api/problema` | `infrastructure`, `lib/api/client`, `lib/api/query`          |
+| `components`     | `Endpoints`             | `application`, `domain`, `components/` compartidos, `lib/api/problema`               | `pages`, `infrastructure`, `lib/api/client`, `lib/api/query` |
+| `index.ts`       | `Application/Contracts` | Todas las capas                                                                      | —                                                            |
+
+Las rutas de `routes/` son adaptadores delgados, como los `Map…Endpoints`: validan la búsqueda, ejecutan la guarda en `beforeLoad` y montan la página. `main.tsx` es la raíz de composición de la aplicación. Dentro de un módulo se importa con rutas relativas; desde fuera, solo `@/modules/<modulo>`.
+
+`.oxlintrc.json` verifica estas reglas en el lint, como `Sgpla.ArchitectureTests` en el backend: los imports profundos entre módulos, los imports prohibidos por capa y el uso de `localStorage` o `sessionStorage` fuera de `infrastructure`. No detecta imports relativos que crucen de un módulo a otro; esos se revisan en el PR.
+
 `routeTree.gen.ts` y `lib/api/schema.d.ts` son archivos generados que se versionan: no se editan a mano.
 
 ### `tools/openapi`: el generador de tipos
@@ -60,6 +88,10 @@ docker compose run --rm web sh -c "corepack enable && pnpm add <paquete>"
 Un paquete nuevo o una actualización mayor necesita revisión de licencia y aprobación. Después de agregarlo se ejecuta `pnpm licenses list` en la aplicación y, si cambió, en `tools/openapi`.
 
 El CI no regenera `schema.d.ts`, porque no tiene la API: tras un cambio de contratos en el backend, hay que ejecutar `generar-api.sh` y confirmar el resultado.
+
+## Sesión
+
+El token que devuelve `POST /api/v1/usuarios/iniciar-sesion` se guarda en `localStorage`, bajo la clave `sgpla.sesion`, junto con su vencimiento (`expiraEn`), y se descarta al vencer. El módulo `sesion` conecta el token con el cliente de la API desde `main.tsx` (`registrarSesion`), y el cliente lo envía como `Authorization: Bearer` en cada petición. Un 401 con token borra la sesión y lleva al inicio de sesión. Las rutas del panel exigen una sesión vigente, y una cuenta con contraseña temporal solo puede abrir `/cambiar-contrasena`.
 
 ## Variables
 

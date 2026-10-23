@@ -10,8 +10,152 @@
     "react/exhaustive-deps": "error",
     "@tanstack/query/exhaustive-deps": "error",
     "@tanstack/query/stable-query-client": "error",
-    "@tanstack/router/create-route-property-order": "error"
+    "@tanstack/router/create-route-property-order": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@/modules/*/**"],
+            "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+          }
+        ]
+      }
+    ],
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "localStorage",
+        "message": "El almacenamiento del navegador solo se usa en la capa infrastructure de un módulo."
+      },
+      {
+        "name": "sessionStorage",
+        "message": "El almacenamiento del navegador solo se usa en la capa infrastructure de un módulo."
+      }
+    ]
   },
+  "overrides": [
+    {
+      "files": ["src/modules/*/domain/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/modules/*/**"],
+                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+              },
+              {
+                "group": [
+                  "react",
+                  "react-dom",
+                  "@tanstack/*",
+                  "@/lib/api/*",
+                  "@/components/**",
+                  "../application/*",
+                  "../infrastructure/*",
+                  "../pages/*",
+                  "../components/*"
+                ],
+                "message": "domain es TypeScript puro: sin React, TanStack, la API ni las otras capas del módulo."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/*/application/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/modules/*/**"],
+                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+              },
+              {
+                "group": ["../pages/*", "../components/*"],
+                "message": "application no depende de pages ni de components."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/*/infrastructure/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/modules/*/**"],
+                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+              },
+              {
+                "group": ["../pages/*", "../components/*"],
+                "message": "infrastructure no depende de pages ni de components."
+              }
+            ]
+          }
+        ],
+        "no-restricted-globals": "off"
+      }
+    },
+    {
+      "files": ["src/modules/*/pages/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/modules/*/**"],
+                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+              },
+              {
+                "group": [
+                  "../infrastructure/*",
+                  "@/lib/api/client",
+                  "@/lib/api/query"
+                ],
+                "message": "pages llega a los datos solo por application."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/*/components/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/modules/*/**"],
+                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+              },
+              {
+                "group": [
+                  "../infrastructure/*",
+                  "@/lib/api/client",
+                  "@/lib/api/query",
+                  "../pages/*"
+                ],
+                "message": "components llega a los datos solo por application y no depende de pages."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
   "ignorePatterns": [
     "node_modules",
     "dist",

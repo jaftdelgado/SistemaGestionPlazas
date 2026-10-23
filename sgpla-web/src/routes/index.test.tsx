@@ -27,11 +27,11 @@ async function renderizarEn(ruta: string) {
   );
 }
 
-it("muestra el panel principal en la ruta raíz", async () => {
+it("redirige al inicio de sesión cuando no hay sesión en la ruta raíz", async () => {
   await renderizarEn("/");
 
   expect(
-    await screen.findByRole("heading", { name: "Panel principal" }),
+    await screen.findByRole("heading", { name: "Iniciar sesión" }),
   ).toBeInTheDocument();
 });
 
