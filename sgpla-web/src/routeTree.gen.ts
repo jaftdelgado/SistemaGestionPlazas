@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PanelRouteImport } from './routes/_panel'
 import { Route as ComponentesRouteImport } from './routes/componentes'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelUsuariosRouteImport } from './routes/_panel/usuarios'
 
@@ -21,6 +22,11 @@ const PanelRoute = PanelRouteImport.update({
 const ComponentesRoute = ComponentesRouteImport.update({
   id: '/componentes',
   path: '/componentes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PanelIndexRoute = PanelIndexRouteImport.update({
@@ -37,10 +43,12 @@ const PanelUsuariosRoute = PanelUsuariosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
   '/componentes': typeof ComponentesRoute
+  '/login': typeof LoginRoute
   '/usuarios': typeof PanelUsuariosRoute
 }
 export interface FileRoutesByTo {
   '/componentes': typeof ComponentesRoute
+  '/login': typeof LoginRoute
   '/usuarios': typeof PanelUsuariosRoute
   '/': typeof PanelIndexRoute
 }
@@ -48,20 +56,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_panel': typeof PanelRouteWithChildren
   '/componentes': typeof ComponentesRoute
+  '/login': typeof LoginRoute
   '/_panel/usuarios': typeof PanelUsuariosRoute
   '/_panel/': typeof PanelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/componentes' | '/usuarios'
+  fullPaths: '/' | '/componentes' | '/login' | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/componentes' | '/usuarios' | '/'
-  id: '__root__' | '/_panel' | '/componentes' | '/_panel/usuarios' | '/_panel/'
+  to: '/componentes' | '/login' | '/usuarios' | '/'
+  id:
+    | '__root__'
+    | '/_panel'
+    | '/componentes'
+    | '/login'
+    | '/_panel/usuarios'
+    | '/_panel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   PanelRoute: typeof PanelRouteWithChildren
   ComponentesRoute: typeof ComponentesRoute
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,6 +94,13 @@ declare module '@tanstack/react-router' {
       path: '/componentes'
       fullPath: '/componentes'
       preLoaderRoute: typeof ComponentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_panel/': {
@@ -112,6 +135,7 @@ const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   PanelRoute: PanelRouteWithChildren,
   ComponentesRoute: ComponentesRoute,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
