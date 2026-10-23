@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ToastStack } from "@/components/ui/toast-stack";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
@@ -14,6 +15,7 @@ function RaizLayout() {
   return (
     <>
       <Outlet />
+      <ToastStack />
       {import.meta.env.DEV && (
         <>
           <TanStackRouterDevtools />
