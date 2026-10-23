@@ -32,7 +32,7 @@ import {
    Base UI opens the stack when the pointer or focus is on the viewport,
    and a hairline under each toast bridges the gap between them, so the
    list never closes while the pointer crosses from one toast to the
-   next. The front toast stays put as the rest fan upward.
+   next. The front toast stays put as the rest fan downward.
 
    ── ONLY THREE ──────────────────────────────────────────
    Dismiss one and it slides away. The provider's limit is three: older
@@ -77,6 +77,7 @@ function ListaDeToasts() {
             <Toast.Root
               key={t.id}
               toast={t}
+              swipeDirection="up"
               className="tst-toast"
               data-kind={t.type}
             >

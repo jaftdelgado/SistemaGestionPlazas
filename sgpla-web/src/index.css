@@ -115,8 +115,9 @@
   --tst-mute: color-mix(in srgb, var(--foreground) 52%, var(--card));
   --tst-wash: color-mix(in srgb, var(--foreground) 6%, var(--card));
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
+  top: 1rem;
+  left: 50%;
+  translate: -50% 0;
   z-index: 60;
   width: 300px;
   font-family: var(--font-sans);
@@ -133,20 +134,20 @@
   --back: min(var(--toast-index), 2);
   position: absolute;
   right: 0;
-  bottom: 0;
+  top: 0;
   left: 0;
   box-sizing: border-box;
   height: 64px;
   border-radius: var(--tst-r);
   z-index: calc(1000 - var(--toast-index));
-  /* the stack: front at the bottom, each one behind a peek higher
-     and a step smaller, hanging from its top edge */
+  /* the stack: front at the top, each one behind a peek lower
+     and a step smaller, hanging from its bottom edge */
   transform: translateX(var(--toast-swipe-movement-x, 0px))
     translateY(
-      calc(var(--toast-swipe-movement-y, 0px) - var(--back) * var(--peek))
+      calc(var(--toast-swipe-movement-y, 0px) + var(--back) * var(--peek))
     )
     scale(calc(1 - var(--back) * 0.05));
-  transform-origin: 50% 0;
+  transform-origin: 50% 100%;
   /* tucked: the same near-white for both, and a faint edge so each
      sliver has a line to read by; the front one has neither */
   background: color-mix(
@@ -169,12 +170,12 @@
     box-shadow 220ms ease;
 }
 
-/* the list: front at the bottom, the rest above it */
+/* the list: front at the top, the rest below it */
 .tst-toast[data-expanded] {
   transform: translateX(var(--toast-swipe-movement-x, 0px))
     translateY(
       calc(
-        var(--toast-swipe-movement-y, 0px) + var(--toast-offset-y) * -1 -
+        var(--toast-swipe-movement-y, 0px) + var(--toast-offset-y) +
           var(--toast-index) * var(--gap)
       )
     );
@@ -182,15 +183,15 @@
   box-shadow: none;
 }
 
-/* a new one rises in from below the front; a dismissed one slides away */
+/* a new one drops in from above the front; a dismissed one slides back up */
 .tst-toast[data-starting-style] {
   opacity: 0;
-  translate: 0 24px;
+  translate: 0 -24px;
 }
 
 .tst-toast[data-ending-style] {
   opacity: 0;
-  translate: 60px 0;
+  translate: 0 -24px;
   transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
 }
 
