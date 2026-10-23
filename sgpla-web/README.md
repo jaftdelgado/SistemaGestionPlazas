@@ -42,18 +42,20 @@ modules/<modulo>/
   domain/           reglas en TypeScript puro: sin React, TanStack ni la API
   application/      casos de uso: queryOptions, hooks de mutación y guardas de ruta
   infrastructure/   adaptadores del navegador (localStorage, por ejemplo)
-  ui/               pages/, components/, layouts/ y hooks/ de presentación
+  pages/            lo que monta una ruta: páginas, layouts y la validación de su búsqueda
+  components/       piezas de presentación del módulo y sus hooks de interfaz
   <modulo>-module.ts  raíz de composición, si el módulo se conecta al cliente de la API u otra pieza global
   index.ts          contrato: lo único que importan las rutas y los demás módulos
 ```
 
-| Capa             | Equivale en el backend  | Puede depender de                                          | Nunca depende de                                          |
-| ---------------- | ----------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| `domain`         | `Domain`                | Nada fuera del módulo                                      | React, TanStack, `lib/api`, `components`, las otras capas |
-| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                 | `ui`                                                      |
-| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                            | `ui`                                                      |
-| `ui`             | `Endpoints`             | `application`, `domain`, `components/`, `lib/api/problema` | `infrastructure`, `lib/api/client`, `lib/api/query`       |
-| `index.ts`       | `Application/Contracts` | Todas las capas                                            | —                                                         |
+| Capa             | Equivale en el backend  | Puede depender de                                                                    | Nunca depende de                                             |
+| ---------------- | ----------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `domain`         | `Domain`                | Nada fuera del módulo                                                                | React, TanStack, `lib/api`, `components`, las otras capas    |
+| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                           | `pages`, `components`                                        |
+| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                      | `pages`, `components`                                        |
+| `pages`          | `Endpoints`             | `components`, `application`, `domain`, `components/` compartidos, `lib/api/problema` | `infrastructure`, `lib/api/client`, `lib/api/query`          |
+| `components`     | `Endpoints`             | `application`, `domain`, `components/` compartidos, `lib/api/problema`               | `pages`, `infrastructure`, `lib/api/client`, `lib/api/query` |
+| `index.ts`       | `Application/Contracts` | Todas las capas                                                                      | —                                                            |
 
 Las rutas de `routes/` son adaptadores delgados, como los `Map…Endpoints`: validan la búsqueda, ejecutan la guarda en `beforeLoad` y montan la página. `main.tsx` es la raíz de composición de la aplicación. Dentro de un módulo se importa con rutas relativas; desde fuera, solo `@/modules/<modulo>`.
 
