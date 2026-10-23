@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PanelRouteImport } from './routes/_panel'
+import { Route as CambiarContrasenaRouteImport } from './routes/cambiar-contrasena'
 import { Route as ComponentesRouteImport } from './routes/componentes'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
@@ -17,6 +18,11 @@ import { Route as PanelUsuariosRouteImport } from './routes/_panel/usuarios'
 
 const PanelRoute = PanelRouteImport.update({
   id: '/_panel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CambiarContrasenaRoute = CambiarContrasenaRouteImport.update({
+  id: '/cambiar-contrasena',
+  path: '/cambiar-contrasena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComponentesRoute = ComponentesRouteImport.update({
@@ -42,11 +48,13 @@ const PanelUsuariosRoute = PanelUsuariosRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
+  '/cambiar-contrasena': typeof CambiarContrasenaRoute
   '/componentes': typeof ComponentesRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof PanelUsuariosRoute
 }
 export interface FileRoutesByTo {
+  '/cambiar-contrasena': typeof CambiarContrasenaRoute
   '/componentes': typeof ComponentesRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof PanelUsuariosRoute
@@ -55,6 +63,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_panel': typeof PanelRouteWithChildren
+  '/cambiar-contrasena': typeof CambiarContrasenaRoute
   '/componentes': typeof ComponentesRoute
   '/login': typeof LoginRoute
   '/_panel/usuarios': typeof PanelUsuariosRoute
@@ -62,12 +71,14 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/componentes' | '/login' | '/usuarios'
+  fullPaths:
+    '/' | '/cambiar-contrasena' | '/componentes' | '/login' | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/componentes' | '/login' | '/usuarios' | '/'
+  to: '/cambiar-contrasena' | '/componentes' | '/login' | '/usuarios' | '/'
   id:
     | '__root__'
     | '/_panel'
+    | '/cambiar-contrasena'
     | '/componentes'
     | '/login'
     | '/_panel/usuarios'
@@ -76,6 +87,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   PanelRoute: typeof PanelRouteWithChildren
+  CambiarContrasenaRoute: typeof CambiarContrasenaRoute
   ComponentesRoute: typeof ComponentesRoute
   LoginRoute: typeof LoginRoute
 }
@@ -87,6 +99,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cambiar-contrasena': {
+      id: '/cambiar-contrasena'
+      path: '/cambiar-contrasena'
+      fullPath: '/cambiar-contrasena'
+      preLoaderRoute: typeof CambiarContrasenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/componentes': {
@@ -134,6 +153,7 @@ const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   PanelRoute: PanelRouteWithChildren,
+  CambiarContrasenaRoute: CambiarContrasenaRoute,
   ComponentesRoute: ComponentesRoute,
   LoginRoute: LoginRoute,
 }
