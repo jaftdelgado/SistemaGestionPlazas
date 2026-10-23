@@ -45,7 +45,9 @@ export function CambiarContrasenaPage() {
             </p>
           </div>
           <Field data-invalid={errorActual ? "true" : undefined}>
-            <FieldLabel htmlFor="contrasena-actual">Contraseña actual</FieldLabel>
+            <FieldLabel htmlFor="contrasena-actual">
+              Contraseña actual
+            </FieldLabel>
             <PasswordInput
               id="contrasena-actual"
               name="contrasenaActual"
@@ -87,7 +89,9 @@ export function CambiarContrasenaPage() {
               onChange={(evento) => setConfirmacion(evento.target.value)}
               aria-invalid={noCoincide ? true : undefined}
             />
-            {noCoincide && <FieldError>Las contraseñas no coinciden.</FieldError>}
+            {noCoincide && (
+              <FieldError>Las contraseñas no coinciden.</FieldError>
+            )}
           </Field>
           {error && (
             <p role="alert" className="text-sm text-destructive">

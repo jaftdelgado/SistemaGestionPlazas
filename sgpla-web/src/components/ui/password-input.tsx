@@ -35,7 +35,7 @@ export function PasswordInput({
         // Edge agrega un botón de revelar al campo nativo; se oculta.
         // El autocompletado del navegador pinta un fondo propio que se sale
         // de los bordes redondeados del grupo; se cubre con el color del campo.
-        className="[&::-ms-reveal]:hidden [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_var(--input)] [&:-webkit-autofill]:[-webkit-text-fill-color:var(--foreground)]"
+        className="[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_var(--input)] [&:-webkit-autofill]:[-webkit-text-fill-color:var(--foreground)] [&::-ms-reveal]:hidden"
         type={visible ? "text" : "password"}
         disabled={disabled}
         {...props}
