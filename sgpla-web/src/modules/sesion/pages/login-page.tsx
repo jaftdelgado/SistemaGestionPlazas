@@ -21,7 +21,12 @@ export function LoginPage() {
 
   const errores = erroresDeCampo(error);
   const errorUsuario = errores["correo"]?.join(" ");
-  const errorContrasena = errores["contraseña"]?.join(" ");
+  const errorContrasena = errores["contrasena"]?.join(" ");
+  // Un error que ya se muestra bajo su campo no se repite en el aviso general.
+  const errorGeneral =
+    error && Object.keys(errores).length === 0
+      ? mensajeDeProblema(error)
+      : undefined;
 
   function enviar(evento: SubmitEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -67,9 +72,9 @@ export function LoginPage() {
             </FieldDescription>
             <FieldError>{errorContrasena}</FieldError>
           </Field>
-          {error && (
+          {errorGeneral && (
             <p role="alert" className="text-sm text-destructive">
-              {mensajeDeProblema(error)}
+              {errorGeneral}
             </p>
           )}
           <Button type="submit" disabled={isPending}>

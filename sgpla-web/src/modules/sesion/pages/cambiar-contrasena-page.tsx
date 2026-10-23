@@ -23,6 +23,11 @@ export function CambiarContrasenaPage() {
   const errores = erroresDeCampo(error);
   const errorActual = errores["contrasenaActual"]?.join(" ");
   const errorNueva = errores["contrasenaNueva"]?.join(" ");
+  // Un error que ya se muestra bajo su campo no se repite en el aviso general.
+  const errorGeneral =
+    error && Object.keys(errores).length === 0
+      ? mensajeDeProblema(error)
+      : undefined;
 
   function enviar(evento: SubmitEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -93,9 +98,9 @@ export function CambiarContrasenaPage() {
               <FieldError>Las contraseñas no coinciden.</FieldError>
             )}
           </Field>
-          {error && (
+          {errorGeneral && (
             <p role="alert" className="text-sm text-destructive">
-              {mensajeDeProblema(error)}
+              {errorGeneral}
             </p>
           )}
           <Button type="submit" disabled={isPending}>
