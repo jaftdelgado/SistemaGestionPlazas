@@ -1,6 +1,6 @@
 # sgpla-web
 
-Frontend de SGPLa. Esta carpeta contiene solo la configuración inicial: sin pantallas de negocio ni inicio de sesión.
+Frontend de SGPLa: el panel principal y el inicio de sesión contra la API REST de `../sgpla-backend`.
 
 ## Stack
 
@@ -60,6 +60,10 @@ docker compose run --rm web sh -c "corepack enable && pnpm add <paquete>"
 Un paquete nuevo o una actualización mayor necesita revisión de licencia y aprobación. Después de agregarlo se ejecuta `pnpm licenses list` en la aplicación y, si cambió, en `tools/openapi`.
 
 El CI no regenera `schema.d.ts`, porque no tiene la API: tras un cambio de contratos en el backend, hay que ejecutar `generar-api.sh` y confirmar el resultado.
+
+## Sesión
+
+El token que devuelve `POST /api/v1/usuarios/iniciar-sesion` se guarda en `localStorage`, bajo la clave `sgpla.sesion`, junto con su vencimiento (`expiraEn`), y se descarta al vencer. El cliente lo envía como `Authorization: Bearer` en cada petición. Un 401 con token borra la sesión y lleva al inicio de sesión. Las rutas del panel exigen una sesión vigente, y una cuenta con contraseña temporal solo puede abrir `/cambiar-contrasena`.
 
 ## Variables
 
