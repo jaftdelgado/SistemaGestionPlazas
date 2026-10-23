@@ -1,18 +1,29 @@
-import { PersonRegular } from "@fluentui/react-icons";
-import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { AvatarBadge } from "@/components/ui/avatar";
+import { AvatarUsuario } from "@/components/ui/avatar-usuario";
+import { sesionQueryOptions } from "@/modules/sesion/lib/sesion-queries";
 
-// Todavía no hay sesión: el avatar muestra un icono genérico y el estado queda fijo en línea.
 export function PanelAvatar() {
+  const { data: usuario } = useSuspenseQuery(sesionQueryOptions);
   return (
-    <Avatar>
-      <AvatarFallback>
-        <PersonRegular aria-hidden="true" className="size-4" />
-      </AvatarFallback>
-      <AvatarBadge
-        role="img"
-        aria-label="En línea"
-        className="bg-green-600 dark:bg-green-800"
-      />
-    </Avatar>
+    <div className="flex items-center gap-3">
+      <div className="hidden flex-col items-end leading-tight sm:flex">
+        <span className="text-sm font-medium">{usuario.nombre}</span>
+        <span className="text-xs text-muted-foreground">
+          {usuario.rol.nombre}
+        </span>
+      </div>
+      <AvatarUsuario
+        nombre={usuario.nombre}
+        correo={usuario.correo}
+        className="size-9"
+      >
+        <AvatarBadge
+          role="img"
+          aria-label="En línea"
+          className="bg-green-600 dark:bg-green-800"
+        />
+      </AvatarUsuario>
+    </div>
   );
 }
