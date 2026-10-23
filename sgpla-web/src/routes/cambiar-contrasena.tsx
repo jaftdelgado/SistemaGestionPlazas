@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
+  CambiarContrasenaPage,
   destinoSeguro,
   exigirSesion,
   validarBusquedaConRedirect,
-} from "@/modules/sesion/lib/sesion-queries";
-import { CambiarContrasenaPage } from "@/modules/sesion/pages/cambiar-contrasena-page";
+} from "@/modules/sesion";
 
 export const Route = createFileRoute("/cambiar-contrasena")({
   validateSearch: validarBusquedaConRedirect,

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { $api } from "@/lib/api/query";
-import { borrarSesion } from "@/lib/api/sesion-token";
+import { descartarSesion } from "./sesion-activa";
 
 export function useCerrarSesion() {
   const navigate = useNavigate();
@@ -10,8 +10,7 @@ export function useCerrarSesion() {
   return $api.useMutation("post", "/api/v1/usuarios/cerrar-sesion", {
     // La sesión local se descarta aunque la API falle: un 401 ya significa que no era válida y, ante otro error, el usuario no debe quedar atrapado.
     onSettled: () => {
-      borrarSesion();
-      queryClient.clear();
+      descartarSesion(queryClient);
       void navigate({ to: "/login" });
     },
   });

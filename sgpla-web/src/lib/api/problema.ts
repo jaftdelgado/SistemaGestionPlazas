@@ -37,3 +37,10 @@ export function erroresDeCampo(error: unknown): Record<string, string[]> {
   }
   return {};
 }
+
+// Un error que ya se muestra bajo su campo no se repite en el aviso general.
+export function mensajeGeneral(error: unknown): string | undefined {
+  return error && Object.keys(erroresDeCampo(error)).length === 0
+    ? mensajeDeProblema(error)
+    : undefined;
+}

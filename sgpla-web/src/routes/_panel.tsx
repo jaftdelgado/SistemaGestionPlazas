@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { PanelLayout } from "@/modules/panel-principal/layouts/panel-layout";
-import { exigirSesion } from "@/modules/sesion/lib/sesion-queries";
+import { PanelLayout } from "@/modules/panel-principal";
+import { exigirSesion } from "@/modules/sesion";
 
 export const Route = createFileRoute("/_panel")({
   beforeLoad: async ({ context, location }) => {

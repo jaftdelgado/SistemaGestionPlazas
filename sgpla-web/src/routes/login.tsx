@@ -1,15 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { leerToken } from "@/lib/api/sesion-token";
 import {
   destinoSeguro,
+  haySesionGuardada,
+  LoginPage,
   validarBusquedaConRedirect,
-} from "@/modules/sesion/lib/sesion-queries";
-import { LoginPage } from "@/modules/sesion/pages/login-page";
+} from "@/modules/sesion";
 
 export const Route = createFileRoute("/login")({
   validateSearch: validarBusquedaConRedirect,
   beforeLoad: ({ search }) => {
-    if (leerToken() !== null) {
+    if (haySesionGuardada()) {
       throw redirect({ to: destinoSeguro(search.redirect) });
     }
   },

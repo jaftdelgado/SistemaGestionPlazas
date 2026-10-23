@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { erroresDeCampo, mensajeDeProblema } from "@/lib/api/problema";
-import { useIniciarSesion } from "@/modules/sesion/hooks/use-iniciar-sesion";
+import { erroresDeCampo, mensajeGeneral } from "@/lib/api/problema";
+import { useIniciarSesion } from "../../application/use-iniciar-sesion";
 
 export function LoginPage() {
   const { redirect } = useSearch({ from: "/login" });
@@ -22,11 +22,7 @@ export function LoginPage() {
   const errores = erroresDeCampo(error);
   const errorUsuario = errores["correo"]?.join(" ");
   const errorContrasena = errores["contrasena"]?.join(" ");
-  // Un error que ya se muestra bajo su campo no se repite en el aviso general.
-  const errorGeneral =
-    error && Object.keys(errores).length === 0
-      ? mensajeDeProblema(error)
-      : undefined;
+  const errorGeneral = mensajeGeneral(error);
 
   function enviar(evento: SubmitEvent<HTMLFormElement>) {
     evento.preventDefault();

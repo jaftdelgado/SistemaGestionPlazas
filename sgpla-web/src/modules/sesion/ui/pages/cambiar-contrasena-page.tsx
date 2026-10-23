@@ -9,8 +9,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
-import { erroresDeCampo, mensajeDeProblema } from "@/lib/api/problema";
-import { useCambiarContrasena } from "@/modules/sesion/hooks/use-cambiar-contrasena";
+import { erroresDeCampo, mensajeGeneral } from "@/lib/api/problema";
+import { useCambiarContrasena } from "../../application/use-cambiar-contrasena";
 
 export function CambiarContrasenaPage() {
   const { redirect } = useSearch({ from: "/cambiar-contrasena" });
@@ -23,11 +23,7 @@ export function CambiarContrasenaPage() {
   const errores = erroresDeCampo(error);
   const errorActual = errores["contrasenaActual"]?.join(" ");
   const errorNueva = errores["contrasenaNueva"]?.join(" ");
-  // Un error que ya se muestra bajo su campo no se repite en el aviso general.
-  const errorGeneral =
-    error && Object.keys(errores).length === 0
-      ? mensajeDeProblema(error)
-      : undefined;
+  const errorGeneral = mensajeGeneral(error);
 
   function enviar(evento: SubmitEvent<HTMLFormElement>) {
     evento.preventDefault();

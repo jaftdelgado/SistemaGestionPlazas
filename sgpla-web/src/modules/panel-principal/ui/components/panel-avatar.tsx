@@ -9,8 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCerrarSesion } from "@/modules/sesion/hooks/use-cerrar-sesion";
-import { sesionQueryOptions } from "@/modules/sesion/lib/sesion-queries";
+import { sesionQueryOptions, useCerrarSesion } from "@/modules/sesion";
 
 export function PanelAvatar() {
   const { data: usuario } = useSuspenseQuery(sesionQueryOptions);
