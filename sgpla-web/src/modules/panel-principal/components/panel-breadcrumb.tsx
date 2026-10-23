@@ -7,7 +7,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useNavegacion } from "../hooks/use-navegacion";
+import { useNavegacion } from "./use-navegacion";
 
 export function PanelBreadcrumb() {
   const { elementos, activo } = useNavegacion();

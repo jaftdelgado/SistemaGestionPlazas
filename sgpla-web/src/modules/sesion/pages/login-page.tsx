@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { erroresDeCampo, mensajeGeneral } from "@/lib/api/problema";
-import { useIniciarSesion } from "../../application/use-iniciar-sesion";
+import { useIniciarSesion } from "../application/use-iniciar-sesion";
 
 export function LoginPage() {
   const { redirect } = useSearch({ from: "/login" });

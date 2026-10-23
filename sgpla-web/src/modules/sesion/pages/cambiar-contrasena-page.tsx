@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { erroresDeCampo, mensajeGeneral } from "@/lib/api/problema";
-import { useCambiarContrasena } from "../../application/use-cambiar-contrasena";
+import { useCambiarContrasena } from "../application/use-cambiar-contrasena";
 
 export function CambiarContrasenaPage() {
   const { redirect } = useSearch({ from: "/cambiar-contrasena" });

@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useNavegacion } from "../hooks/use-navegacion";
+import { useNavegacion } from "./use-navegacion";
 
 export function PanelSidebar() {
   const { elementos, activo } = useNavegacion();
