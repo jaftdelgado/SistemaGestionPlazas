@@ -2,12 +2,23 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { registrarAlVencerSesion } from "@/lib/api/client";
+import { borrarSesion } from "@/lib/api/sesion-token";
 import { crearQueryClient } from "@/lib/query-client";
 import { routeTree } from "@/routeTree.gen";
 import "./index.css";
 
 const queryClient = crearQueryClient();
 const router = createRouter({ routeTree, context: { queryClient } });
+
+registrarAlVencerSesion(() => {
+  borrarSesion();
+  queryClient.clear();
+  void router.navigate({
+    to: "/login",
+    search: { redirect: router.state.location.href },
+  });
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
