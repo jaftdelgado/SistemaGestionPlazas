@@ -21,6 +21,15 @@ export function mensajeDeProblema(error: unknown): string {
   return MENSAJE_SIN_CONEXION;
 }
 
+export function esNoAutenticado(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    Number(error.status) === 401
+  );
+}
+
 export function erroresDeCampo(error: unknown): Record<string, string[]> {
   if (typeof error === "object" && error !== null && "errors" in error) {
     const { errors } = error as ProblemaApi;
