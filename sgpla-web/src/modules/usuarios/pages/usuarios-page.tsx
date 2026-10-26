@@ -1,5 +1,4 @@
 import {
-  CheckmarkCircleRegular,
   MailRegular,
   PersonRegular,
   ShieldRegular,
@@ -8,7 +7,6 @@ import * as React from "react";
 import {
   DataGrid,
   type DataGridColumn,
-  type DataGridSort,
 } from "@/components/data-grid/data-grid";
 import {
   PageHeader,
@@ -26,17 +24,19 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import { PaginationSummary } from "@/components/ui/pagination-summary";
 import { SearchInput } from "@/components/ui/search-input";
+import { useValorConRetardo } from "@/hooks/use-valor-con-retardo";
+import { mensajeDeProblema } from "@/lib/api/problema";
+import { useCuentas } from "../application/usuarios-queries";
+import { ROLES } from "../domain/roles";
 
-// Datos de ejemplo para verificar el DataGrid a mano; se sustituyen por la consulta real de usuarios.
-type UsuarioEjemplo = {
+type UsuarioFila = {
   id: string;
   nombre: string;
   correo: string;
   rol: string;
-  estado: string;
 };
 
-type ColumnaUsuario = "nombre" | "correo" | "rol" | "estado";
+type ColumnaUsuario = "nombre" | "correo" | "rol";
 
 const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
   {
@@ -44,128 +44,41 @@ const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
     label: "Nombre",
     icon: PersonRegular,
     defaultWidth: 260,
-    sortable: true,
   },
   {
     id: "correo",
     label: "Correo",
     icon: MailRegular,
     defaultWidth: 280,
-    sortable: true,
   },
   {
     id: "rol",
     label: "Rol",
     icon: ShieldRegular,
     defaultWidth: 200,
-    sortable: true,
-  },
-  {
-    id: "estado",
-    label: "Estado",
-    icon: CheckmarkCircleRegular,
-    defaultWidth: 140,
-    minWidth: 120,
-    sortable: true,
   },
 ];
-
-const USUARIOS_EJEMPLO: UsuarioEjemplo[] = [
-  {
-    id: "1",
-    nombre: "María Fernanda López Hernández",
-    correo: "mflopez@uv.mx",
-    rol: "Superusuario",
-    estado: "Activo",
-  },
-  {
-    id: "2",
-    nombre: "José Antonio Ramírez Cruz",
-    correo: "joramirez@uv.mx",
-    rol: "Coordinador",
-    estado: "Activo",
-  },
-  {
-    id: "3",
-    nombre: "Ana Karen Morales Vázquez",
-    correo: "anmorales@uv.mx",
-    rol: "Académico",
-    estado: "Inactivo",
-  },
-  {
-    id: "4",
-    nombre: "Luis Enrique Domínguez Soto",
-    correo: "ludominguez@uv.mx",
-    rol: "Académico",
-    estado: "Activo",
-  },
-  {
-    id: "5",
-    nombre: "Gabriela Sánchez Ortiz",
-    correo: "gasanchez@uv.mx",
-    rol: "Coordinador",
-    estado: "Activo",
-  },
-  {
-    id: "6",
-    nombre: "Ricardo Méndez Aguilar",
-    correo: "rimendez@uv.mx",
-    rol: "Académico",
-    estado: "Inactivo",
-  },
-];
-
-// Relleno temporal para probar la paginación con muchas páginas.
-const USUARIOS_RELLENO: UsuarioEjemplo[] = Array.from(
-  { length: 94 },
-  (_, i) => i,
-).flatMap((i) => {
-  const base = USUARIOS_EJEMPLO[i % USUARIOS_EJEMPLO.length];
-  if (!base) return [];
-  const numero = i + 7;
-  return [
-    {
-      ...base,
-      id: String(numero),
-      nombre: `${base.nombre} ${numero}`,
-      correo: `usuario${numero}@uv.mx`,
-    },
-  ];
-});
-
-const TODOS_LOS_USUARIOS = [...USUARIOS_EJEMPLO, ...USUARIOS_RELLENO];
 
 const CAMPOS_FILTRO: FilterField[] = [
   {
     id: "rol",
     label: "Rol",
-    options: ["Superusuario", "Coordinador", "Académico"].map((rol) => ({
-      value: rol,
-      label: rol,
-    })),
-  },
-  {
-    id: "estado",
-    label: "Estado",
-    options: ["Activo", "Inactivo"].map((estado) => ({
-      value: estado,
-      label: estado,
+    options: ROLES.map((rol) => ({
+      value: String(rol.id),
+      label: rol.nombre,
     })),
   },
 ];
 
 const TAMANO_PAGINA_INICIAL = 10;
+const RETARDO_BUSQUEDA_MS = 300;
 
-function esColumnaEditable(columnId: ColumnaUsuario) {
-  return columnId === "nombre";
-}
-
-function abreDetalle(columnId: ColumnaUsuario) {
-  return columnId === "nombre" || columnId === "correo";
+function noAbreDetalle() {
+  return false;
 }
 
 function renderizarCelda(
-  usuario: UsuarioEjemplo,
+  usuario: UsuarioFila,
   columna: DataGridColumn<ColumnaUsuario>,
 ) {
   if (columna.id !== "nombre") return usuario[columna.id];
@@ -182,72 +95,63 @@ function renderizarCelda(
   );
 }
 
-function valorDeCelda(usuario: UsuarioEjemplo, columnId: ColumnaUsuario) {
+function valorDeCelda(usuario: UsuarioFila, columnId: ColumnaUsuario) {
   return usuario[columnId];
 }
 
-function aplicarEdicion(
-  usuario: UsuarioEjemplo,
-  columnId: ColumnaUsuario,
-  valor: string,
-) {
-  return { ...usuario, [columnId]: valor };
-}
-
 export function UsuariosPage() {
-  const [usuarios, setUsuarios] = React.useState(TODOS_LOS_USUARIOS);
   const [seleccionados, setSeleccionados] = React.useState<string[]>([]);
   const [pagina, setPagina] = React.useState(1);
   const [tamanoPagina, setTamanoPagina] = React.useState(TAMANO_PAGINA_INICIAL);
-
   const [filtros, setFiltros] = React.useState<FilterChip[]>([]);
-  const [orden, setOrden] = React.useState<DataGridSort<ColumnaUsuario>>(null);
+  const [textoBusqueda, setTextoBusqueda] = React.useState("");
 
-  const usuariosFiltrados = usuarios.filter((usuario) =>
-    filtros.every(
-      (filtro) => usuario[filtro.id as ColumnaUsuario] === filtro.value,
-    ),
+  const busqueda = useValorConRetardo(
+    textoBusqueda.trim(),
+    RETARDO_BUSQUEDA_MS,
   );
-  // El orden se aplica a todo el conjunto filtrado, antes de paginar.
-  const usuariosOrdenados = orden
-    ? [...usuariosFiltrados].sort(
-        (a, b) =>
-          a[orden.columnId].localeCompare(b[orden.columnId], "es") *
-          (orden.direction === "asc" ? 1 : -1),
-      )
-    : usuariosFiltrados;
-  const totalPaginas = Math.ceil(usuariosFiltrados.length / tamanoPagina);
-  const inicio = (pagina - 1) * tamanoPagina;
-  const usuariosDePagina = usuariosOrdenados.slice(
-    inicio,
-    inicio + tamanoPagina,
-  );
+  const rolFiltro = filtros.find((filtro) => filtro.id === "rol")?.value;
 
-  // Al cambiar el orden se vuelve a la primera página.
-  function cambiarOrden(siguiente: DataGridSort<ColumnaUsuario>) {
-    setOrden(siguiente);
+  const { data, isPending, isError, error, refetch } = useCuentas({
+    pagina,
+    tamanoPagina,
+    rolId: rolFiltro === undefined ? undefined : Number(rolFiltro),
+    busqueda: busqueda === "" ? undefined : busqueda,
+  });
+
+  const usuarios = React.useMemo<UsuarioFila[]>(
+    () =>
+      (data?.elementos ?? []).map((cuenta) => ({
+        id: String(cuenta.id),
+        nombre: cuenta.nombre,
+        correo: cuenta.correo,
+        rol: cuenta.rol.nombre,
+      })),
+    [data],
+  );
+  const total = Number(data?.total ?? 0);
+  const totalPaginas = Math.ceil(total / tamanoPagina);
+  const hayCriterios = filtros.length > 0 || busqueda !== "";
+
+  // Al cambiar los criterios, la página actual podría no existir; se vuelve a la primera.
+  function cambiarBusqueda(texto: string) {
+    setTextoBusqueda(texto);
     setPagina(1);
   }
 
-  // Al cambiar los filtros, la página actual podría no existir; se vuelve a la primera.
   function cambiarFiltros(siguientes: FilterChip[]) {
     setFiltros(siguientes);
     setPagina(1);
   }
 
-  // Al cambiar el tamaño, la página actual podría no existir; se vuelve a la primera.
   function cambiarTamanoPagina(tamano: number) {
     setTamanoPagina(tamano);
     setPagina(1);
   }
 
-  // El grid devuelve solo las filas de la página; se reemplazan por id.
-  function aplicarFilasDePagina(filas: UsuarioEjemplo[]) {
-    setUsuarios((actuales) =>
-      actuales.map(
-        (usuario) => filas.find((f) => f.id === usuario.id) ?? usuario,
-      ),
-    );
+  function limpiarCriterios() {
+    setTextoBusqueda("");
+    cambiarFiltros([]);
   }
 
   return (
@@ -263,6 +167,8 @@ export function UsuariosPage() {
           aria-label="Buscar usuarios"
           placeholder="Buscar usuarios"
           className="max-w-xs"
+          value={textoBusqueda}
+          onChange={(evento) => cambiarBusqueda(evento.target.value)}
         />
         <FilterToolbar
           filters={filtros}
@@ -277,47 +183,60 @@ export function UsuariosPage() {
           onClearAll={() => cambiarFiltros([])}
         />
       </div>
-      <DataGrid
-        rows={usuariosDePagina}
-        columns={COLUMNAS}
-        sort={orden}
-        onSortChange={cambiarOrden}
-        getRowLabel={(usuario) => usuario.nombre}
-        renderCell={renderizarCelda}
-        selectedRowIds={seleccionados}
-        onSelectedRowIdsChange={setSeleccionados}
-        isEditableColumn={esColumnaEditable}
-        getCellEditValue={valorDeCelda}
-        applyCellEdit={aplicarEdicion}
-        onRowsChange={aplicarFilasDePagina}
-        getDrawerCellValue={valorDeCelda}
-        canOpenDrawer={abreDetalle}
-        emptyState={
-          <EmptyState
-            label="Sin usuarios"
-            title={
-              filtros.length > 0 ? "Sin resultados" : "Aún no hay usuarios"
-            }
-            description={
-              filtros.length > 0
-                ? "Ningún usuario coincide con los filtros aplicados."
-                : "Cuando registres usuarios, aparecerán aquí."
-            }
-            action={
-              filtros.length > 0 ? (
-                <Button variant="secondary" onClick={() => cambiarFiltros([])}>
-                  Limpiar filtros
-                </Button>
-              ) : undefined
-            }
-          />
-        }
-      />
+      {isError ? (
+        <EmptyState
+          label="Error al cargar usuarios"
+          title="No se pudieron cargar los usuarios"
+          description={mensajeDeProblema(error)}
+          action={
+            <Button variant="secondary" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
+          }
+        />
+      ) : (
+        <DataGrid
+          rows={usuarios}
+          columns={COLUMNAS}
+          getRowLabel={(usuario) => usuario.nombre}
+          renderCell={renderizarCelda}
+          selectedRowIds={seleccionados}
+          onSelectedRowIdsChange={setSeleccionados}
+          getDrawerCellValue={valorDeCelda}
+          canOpenDrawer={noAbreDetalle}
+          emptyState={
+            isPending ? (
+              <EmptyState
+                label="Cargando usuarios"
+                title="Cargando usuarios"
+                description="Un momento, por favor."
+              />
+            ) : (
+              <EmptyState
+                label="Sin usuarios"
+                title={hayCriterios ? "Sin resultados" : "Aún no hay usuarios"}
+                description={
+                  hayCriterios
+                    ? "Ningún usuario coincide con la búsqueda o los filtros aplicados."
+                    : "Cuando registres usuarios, aparecerán aquí."
+                }
+                action={
+                  hayCriterios ? (
+                    <Button variant="secondary" onClick={limpiarCriterios}>
+                      Limpiar búsqueda y filtros
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )
+          }
+        />
+      )}
       {/* Fijo al borde inferior; los márgenes negativos compensan el p-6 del layout. */}
       <div className="sticky bottom-0 z-10 -mx-6 mt-auto -mb-6 flex flex-wrap items-center justify-between gap-4 px-6 pt-14 pb-6 before:absolute before:inset-0 before:-z-10 before:bg-background before:[mask-image:linear-gradient(to_top,black_55%,transparent)]">
         <PaginationSummary
           pageSize={tamanoPagina}
-          total={usuariosFiltrados.length}
+          total={total}
           onPageSizeChange={cambiarTamanoPagina}
         />
         <Pagination

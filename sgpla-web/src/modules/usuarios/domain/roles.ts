@@ -1,0 +1,6 @@
+// Roles fijos del sistema; los ids son los del backend y no son configurables.
+export const ROLES = [
+  { id: 1, nombre: "Superusuario" },
+  { id: 2, nombre: "DGAA" },
+  { id: 3, nombre: "Entidad Académica" },
+] as const;
