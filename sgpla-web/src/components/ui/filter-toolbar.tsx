@@ -330,6 +330,9 @@ function FilterToolbar({
                           const valor = filters.find(
                             (x) => x.id === f.id,
                           )?.value;
+                          const etiqueta =
+                            f.options.find((o) => o.value === valor)?.label ??
+                            valor;
                           return (
                             <button
                               key={f.id}
@@ -341,7 +344,7 @@ function FilterToolbar({
                             >
                               {f.label}
                               <span className="absolute right-3 flex items-center gap-1 text-muted-foreground">
-                                {valor}
+                                {etiqueta}
                                 <ChevronRightRegular
                                   aria-hidden="true"
                                   className="size-4"

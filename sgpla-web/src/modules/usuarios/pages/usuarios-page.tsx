@@ -1,4 +1,5 @@
 import {
+  BuildingRegular,
   MailRegular,
   PersonRegular,
   ShieldRegular,
@@ -26,17 +27,27 @@ import { PaginationSummary } from "@/components/ui/pagination-summary";
 import { SearchInput } from "@/components/ui/search-input";
 import { useValorConRetardo } from "@/hooks/use-valor-con-retardo";
 import { mensajeDeProblema } from "@/lib/api/problema";
-import { useCuentas } from "../application/usuarios-queries";
+import type { components } from "@/lib/api/schema";
+import {
+  useAreasAcademicas,
+  useCuentas,
+  useEntidadesAcademicas,
+} from "../application/usuarios-queries";
 import { ROLES } from "../domain/roles";
+
+type CuentaListada = components["schemas"]["CuentaResponse"];
 
 type UsuarioFila = {
   id: string;
   nombre: string;
   correo: string;
   rol: string;
+  // Entidad o área de la cuenta; el Superusuario no tiene ámbito.
+  ambito: string;
+  tipoAmbito: "Entidad" | "Área" | null;
 };
 
-type ColumnaUsuario = "nombre" | "correo" | "rol";
+type ColumnaUsuario = "nombre" | "correo" | "rol" | "ambito";
 
 const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
   {
@@ -57,18 +68,22 @@ const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
     icon: ShieldRegular,
     defaultWidth: 200,
   },
-];
-
-const CAMPOS_FILTRO: FilterField[] = [
   {
-    id: "rol",
-    label: "Rol",
-    options: ROLES.map((rol) => ({
-      value: String(rol.id),
-      label: rol.nombre,
-    })),
+    id: "ambito",
+    label: "Ámbito",
+    icon: BuildingRegular,
+    defaultWidth: 320,
   },
 ];
+
+const CAMPO_ROL: FilterField = {
+  id: "rol",
+  label: "Rol",
+  options: ROLES.map((rol) => ({
+    value: String(rol.id),
+    label: rol.nombre,
+  })),
+};
 
 const TAMANO_PAGINA_INICIAL = 10;
 const RETARDO_BUSQUEDA_MS = 300;
@@ -81,6 +96,17 @@ function renderizarCelda(
   usuario: UsuarioFila,
   columna: DataGridColumn<ColumnaUsuario>,
 ) {
+  if (columna.id === "ambito") {
+    if (usuario.tipoAmbito === null) return "—";
+    return (
+      <span className="flex items-baseline gap-2">
+        <span className="truncate">{usuario.ambito}</span>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {usuario.tipoAmbito}
+        </span>
+      </span>
+    );
+  }
   if (columna.id !== "nombre") return usuario[columna.id];
   return (
     <span className="flex items-center gap-2">
@@ -93,6 +119,32 @@ function renderizarCelda(
       <span className="truncate">{usuario.nombre}</span>
     </span>
   );
+}
+
+function valorDeFiltro(filtros: FilterChip[], id: string) {
+  const valor = filtros.find((filtro) => filtro.id === id)?.value;
+  return valor === undefined ? undefined : Number(valor);
+}
+
+// "Facultad de Estadística e Informática" se muestra como "Fac. de Estadística e Informática".
+function abreviarFacultad(nombre: string) {
+  return nombre.replace(/\bFacultad\b/g, "Fac.");
+}
+
+// Las cuentas DGAA traen área y las de Entidad Académica, entidad; el Superusuario, ninguna.
+function ambitoDeCuenta(
+  cuenta: CuentaListada,
+): Pick<UsuarioFila, "ambito" | "tipoAmbito"> {
+  if (cuenta.entidadAcademica) {
+    return {
+      ambito: abreviarFacultad(cuenta.entidadAcademica.nombre),
+      tipoAmbito: "Entidad",
+    };
+  }
+  if (cuenta.areaAcademica) {
+    return { ambito: cuenta.areaAcademica.nombre, tipoAmbito: "Área" };
+  }
+  return { ambito: "", tipoAmbito: null };
 }
 
 function valorDeCelda(usuario: UsuarioFila, columnId: ColumnaUsuario) {
@@ -110,14 +162,45 @@ export function UsuariosPage() {
     textoBusqueda.trim(),
     RETARDO_BUSQUEDA_MS,
   );
-  const rolFiltro = filtros.find((filtro) => filtro.id === "rol")?.value;
+  const rolFiltro = valorDeFiltro(filtros, "rol");
+  const areaFiltro = valorDeFiltro(filtros, "area");
+  const entidadFiltro = valorDeFiltro(filtros, "entidad");
 
   const { data, isPending, isError, error, refetch } = useCuentas({
     pagina,
     tamanoPagina,
-    rolId: rolFiltro === undefined ? undefined : Number(rolFiltro),
+    rolId: rolFiltro,
+    areaAcademicaId: areaFiltro,
+    entidadAcademicaId: entidadFiltro,
     busqueda: busqueda === "" ? undefined : busqueda,
   });
+
+  const { data: areas } = useAreasAcademicas();
+  const { data: entidades } = useEntidadesAcademicas(areaFiltro);
+
+  // Con un área elegida, el filtro de entidad solo ofrece las de esa área.
+  const camposFiltro = React.useMemo<FilterField[]>(
+    () => [
+      CAMPO_ROL,
+      {
+        id: "area",
+        label: "Área académica",
+        options: (areas ?? []).map((area) => ({
+          value: String(area.id),
+          label: area.nombre,
+        })),
+      },
+      {
+        id: "entidad",
+        label: "Entidad académica",
+        options: (entidades?.elementos ?? []).map((entidad) => ({
+          value: String(entidad.id),
+          label: abreviarFacultad(entidad.nombre),
+        })),
+      },
+    ],
+    [areas, entidades],
+  );
 
   const usuarios = React.useMemo<UsuarioFila[]>(
     () =>
@@ -126,6 +209,7 @@ export function UsuariosPage() {
         nombre: cuenta.nombre,
         correo: cuenta.correo,
         rol: cuenta.rol.nombre,
+        ...ambitoDeCuenta(cuenta),
       })),
     [data],
   );
@@ -172,10 +256,15 @@ export function UsuariosPage() {
         />
         <FilterToolbar
           filters={filtros}
-          fields={CAMPOS_FILTRO}
+          fields={camposFiltro}
           onAdd={(filtro) =>
             cambiarFiltros([
-              ...filtros.filter((f) => f.id !== filtro.id),
+              // Cambiar el área invalida la entidad elegida, que podría ser de otra área.
+              ...filtros.filter(
+                (f) =>
+                  f.id !== filtro.id &&
+                  !(filtro.id === "area" && f.id === "entidad"),
+              ),
               filtro,
             ])
           }
