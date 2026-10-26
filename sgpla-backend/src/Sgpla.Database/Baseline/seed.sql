@@ -280,7 +280,19 @@ VALUES (1, '111', N'Área de Formación Básica'),
 SET IDENTITY_INSERT academico.area_formacion OFF;
 
 -- 6. academico.area_academica
--- Sin datos: las registra el Superusuario.
+-- Áreas académicas de la UV; clave en orden alfabético. El teléfono es un marcador.
+
+SET IDENTITY_INSERT academico.area_academica ON;
+
+INSERT INTO academico.area_academica (id, clave, nombre, telefono)
+VALUES (1, 1, N'Artes',                    '2288420000'),
+       (2, 2, N'Biológico-Agropecuaria',   '2288420000'),
+       (3, 3, N'Ciencias de la Salud',     '2288420000'),
+       (4, 4, N'Económico-Administrativa', '2288420000'),
+       (5, 5, N'Humanidades',              '2288420000'),
+       (6, 6, N'Técnica',                  '2288420000');
+
+SET IDENTITY_INSERT academico.area_academica OFF;
 
 -- 7. academico.region
 -- Regiones universitarias de la UV; id = clave = código de región.
@@ -333,7 +345,7 @@ SET IDENTITY_INSERT academico.campus OFF;
 -- Sin datos por ahora.
 
 -- 10. academico.entidad_academica
--- Sin datos: requiere area_academica, que registra el Superusuario.
+-- Sin datos: las registra el Superusuario.
 
 -- 11. academico.grado_academico
 -- Catálogo fijo: sin altas, modificaciones ni bajas en la

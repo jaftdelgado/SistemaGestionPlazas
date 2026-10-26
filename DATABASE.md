@@ -533,7 +533,7 @@ Restricciones e índices:
 
 - `fk_usuario__rol (rol_id)`.
 - `ck_usuario__correo_formato` y `ck_usuario__nombre_no_vacio`.
-- `ck_usuario__correo_institucional`: los roles DGAA y Entidad Académica requieren dominio `@uv.mx`; Superusuario puede usar cualquier dominio válido.
+- `ck_usuario__correo_institucional`: los roles DGAA y Entidad Académica requieren dominio `@uv.mx` o `@estudiantes.uv.mx`; Superusuario puede usar cualquier dominio válido.
 - `ux_usuario__correo_activo (correo) WHERE fecha_eliminacion IS NULL`, índice único filtrado.
 - `ix_usuario__rol_id (rol_id)`.
 
