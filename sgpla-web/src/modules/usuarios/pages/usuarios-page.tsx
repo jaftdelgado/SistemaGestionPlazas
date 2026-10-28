@@ -115,11 +115,11 @@ function renderizarCelda(
   );
 }
 
-// Acciones provisionales, deshabilitadas hasta que existan sus flujos.
+// Acciones provisionales: aún no hacen nada hasta que existan sus flujos.
 const ACCIONES_USUARIO: DataGridRowAction[] = [
-  { id: "detalle", label: "Ver detalle", disabled: true },
-  { id: "editar", label: "Editar", disabled: true },
-  { id: "baja", label: "Dar de baja", destructive: true, disabled: true },
+  { id: "detalle", label: "Ver detalle" },
+  { id: "editar", label: "Editar" },
+  { id: "baja", label: "Dar de baja", destructive: true },
 ];
 
 function accionesDeUsuario() {
