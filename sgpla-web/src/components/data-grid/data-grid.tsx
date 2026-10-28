@@ -1,5 +1,6 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import * as React from "react";
+import { ACTIONS_COLUMN_WIDTH } from "@/components/data-grid/actions-column";
 import { DrawerPanel } from "@/components/data-grid/drawer-panel";
 import { DataGridTableBody } from "@/components/data-grid/table-body";
 import { DataGridTableHeader } from "@/components/data-grid/table-header";
@@ -21,6 +22,7 @@ export type {
   DataGridDrawerPanelProps,
   DataGridIcon,
   DataGridProps,
+  DataGridRowAction,
   DataGridRowBase,
   DataGridSort,
   EditingCell,
@@ -44,6 +46,10 @@ function alwaysOpenDrawer() {
   return true;
 }
 
+function sinAcciones() {
+  return [];
+}
+
 export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   rows,
   columns,
@@ -51,6 +57,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   onSortChange,
   getRowLabel,
   renderCell,
+  getRowActions,
   selectedRowIds,
   onSelectedRowIdsChange,
   isEditableColumn = neverEditable,
@@ -280,6 +287,9 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   // foco o edición solo renderice las filas afectadas. `renderCell` debe depender únicamente de `row` y `column`.
   const stableGetRowLabel = useStableCallback(getRowLabel);
   const stableRenderCell = useStableCallback(renderCell);
+  const stableGetRowActions = useStableCallback(getRowActions ?? sinAcciones);
+  const hasActions = getRowActions !== undefined;
+  const tableMinWidth = gridMinWidth + (hasActions ? ACTIONS_COLUMN_WIDTH : 0);
   const stableRowKeyDown = useStableCallback(handleRowKeyDown);
   const stableToggleRowSelection = useStableCallback(toggleRowSelection);
   const stableStartSelectionDrag = useStableCallback(startSelectionDrag);
@@ -320,7 +330,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               fillAvailableHeight && "h-full",
               tableContainerClassName,
             )}
-            style={{ width: `max(100%, ${gridMinWidth}px)` }}
+            style={{ width: `max(100%, ${tableMinWidth}px)` }}
           >
             <DataGridTableHeader
               columns={columns}
@@ -328,6 +338,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               sort={sort}
               onSortToggle={onSortChange ? toggleSort : undefined}
               controlColumnWidth={CONTROL_COLUMN_WIDTH}
+              actionsColumnWidth={hasActions ? ACTIONS_COLUMN_WIDTH : undefined}
               allRowsSelected={allRowsSelected}
               someRowsSelected={someRowsSelected}
               onToggleAllRows={toggleAllRows}
@@ -341,6 +352,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               columns={columns}
               getRowLabel={stableGetRowLabel}
               renderCell={stableRenderCell}
+              getRowActions={hasActions ? stableGetRowActions : undefined}
               activeRowId={activeRowId}
               onActiveRowChange={setFocusedRowId}
               onRowKeyDown={stableRowKeyDown}

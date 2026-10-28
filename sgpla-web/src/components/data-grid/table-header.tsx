@@ -10,6 +10,8 @@ import {
 } from "@/components/data-grid/types";
 import { type GridResizeEvent } from "@/components/data-grid/use-grid-columns";
 import { EASE_OUT, SPRING_SWAP } from "@/lib/ease";
+import { cn } from "@/lib/utils";
+import { DESVANECIDO_ACCIONES } from "@/components/data-grid/actions-column";
 
 const EASE = [...EASE_OUT] as [number, number, number, number];
 
@@ -76,6 +78,8 @@ type DataGridTableHeaderProps<ColumnId extends string> = {
   // Sin él, ninguna columna es ordenable aunque lo declare.
   onSortToggle?: (columnId: ColumnId) => void;
   controlColumnWidth: number;
+  // Ancho de la columna de acciones, fija y no redimensionable; sin él, no se dibuja.
+  actionsColumnWidth?: number;
   allRowsSelected: boolean;
   someRowsSelected: boolean;
   onToggleAllRows: (checked: boolean) => void;
@@ -89,6 +93,7 @@ export function DataGridTableHeader<ColumnId extends string>({
   sort,
   onSortToggle,
   controlColumnWidth,
+  actionsColumnWidth,
   allRowsSelected,
   someRowsSelected,
   onToggleAllRows,
@@ -110,6 +115,9 @@ export function DataGridTableHeader<ColumnId extends string>({
             }
           />
         ))}
+        {actionsColumnWidth !== undefined ? (
+          <col style={{ width: actionsColumnWidth }} />
+        ) : null}
       </colgroup>
 
       <TableHeader>
@@ -168,6 +176,17 @@ export function DataGridTableHeader<ColumnId extends string>({
               </TableHead>
             );
           })}
+          {actionsColumnWidth !== undefined ? (
+            <TableHead
+              className={cn(
+                "sticky right-0 z-10 h-10 bg-table-header px-0",
+                DESVANECIDO_ACCIONES,
+                "before:from-table-header",
+              )}
+            >
+              <span className="sr-only">Acciones</span>
+            </TableHead>
+          ) : null}
         </TableRow>
       </TableHeader>
     </>

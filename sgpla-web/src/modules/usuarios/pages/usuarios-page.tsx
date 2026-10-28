@@ -8,6 +8,7 @@ import * as React from "react";
 import {
   DataGrid,
   type DataGridColumn,
+  type DataGridRowAction,
 } from "@/components/data-grid/data-grid";
 import {
   PageHeader,
@@ -98,14 +99,7 @@ function renderizarCelda(
 ) {
   if (columna.id === "ambito") {
     if (usuario.tipoAmbito === null) return "—";
-    return (
-      <span className="flex items-baseline gap-2">
-        <span className="truncate">{usuario.ambito}</span>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {usuario.tipoAmbito}
-        </span>
-      </span>
-    );
+    return <span className="truncate">{usuario.ambito}</span>;
   }
   if (columna.id !== "nombre") return usuario[columna.id];
   return (
@@ -119,6 +113,17 @@ function renderizarCelda(
       <span className="truncate">{usuario.nombre}</span>
     </span>
   );
+}
+
+// Acciones provisionales, deshabilitadas hasta que existan sus flujos.
+const ACCIONES_USUARIO: DataGridRowAction[] = [
+  { id: "detalle", label: "Ver detalle", disabled: true },
+  { id: "editar", label: "Editar", disabled: true },
+  { id: "baja", label: "Dar de baja", destructive: true, disabled: true },
+];
+
+function accionesDeUsuario() {
+  return ACCIONES_USUARIO;
 }
 
 function valorDeFiltro(filtros: FilterChip[], id: string) {
@@ -289,6 +294,7 @@ export function UsuariosPage() {
           columns={COLUMNAS}
           getRowLabel={(usuario) => usuario.nombre}
           renderCell={renderizarCelda}
+          getRowActions={accionesDeUsuario}
           selectedRowIds={seleccionados}
           onSelectedRowIdsChange={setSeleccionados}
           getDrawerCellValue={valorDeCelda}

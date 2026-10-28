@@ -1,4 +1,7 @@
 import type * as React from "react";
+import type { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
+export type DataGridRowAction = DropdownMenuItem;
 
 export type DataGridIcon = React.ComponentType<{
   className?: string;
@@ -65,6 +68,8 @@ export type DataGridProps<
   onSortChange?: (sort: DataGridSort<ColumnId>) => void;
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
+  // Con él, el grid agrega una columna fija al final con un menú de acciones por fila; sin él, no hay columna.
+  getRowActions?: (row: Row) => DataGridRowAction[];
   selectedRowIds: string[];
   onSelectedRowIdsChange: (rowIds: string[]) => void;
   // La edición en celda es opcional: solo se activa en las columnas que isEditableColumn acepta y si se pasan

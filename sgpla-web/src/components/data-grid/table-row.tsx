@@ -1,12 +1,15 @@
 import { OpenRegular } from "@fluentui/react-icons";
 import * as React from "react";
 import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
+import { DESVANECIDO_ACCIONES } from "@/components/data-grid/actions-column";
 import {
   type DataGridColumn,
+  type DataGridRowAction,
   type DataGridRowBase,
   type EditingCell,
 } from "@/components/data-grid/types";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -22,6 +25,7 @@ type DataGridRowProps<Row extends DataGridRowBase, ColumnId extends string> = {
   draftValue: string;
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
+  getRowActions?: (row: Row) => DataGridRowAction[];
   onActiveRowChange: (rowId: string) => void;
   onRowKeyDown: (
     event: React.KeyboardEvent<HTMLTableRowElement>,
@@ -53,6 +57,7 @@ function DataGridRowInner<
   draftValue,
   getRowLabel,
   renderCell,
+  getRowActions,
   onActiveRowChange,
   onRowKeyDown,
   onToggleRowSelection,
@@ -186,6 +191,21 @@ function DataGridRowInner<
           </TableCell>
         );
       })}
+      {getRowActions ? (
+        <TableCell
+          className={cn(
+            "sticky right-0 z-10 h-10 bg-card p-0 text-center in-data-[state=selected]:bg-secondary",
+            DESVANECIDO_ACCIONES,
+            "before:from-card in-data-[state=selected]:before:from-secondary",
+          )}
+        >
+          <DropdownMenu
+            label={`Acciones de ${getRowLabel(row)}`}
+            items={getRowActions(row)}
+            triggerTabIndex={controlTabIndex}
+          />
+        </TableCell>
+      ) : null}
     </TableRow>
   );
 }

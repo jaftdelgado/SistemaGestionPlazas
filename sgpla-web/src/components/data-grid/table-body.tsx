@@ -3,6 +3,7 @@ import { DataGridRow } from "@/components/data-grid/table-row";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   type DataGridColumn,
+  type DataGridRowAction,
   type DataGridRowBase,
   type EditingCell,
 } from "@/components/data-grid/types";
@@ -18,6 +19,7 @@ type DataGridTableBodyProps<
   columns: DataGridColumn<ColumnId>[];
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
+  getRowActions?: (row: Row) => DataGridRowAction[];
   activeRowId: string | null;
   onActiveRowChange: (rowId: string) => void;
   onRowKeyDown: (
@@ -49,6 +51,7 @@ export function DataGridTableBody<
   columns,
   getRowLabel,
   renderCell,
+  getRowActions,
   activeRowId,
   onActiveRowChange,
   onRowKeyDown,
@@ -70,7 +73,10 @@ export function DataGridTableBody<
     return (
       <TableBody>
         <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={columns.length + 1} className="p-0">
+          <TableCell
+            colSpan={columns.length + (getRowActions ? 2 : 1)}
+            className="p-0"
+          >
             <div className="flex h-80 items-center justify-center">
               {emptyState}
             </div>
@@ -97,6 +103,7 @@ export function DataGridTableBody<
             draftValue={isEditingRow ? draftValue : ""}
             getRowLabel={getRowLabel}
             renderCell={renderCell}
+            getRowActions={getRowActions}
             onActiveRowChange={onActiveRowChange}
             onRowKeyDown={onRowKeyDown}
             onToggleRowSelection={onToggleRowSelection}
