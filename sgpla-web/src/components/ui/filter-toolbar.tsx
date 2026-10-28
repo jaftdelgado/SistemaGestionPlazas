@@ -62,12 +62,10 @@ function pasos(reducir: boolean): Variants {
         : {
             opacity: 0,
             x: direccion * DESPLAZAMIENTO_PASO,
-            filter: "blur(4px)",
           },
     centro: {
       opacity: 1,
       x: 0,
-      filter: "blur(0px)",
       transition: reducir ? { duration: 0.1 } : { duration: 0.22, ease: EASE },
     },
     sale: (direccion: number) =>
@@ -76,7 +74,6 @@ function pasos(reducir: boolean): Variants {
         : {
             opacity: 0,
             x: direccion * -DESPLAZAMIENTO_PASO,
-            filter: "blur(2px)",
             transition: { duration: 0.12, ease: EASE },
           },
   };
@@ -259,7 +256,7 @@ function FilterToolbar({
           >
             <PopoverPrimitive.Popup
               data-slot="filter-toolbar-content"
-              className="max-h-(--available-height) w-64 origin-(--transform-origin) overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+              className="max-h-(--available-height) w-68 origin-(--transform-origin) overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
             >
               <motion.div
                 className="relative overflow-hidden"
@@ -339,15 +336,17 @@ function FilterToolbar({
                               type="button"
                               role="menuitem"
                               data-row={f.id}
-                              className={ITEM_CLASS}
+                              className={cn(ITEM_CLASS, "pr-3")}
                               onClick={() => entrarEnCampo(f.id)}
                             >
-                              {f.label}
-                              <span className="absolute right-3 flex items-center gap-1 text-muted-foreground">
-                                {etiqueta}
+                              <span className="shrink-0">{f.label}</span>
+                              <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-muted-foreground">
+                                <span className="truncate" title={etiqueta}>
+                                  {etiqueta}
+                                </span>
                                 <ChevronRightRegular
                                   aria-hidden="true"
-                                  className="size-4"
+                                  className="size-4 shrink-0"
                                 />
                               </span>
                             </button>
