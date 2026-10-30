@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
   <!-- API -->
@@ -35,6 +36,11 @@
   <!-- Documentos (OfertaEducativa) -->
   <ItemGroup>
     <PackageVersion Include="ClosedXML" Version="0.105.1" />
+  </ItemGroup>
+
+  <!-- Dependencias transitivas con vulnerabilidad conocida: se fija la versión corregida -->
+  <ItemGroup>
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
   </ItemGroup>
 
   <!-- Pruebas -->
