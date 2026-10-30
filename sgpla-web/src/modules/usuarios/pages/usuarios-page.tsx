@@ -1,8 +1,13 @@
 import {
   Building01Icon,
+  Building03Icon,
+  Delete02Icon,
+  Edit02Icon,
+  GraduationScrollIcon,
   Mail01Icon,
   Shield01Icon,
   UserIcon,
+  ViewIcon,
 } from "@hugeicons/core-free-icons";
 import * as React from "react";
 import {
@@ -10,6 +15,7 @@ import {
   type DataGridColumn,
   type DataGridRowAction,
 } from "@/components/data-grid/data-grid";
+import { anchoDeEsqueleto } from "@/components/data-grid/loading-width";
 import {
   PageHeader,
   PageHeaderActions,
@@ -26,6 +32,7 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import { PaginationSummary } from "@/components/ui/pagination-summary";
 import { SearchInput } from "@/components/ui/search-input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useValorConRetardo } from "@/hooks/use-valor-con-retardo";
 import { mensajeDeProblema } from "@/lib/api/problema";
 import type { components } from "@/lib/api/schema";
@@ -53,7 +60,7 @@ type ColumnaUsuario = "nombre" | "correo" | "rol" | "ambito";
 const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
   {
     id: "nombre",
-    label: "Nombre",
+    label: "Usuario",
     icon: UserIcon,
     defaultWidth: 260,
   },
@@ -80,12 +87,14 @@ const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
 const CAMPO_ROL: FilterField = {
   id: "rol",
   label: "Rol",
+  icon: Shield01Icon,
   options: ROLES.map((rol) => ({
     value: String(rol.id),
     label: rol.nombre,
   })),
 };
 
+const SEMILLA_CARGA = "usuarios";
 const TAMANO_PAGINA_INICIAL = 10;
 const RETARDO_BUSQUEDA_MS = 300;
 
@@ -115,11 +124,29 @@ function renderizarCelda(
   );
 }
 
+function renderizarCargaCelda(
+  columna: DataGridColumn<ColumnaUsuario>,
+  fila: number,
+) {
+  if (columna.id !== "nombre") return undefined;
+  return (
+    <span className="flex w-full items-center gap-2">
+      <Skeleton className="size-6 shrink-0 rounded-full" />
+      <Skeleton
+        className="h-4 max-w-[calc(100%-2rem)]"
+        style={{
+          width: `${anchoDeEsqueleto(SEMILLA_CARGA, columna.id, fila)}%`,
+        }}
+      />
+    </span>
+  );
+}
+
 // Acciones provisionales: aún no hacen nada hasta que existan sus flujos.
 const ACCIONES_USUARIO: DataGridRowAction[] = [
-  { id: "detalle", label: "Ver detalle" },
-  { id: "editar", label: "Editar" },
-  { id: "baja", label: "Dar de baja", destructive: true },
+  { id: "detalle", label: "Ver detalle", icon: ViewIcon },
+  { id: "editar", label: "Editar", icon: Edit02Icon },
+  { id: "baja", label: "Dar de baja", icon: Delete02Icon, destructive: true },
 ];
 
 function accionesDeUsuario() {
@@ -157,7 +184,6 @@ function valorDeCelda(usuario: UsuarioFila, columnId: ColumnaUsuario) {
 }
 
 export function UsuariosPage() {
-  const [seleccionados, setSeleccionados] = React.useState<string[]>([]);
   const [pagina, setPagina] = React.useState(1);
   const [tamanoPagina, setTamanoPagina] = React.useState(TAMANO_PAGINA_INICIAL);
   const [filtros, setFiltros] = React.useState<FilterChip[]>([]);
@@ -190,6 +216,7 @@ export function UsuariosPage() {
       {
         id: "area",
         label: "Área académica",
+        icon: GraduationScrollIcon,
         options: (areas ?? []).map((area) => ({
           value: String(area.id),
           label: area.nombre,
@@ -198,6 +225,7 @@ export function UsuariosPage() {
       {
         id: "entidad",
         label: "Entidad académica",
+        icon: Building03Icon,
         options: (entidades?.elementos ?? []).map((entidad) => ({
           value: String(entidad.id),
           label: abreviarFacultad(entidad.nombre),
@@ -295,35 +323,29 @@ export function UsuariosPage() {
           getRowLabel={(usuario) => usuario.nombre}
           renderCell={renderizarCelda}
           getRowActions={accionesDeUsuario}
-          selectedRowIds={seleccionados}
-          onSelectedRowIdsChange={setSeleccionados}
+          loading={isPending}
+          loadingSeed={SEMILLA_CARGA}
+          renderLoadingCell={renderizarCargaCelda}
+          loadingRowCount={tamanoPagina}
           getDrawerCellValue={valorDeCelda}
           canOpenDrawer={noAbreDetalle}
           emptyState={
-            isPending ? (
-              <EmptyState
-                label="Cargando usuarios"
-                title="Cargando usuarios"
-                description="Un momento, por favor."
-              />
-            ) : (
-              <EmptyState
-                label="Sin usuarios"
-                title={hayCriterios ? "Sin resultados" : "Aún no hay usuarios"}
-                description={
-                  hayCriterios
-                    ? "Ningún usuario coincide con la búsqueda o los filtros aplicados."
-                    : "Cuando registres usuarios, aparecerán aquí."
-                }
-                action={
-                  hayCriterios ? (
-                    <Button variant="secondary" onClick={limpiarCriterios}>
-                      Limpiar búsqueda y filtros
-                    </Button>
-                  ) : undefined
-                }
-              />
-            )
+            <EmptyState
+              label="Sin usuarios"
+              title={hayCriterios ? "Sin resultados" : "Aún no hay usuarios"}
+              description={
+                hayCriterios
+                  ? "Ningún usuario coincide con la búsqueda o los filtros aplicados."
+                  : "Cuando registres usuarios, aparecerán aquí."
+              }
+              action={
+                hayCriterios ? (
+                  <Button variant="secondary" onClick={limpiarCriterios}>
+                    Limpiar búsqueda y filtros
+                  </Button>
+                ) : undefined
+              }
+            />
           }
         />
       )}

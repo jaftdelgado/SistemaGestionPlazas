@@ -19,6 +19,7 @@ type DataGridRowProps<Row extends DataGridRowBase, ColumnId extends string> = {
   row: Row;
   rowIndex: number;
   columns: DataGridColumn<ColumnId>[];
+  selectable: boolean;
   isSelected: boolean;
   isActive: boolean;
   // Solo la fila en edición recibe la columna y el borrador; el resto mantiene props idénticas y no se renderiza.
@@ -52,6 +53,7 @@ function DataGridRowInner<
   row,
   rowIndex,
   columns,
+  selectable,
   isSelected,
   isActive,
   editingColumnId,
@@ -86,16 +88,18 @@ function DataGridRowInner<
       onFocus={() => onActiveRowChange(row.id)}
       onKeyDown={(event) => onRowKeyDown(event, row, rowIndex)}
     >
-      <TableCell className="h-10 border-r px-0 py-0 text-center">
-        <SelectionCheckbox
-          aria-label={`Seleccionar ${getRowLabel(row)}`}
-          checked={isSelected}
-          tabIndex={controlTabIndex}
-          onToggle={(checked) => onToggleRowSelection(row.id, checked)}
-          onDragStart={() => onSelectionDragStart(rowIndex)}
-        />
-      </TableCell>
-      {columns.map((column) => {
+      {selectable ? (
+        <TableCell className="h-10 border-r px-0 py-0 text-center">
+          <SelectionCheckbox
+            aria-label={`Seleccionar ${getRowLabel(row)}`}
+            checked={isSelected}
+            tabIndex={controlTabIndex}
+            onToggle={(checked) => onToggleRowSelection(row.id, checked)}
+            onDragStart={() => onSelectionDragStart(rowIndex)}
+          />
+        </TableCell>
+      ) : null}
+      {columns.map((column, index) => {
         const isEditing = editingColumnId === column.id;
         const editable = canEditColumn(column.id);
         const showDrawerAction = canOpenDrawer(column.id);
@@ -105,6 +109,8 @@ function DataGridRowInner<
             key={column.id}
             className={cn(
               "group/cell relative h-10 overflow-hidden border-r px-2 py-1 whitespace-nowrap",
+              // La columna de acciones no lleva divisoria a su izquierda.
+              getRowActions && index === columns.length - 1 && "border-r-0",
               editable && "cursor-text",
             )}
             onDoubleClick={() => {

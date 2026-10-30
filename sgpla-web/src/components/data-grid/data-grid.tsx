@@ -50,6 +50,10 @@ function sinAcciones() {
   return [];
 }
 
+const SIN_SELECCION: string[] = [];
+
+function sinCambios() {}
+
 export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   rows,
   columns,
@@ -58,7 +62,11 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   getRowLabel,
   renderCell,
   getRowActions,
-  selectedRowIds,
+  loading = false,
+  loadingRowCount = 10,
+  loadingSeed = "",
+  renderLoadingCell,
+  selectedRowIds = SIN_SELECCION,
   onSelectedRowIdsChange,
   isEditableColumn = neverEditable,
   getCellEditValue,
@@ -78,6 +86,9 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
     React.useState<EditingCell<ColumnId> | null>(null);
   const [focusedRowId, setFocusedRowId] = React.useState<string | null>(null);
 
+  const selectable = onSelectedRowIdsChange !== undefined;
+  const notifySelection = onSelectedRowIdsChange ?? sinCambios;
+
   const gridRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -85,7 +96,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
     useGridColumns({
       columns,
       minColumnWidth: MIN_COLUMN_WIDTH,
-      controlColumnWidth: CONTROL_COLUMN_WIDTH,
+      controlColumnWidth: selectable ? CONTROL_COLUMN_WIDTH : 0,
     });
 
   const drawerRow = React.useMemo(() => {
@@ -157,29 +168,29 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
     (rowId: string, checked: boolean) => {
       if (checked) {
         if (selectedRowIds.includes(rowId)) return;
-        onSelectedRowIdsChange([...selectedRowIds, rowId]);
+        notifySelection([...selectedRowIds, rowId]);
         return;
       }
 
-      onSelectedRowIdsChange(
+      notifySelection(
         selectedRowIds.filter((currentRowId) => currentRowId !== rowId),
       );
     },
-    [onSelectedRowIdsChange, selectedRowIds],
+    [notifySelection, selectedRowIds],
   );
 
   const startSelectionDrag = useDragSelection({
     gridRef,
     rows,
     selectedRowIds,
-    onSelectedRowIdsChange,
+    onSelectedRowIdsChange: notifySelection,
   });
 
   const toggleAllRows = React.useCallback(
     (checked: boolean) => {
-      onSelectedRowIdsChange(checked ? rows.map((row) => row.id) : []);
+      notifySelection(checked ? rows.map((row) => row.id) : []);
     },
-    [onSelectedRowIdsChange, rows],
+    [notifySelection, rows],
   );
 
   // La selección es del consumidor y puede incluir filas que ya no están: el encabezado solo cuenta las visibles.
@@ -228,12 +239,12 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
         return;
       }
 
-      if (event.key === " ") {
+      if (event.key === " " && selectable) {
         event.preventDefault();
         toggleRowSelection(row.id, !selectedRowIdSet.has(row.id));
       }
     },
-    [focusRow, rows.length, selectedRowIdSet, toggleRowSelection],
+    [focusRow, rows.length, selectable, selectedRowIdSet, toggleRowSelection],
   );
 
   const updateRow = React.useCallback(
@@ -337,6 +348,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               columnWidths={columnWidths}
               sort={sort}
               onSortToggle={onSortChange ? toggleSort : undefined}
+              selectable={selectable}
               controlColumnWidth={CONTROL_COLUMN_WIDTH}
               actionsColumnWidth={hasActions ? ACTIONS_COLUMN_WIDTH : undefined}
               allRowsSelected={allRowsSelected}
@@ -349,6 +361,10 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
             <DataGridTableBody
               rows={rows}
               emptyState={emptyState}
+              loading={loading}
+              loadingRowCount={loadingRowCount}
+              loadingSeed={loadingSeed}
+              renderLoadingCell={renderLoadingCell}
               columns={columns}
               getRowLabel={stableGetRowLabel}
               renderCell={stableRenderCell}
@@ -356,6 +372,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
               activeRowId={activeRowId}
               onActiveRowChange={setFocusedRowId}
               onRowKeyDown={stableRowKeyDown}
+              selectable={selectable}
               selectedRowIds={selectedRowIdSet}
               onToggleRowSelection={stableToggleRowSelection}
               onSelectionDragStart={stableStartSelectionDrag}

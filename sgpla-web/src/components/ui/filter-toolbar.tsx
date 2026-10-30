@@ -4,7 +4,7 @@ import {
   FilterHorizontalIcon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import {
   AnimatePresence,
@@ -28,6 +28,7 @@ export type FilterFieldOption = { value: string; label: string };
 export type FilterField = {
   id: string;
   label: string;
+  icon?: IconSvgElement;
   options: FilterFieldOption[];
 };
 
@@ -342,6 +343,13 @@ function FilterToolbar({
                               className={cn(ITEM_CLASS, "pr-3")}
                               onClick={() => entrarEnCampo(f.id)}
                             >
+                              {f.icon && (
+                                <HugeiconsIcon
+                                  icon={f.icon}
+                                  aria-hidden="true"
+                                  className="size-4 shrink-0"
+                                />
+                              )}
                               <span className="shrink-0">{f.label}</span>
                               <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-muted-foreground">
                                 <span className="truncate" title={etiqueta}>

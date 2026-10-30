@@ -78,6 +78,8 @@ type DataGridTableHeaderProps<ColumnId extends string> = {
   sort: DataGridSort<ColumnId>;
   // Sin él, ninguna columna es ordenable aunque lo declare.
   onSortToggle?: (columnId: ColumnId) => void;
+  // Sin selección no se dibuja la columna de casillas.
+  selectable: boolean;
   controlColumnWidth: number;
   // Ancho de la columna de acciones, fija y no redimensionable; sin él, no se dibuja.
   actionsColumnWidth?: number;
@@ -93,6 +95,7 @@ export function DataGridTableHeader<ColumnId extends string>({
   columnWidths,
   sort,
   onSortToggle,
+  selectable,
   controlColumnWidth,
   actionsColumnWidth,
   allRowsSelected,
@@ -104,7 +107,7 @@ export function DataGridTableHeader<ColumnId extends string>({
   return (
     <>
       <colgroup>
-        <col style={{ width: controlColumnWidth }} />
+        {selectable ? <col style={{ width: controlColumnWidth }} /> : null}
         {columns.map((column, index) => (
           // La última columna no fija su ancho: es la única que absorbe el sobrante de la tabla.
           <col
@@ -123,14 +126,16 @@ export function DataGridTableHeader<ColumnId extends string>({
 
       <TableHeader>
         <TableRow>
-          <TableHead className="h-10 w-10 border-r bg-table-header px-0 text-center">
-            <SelectionCheckbox
-              aria-label="Seleccionar todas las filas"
-              checked={allRowsSelected}
-              indeterminate={someRowsSelected}
-              onToggle={(checked) => onToggleAllRows(checked)}
-            />
-          </TableHead>
+          {selectable ? (
+            <TableHead className="h-10 w-10 border-r bg-table-header px-0 text-center">
+              <SelectionCheckbox
+                aria-label="Seleccionar todas las filas"
+                checked={allRowsSelected}
+                indeterminate={someRowsSelected}
+                onToggle={(checked) => onToggleAllRows(checked)}
+              />
+            </TableHead>
+          ) : null}
           {columns.map((column, index) => {
             const icon = column.icon;
             const width = columnWidths[column.id];
@@ -143,7 +148,13 @@ export function DataGridTableHeader<ColumnId extends string>({
               <TableHead
                 key={column.id}
                 aria-sort={sortable ? ariaSort(direction) : undefined}
-                className="relative h-10 overflow-hidden border-r bg-table-header px-2 text-sm"
+                className={cn(
+                  "relative h-10 overflow-hidden border-r bg-table-header px-2 text-sm",
+                  // La columna de acciones no lleva divisoria a su izquierda.
+                  actionsColumnWidth !== undefined &&
+                    index === columns.length - 1 &&
+                    "border-r-0",
+                )}
                 style={
                   index === columns.length - 1
                     ? undefined

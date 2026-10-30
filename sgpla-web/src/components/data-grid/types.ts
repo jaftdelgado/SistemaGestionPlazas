@@ -69,8 +69,19 @@ export type DataGridProps<
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
   // Con él, el grid agrega una columna fija al final con un menú de acciones por fila; sin él, no hay columna.
   getRowActions?: (row: Row) => DataGridRowAction[];
-  selectedRowIds: string[];
-  onSelectedRowIdsChange: (rowIds: string[]) => void;
+  // Mientras carga, el cuerpo muestra filas de esqueleto en lugar de las filas y del estado vacío.
+  loading?: boolean;
+  loadingRowCount?: number;
+  // Varía el ancho de los esqueletos por celda: es estable entre cargas y distinto entre grids con otra semilla.
+  loadingSeed?: string;
+  // Contenido de esqueleto de una celda mientras carga; por defecto, una barra.
+  renderLoadingCell?: (
+    column: DataGridColumn<ColumnId>,
+    rowIndex: number,
+  ) => React.ReactNode;
+  // La selección es opcional: con onSelectedRowIdsChange el grid agrega la columna de casillas; sin él, no hay columna.
+  selectedRowIds?: string[];
+  onSelectedRowIdsChange?: (rowIds: string[]) => void;
   // La edición en celda es opcional: solo se activa en las columnas que isEditableColumn acepta y si se pasan
   // getCellEditValue y applyCellEdit.
   isEditableColumn?: (columnId: ColumnId) => boolean;
