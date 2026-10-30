@@ -54,14 +54,14 @@ modules/<modulo>/
   index.ts          contrato: lo único que importan las rutas y los demás módulos
 ```
 
-| Capa             | Equivale en el backend  | Puede depender de                                                                    | Nunca depende de                                             |
-| ---------------- | ----------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| `domain`         | `Domain`                | Nada fuera del módulo                                                                | React, TanStack, `lib/api`, `components`, las otras capas    |
-| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                           | `pages`, `components`                                        |
-| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                      | `pages`, `components`                                        |
+| Capa             | Equivale en el backend  | Puede depender de                                                                   | Nunca depende de                                             |
+| ---------------- | ----------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `domain`         | `Domain`                | Nada fuera del módulo                                                               | React, TanStack, `lib/api`, `components`, las otras capas    |
+| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                          | `pages`, `components`                                        |
+| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                     | `pages`, `components`                                        |
 | `pages`          | `Endpoints`             | `components`, `application`, `domain`, `components/` compartidos, `lib/api/problem` | `infrastructure`, `lib/api/client`, `lib/api/query`          |
 | `components`     | `Endpoints`             | `application`, `domain`, `components/` compartidos, `lib/api/problem`               | `pages`, `infrastructure`, `lib/api/client`, `lib/api/query` |
-| `index.ts`       | `Application/Contracts` | Todas las capas                                                                      | —                                                            |
+| `index.ts`       | `Application/Contracts` | Todas las capas                                                                     | —                                                            |
 
 Las rutas de `routes/` son adaptadores delgados, como los `Map…Endpoints`: validan la búsqueda, ejecutan la guarda en `beforeLoad` y montan la página. `main.tsx` es la raíz de composición de la aplicación. Dentro de un módulo se importa con rutas relativas; desde fuera, solo `@/modules/<modulo>`.
 

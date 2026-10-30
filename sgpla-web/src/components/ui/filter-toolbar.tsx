@@ -68,7 +68,9 @@ function stepVariants(reduceMotion: boolean): Variants {
     center: {
       opacity: 1,
       x: 0,
-      transition: reduceMotion ? { duration: 0.1 } : { duration: 0.22, ease: EASE },
+      transition: reduceMotion
+        ? { duration: 0.1 }
+        : { duration: 0.22, ease: EASE },
     },
     exit: (direction: number) =>
       reduceMotion
@@ -152,7 +154,12 @@ function FilterToolbar({
       (f) => f.id === activeField.id && f.value === option.value,
     );
     if (applied) onRemove(activeField.id);
-    else onAdd({ id: activeField.id, label: activeField.label, value: option.value });
+    else
+      onAdd({
+        id: activeField.id,
+        label: activeField.label,
+        value: option.value,
+      });
     setIsOpen(false);
   }
 
@@ -263,7 +270,9 @@ function FilterToolbar({
               <motion.div
                 className="relative overflow-hidden"
                 initial={false}
-                animate={contentHeight === null ? undefined : { height: contentHeight }}
+                animate={
+                  contentHeight === null ? undefined : { height: contentHeight }
+                }
                 transition={
                   reduceMotion ? INSTANT : { duration: 0.22, ease: EASE }
                 }
@@ -304,7 +313,8 @@ function FilterToolbar({
                       ? activeField.options.map((option) => {
                           const applied = filters.some(
                             (f) =>
-                              f.id === activeField.id && f.value === option.value,
+                              f.id === activeField.id &&
+                              f.value === option.value,
                           );
                           return (
                             <button

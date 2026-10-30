@@ -92,9 +92,7 @@ export function ChangePasswordPage() {
               onChange={(event) => setConfirmation(event.target.value)}
               aria-invalid={mismatch ? true : undefined}
             />
-            {mismatch && (
-              <FieldError>Las contraseñas no coinciden.</FieldError>
-            )}
+            {mismatch && <FieldError>Las contraseñas no coinciden.</FieldError>}
           </Field>
           {generalError && (
             <p role="alert" className="text-sm text-destructive">

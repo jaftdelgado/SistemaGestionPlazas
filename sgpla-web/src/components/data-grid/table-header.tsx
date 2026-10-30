@@ -32,7 +32,9 @@ function HeaderIcon({
   direction: SortDirection | null;
 }) {
   const reduceMotion = useReducedMotion() ?? false;
-  const transition = reduceMotion ? { duration: 0 } : { duration: 0.12, ease: EASE };
+  const transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.12, ease: EASE };
 
   return (
     <span className="relative flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">

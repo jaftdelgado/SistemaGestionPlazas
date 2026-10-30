@@ -113,9 +113,7 @@ export function DataGridTableBody<
                 )}
               </TableCell>
             ))}
-            {getRowActions ? (
-              <TableCell className="h-10 p-0" />
-            ) : null}
+            {getRowActions ? <TableCell className="h-10 p-0" /> : null}
           </TableRow>
         ))}
       </TableBody>

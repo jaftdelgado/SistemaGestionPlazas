@@ -502,9 +502,7 @@ function InteractiveBreadcrumb() {
             className="h-auto w-full justify-start gap-3 border-border px-4 py-3 text-start"
             onClick={() => {
               focusOn.current = depth + 1;
-              setDepth((value) =>
-                Math.min(value + 1, exampleRoute.length - 1),
-              );
+              setDepth((value) => Math.min(value + 1, exampleRoute.length - 1));
             }}
           >
             <HugeiconsIcon
@@ -529,13 +527,7 @@ function InteractiveBreadcrumb() {
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-6">
       <h2 className="border-b pb-2 text-xl font-semibold">{title}</h2>

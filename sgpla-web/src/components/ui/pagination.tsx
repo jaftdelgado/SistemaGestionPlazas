@@ -121,9 +121,7 @@ function Pagination({
                     layoutId="pagination-mark"
                     aria-hidden
                     className="absolute inset-0 rounded-full bg-primary"
-                    transition={
-                      reduceMotion ? { duration: 0 } : SPRING_LAYOUT
-                    }
+                    transition={reduceMotion ? { duration: 0 } : SPRING_LAYOUT}
                   />
                 )}
                 <span className="relative">{pageNumber}</span>

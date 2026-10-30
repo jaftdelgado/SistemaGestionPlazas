@@ -62,7 +62,9 @@ export function SidebarDemo() {
       <div className="flex flex-wrap gap-x-6 gap-y-2">
         {(Object.keys(options) as (keyof Opciones)[]).map((itemKey) => (
           <div key={itemKey} className="flex items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">{itemKey}</span>
+            <span className="mr-1 text-xs text-muted-foreground">
+              {itemKey}
+            </span>
             {options[itemKey].map((value) => (
               <Button
                 key={value}
