@@ -14,42 +14,42 @@ import {
   useAreasAcademicas,
   useEntidadesAcademicas,
 } from "../application/usuarios-queries";
-import { abreviarFacultad } from "../application/usuario-fila";
-import { valorDeFiltro } from "../application/use-usuarios-listado";
+import { abbreviateFacultad } from "../application/usuario-row";
+import { getFilterValue } from "../application/use-usuarios-listing";
 import { ROLES } from "../domain/roles";
 
-const CAMPO_ROL: FilterField = {
+const ROL_FIELD: FilterField = {
   id: "rol",
   label: "Rol",
   icon: Shield01Icon,
   options: ROLES.map((rol) => ({
     value: String(rol.id),
-    label: rol.nombre,
+    label: rol.name,
   })),
 };
 
-type UsuariosFiltrosProps = {
-  textoBusqueda: string;
-  onBusquedaChange: (texto: string) => void;
-  filtros: FilterChip[];
-  onFiltrosChange: (filtros: FilterChip[]) => void;
+type UsuariosFiltersProps = {
+  searchText: string;
+  onSearchChange: (text: string) => void;
+  filters: FilterChip[];
+  onFiltersChange: (filters: FilterChip[]) => void;
 };
 
-export function UsuariosFiltros({
-  textoBusqueda,
-  onBusquedaChange,
-  filtros,
-  onFiltrosChange,
-}: UsuariosFiltrosProps) {
+export function UsuariosFilters({
+  searchText,
+  onSearchChange,
+  filters,
+  onFiltersChange,
+}: UsuariosFiltersProps) {
   const { data: areas } = useAreasAcademicas();
   const { data: entidades } = useEntidadesAcademicas(
-    valorDeFiltro(filtros, "area"),
+    getFilterValue(filters, "area"),
   );
 
   // Con un área elegida, el filtro de entidad solo ofrece las de esa área.
-  const campos = React.useMemo<FilterField[]>(
+  const fields = React.useMemo<FilterField[]>(
     () => [
-      CAMPO_ROL,
+      ROL_FIELD,
       {
         id: "area",
         label: "Área académica",
@@ -65,7 +65,7 @@ export function UsuariosFiltros({
         icon: Building03Icon,
         options: (entidades?.elementos ?? []).map((entidad) => ({
           value: String(entidad.id),
-          label: abreviarFacultad(entidad.nombre),
+          label: abbreviateFacultad(entidad.nombre),
         })),
       },
     ],
@@ -78,25 +78,25 @@ export function UsuariosFiltros({
         aria-label="Buscar usuarios"
         placeholder="Buscar usuarios"
         className="max-w-xs"
-        value={textoBusqueda}
-        onChange={(evento) => onBusquedaChange(evento.target.value)}
+        value={searchText}
+        onChange={(event) => onSearchChange(event.target.value)}
       />
       <FilterToolbar
-        filters={filtros}
-        fields={campos}
-        onAdd={(filtro) =>
-          onFiltrosChange([
+        filters={filters}
+        fields={fields}
+        onAdd={(filter) =>
+          onFiltersChange([
             // Cambiar el área invalida la entidad elegida, que podría ser de otra área.
-            ...filtros.filter(
+            ...filters.filter(
               (f) =>
-                f.id !== filtro.id &&
-                !(filtro.id === "area" && f.id === "entidad"),
+                f.id !== filter.id &&
+                !(filter.id === "area" && f.id === "entidad"),
             ),
-            filtro,
+            filter,
           ])
         }
-        onRemove={(id) => onFiltrosChange(filtros.filter((f) => f.id !== id))}
-        onClearAll={() => onFiltrosChange([])}
+        onRemove={(id) => onFiltersChange(filters.filter((f) => f.id !== id))}
+        onClearAll={() => onFiltersChange([])}
       />
     </div>
   );

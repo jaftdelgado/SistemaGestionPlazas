@@ -2,7 +2,7 @@ import { SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import * as React from "react";
 import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
-import { DESVANECIDO_ACCIONES } from "@/components/data-grid/actions-column";
+import { ACTIONS_FADE } from "@/components/data-grid/actions-column";
 import {
   type DataGridColumn,
   type DataGridRowAction,
@@ -205,7 +205,7 @@ function DataGridRowInner<
         <TableCell
           className={cn(
             "sticky right-0 z-10 h-10 bg-card p-0 text-center in-data-[state=selected]:bg-secondary",
-            DESVANECIDO_ACCIONES,
+            ACTIONS_FADE,
             "before:from-card in-data-[state=selected]:before:from-secondary",
           )}
         >

@@ -1,29 +1,29 @@
 import createClient from "openapi-fetch";
 import { expect, it } from "vitest";
-import { crearMiddlewareAutorizacion } from "@/lib/api/client";
+import { createAuthorizationMiddleware } from "@/lib/api/client";
 import type { paths } from "@/lib/api/schema";
 
-async function autorizacionEnviada(token: string | null) {
-  let peticion: Request | undefined;
-  const fetchFalso = (entrada: Request) => {
-    peticion = entrada;
+async function authorizationSent(token: string | null) {
+  let request: Request | undefined;
+  const fakeFetch = (input: Request) => {
+    request = input;
     return Promise.resolve(Response.json([]));
   };
-  const cliente = createClient<paths>({
+  const client = createClient<paths>({
     baseUrl: "http://api.prueba",
-    fetch: fetchFalso,
+    fetch: fakeFetch,
   });
-  cliente.use(crearMiddlewareAutorizacion(() => token));
+  client.use(createAuthorizationMiddleware(() => token));
 
-  await cliente.GET("/api/v1/institucional/regiones");
+  await client.GET("/api/v1/institucional/regiones");
 
-  return peticion?.headers.get("Authorization");
+  return request?.headers.get("Authorization");
 }
 
 it("no envía Authorization cuando no hay token", async () => {
-  expect(await autorizacionEnviada(null)).toBeNull();
+  expect(await authorizationSent(null)).toBeNull();
 });
 
 it("envía Authorization con el esquema Bearer cuando hay token", async () => {
-  expect(await autorizacionEnviada("abc123")).toBe("Bearer abc123");
+  expect(await authorizationSent("abc123")).toBe("Bearer abc123");
 });

@@ -12,7 +12,7 @@ import {
 import { type GridResizeEvent } from "@/components/data-grid/use-grid-columns";
 import { EASE_OUT, SPRING_SWAP } from "@/lib/ease";
 import { cn } from "@/lib/utils";
-import { DESVANECIDO_ACCIONES } from "@/components/data-grid/actions-column";
+import { ACTIONS_FADE } from "@/components/data-grid/actions-column";
 
 const EASE = [...EASE_OUT] as [number, number, number, number];
 
@@ -31,8 +31,8 @@ function HeaderIcon({
   icon: DataGridIcon;
   direction: SortDirection | null;
 }) {
-  const reducir = useReducedMotion() ?? false;
-  const transicion = reducir ? { duration: 0 } : { duration: 0.12, ease: EASE };
+  const reduceMotion = useReducedMotion() ?? false;
+  const transition = reduceMotion ? { duration: 0 } : { duration: 0.12, ease: EASE };
 
   return (
     <span className="relative flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
@@ -44,7 +44,7 @@ function HeaderIcon({
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
-            transition={transicion}
+            transition={transition}
           >
             <HugeiconsIcon icon={icon} className="size-3.5" />
           </motion.span>
@@ -55,13 +55,13 @@ function HeaderIcon({
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
-            transition={transicion}
+            transition={transition}
           >
             <motion.span
               className="flex"
               initial={false}
               animate={{ rotate: direction === "desc" ? 180 : 0 }}
-              transition={reducir ? { duration: 0 } : SPRING_SWAP}
+              transition={reduceMotion ? { duration: 0 } : SPRING_SWAP}
             >
               <HugeiconsIcon icon={ArrowUp01Icon} className="size-3.5" />
             </motion.span>
@@ -195,7 +195,7 @@ export function DataGridTableHeader<ColumnId extends string>({
             <TableHead
               className={cn(
                 "sticky right-0 z-10 h-10 bg-table-header px-0",
-                DESVANECIDO_ACCIONES,
+                ACTIONS_FADE,
                 "before:from-table-header",
               )}
             >

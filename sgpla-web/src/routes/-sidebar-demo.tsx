@@ -41,7 +41,7 @@ type Opciones = {
   collapsible: "offcanvas" | "none";
 };
 
-const opciones = {
+const options = {
   side: ["left", "right"],
   variant: ["sidebar", "floating", "inset"],
   peek: ["none", "hover", "click"],
@@ -55,24 +55,24 @@ export function SidebarDemo() {
     peek: "hover",
     collapsible: "offcanvas",
   });
-  const [ofertasAbierto, setOfertasAbierto] = useState(true);
+  const [offersOpen, setOffersOpen] = useState(true);
 
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="flex flex-wrap gap-x-6 gap-y-2">
-        {(Object.keys(opciones) as (keyof Opciones)[]).map((clave) => (
-          <div key={clave} className="flex items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">{clave}</span>
-            {opciones[clave].map((valor) => (
+        {(Object.keys(options) as (keyof Opciones)[]).map((itemKey) => (
+          <div key={itemKey} className="flex items-center gap-1">
+            <span className="mr-1 text-xs text-muted-foreground">{itemKey}</span>
+            {options[itemKey].map((value) => (
               <Button
-                key={valor}
+                key={value}
                 size="sm"
-                variant={config[clave] === valor ? "default" : "secondary"}
+                variant={config[itemKey] === value ? "default" : "secondary"}
                 onClick={() =>
-                  setConfig((actual) => ({ ...actual, [clave]: valor }))
+                  setConfig((actual) => ({ ...actual, [itemKey]: value }))
                 }
               >
-                {valor}
+                {value}
               </Button>
             ))}
           </div>
@@ -130,8 +130,8 @@ export function SidebarDemo() {
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         icon={<HugeiconsIcon icon={BookOpen01Icon} />}
-                        aria-expanded={ofertasAbierto}
-                        onClick={() => setOfertasAbierto((valor) => !valor)}
+                        aria-expanded={offersOpen}
+                        onClick={() => setOffersOpen((value) => !value)}
                       >
                         Ofertas educativas
                       </SidebarMenuButton>
@@ -146,7 +146,7 @@ export function SidebarDemo() {
                           <HugeiconsIcon icon={MoreHorizontalIcon} />
                         </SidebarMenuAction>
                       </SidebarMenuActions>
-                      <SidebarMenuSub open={ofertasAbierto}>
+                      <SidebarMenuSub open={offersOpen}>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton isActive={false}>
                             Licenciaturas
@@ -166,8 +166,8 @@ export function SidebarDemo() {
                 <SidebarGroupLabel>Cargando</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {[0, 1, 2].map((indice) => (
-                      <SidebarMenuItem key={indice}>
+                    {[0, 1, 2].map((index) => (
+                      <SidebarMenuItem key={index}>
                         <SidebarMenuSkeleton showIcon />
                       </SidebarMenuItem>
                     ))}

@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PanelLayout } from "@/modules/panel-principal";
-import { exigirSesion } from "@/modules/sesion";
+import { requireSesion } from "@/modules/sesion";
 
 export const Route = createFileRoute("/_panel")({
   beforeLoad: async ({ context, location }) => {
-    const sesion = await exigirSesion(context.queryClient, location.href);
+    const sesion = await requireSesion(context.queryClient, location.href);
     if (sesion.cambioContrasenaPendiente) {
       throw redirect({
         to: "/cambiar-contrasena",

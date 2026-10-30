@@ -23,7 +23,7 @@ export function PasswordInput({
   ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
-  const icono = visible ? ViewOffIcon : ViewIcon;
+  const icon = visible ? ViewOffIcon : ViewIcon;
 
   return (
     <InputGroup
@@ -49,7 +49,7 @@ export function PasswordInput({
           disabled={disabled}
           onClick={() => setVisible((actual) => !actual)}
         >
-          <HugeiconsIcon icon={icono} aria-hidden="true" />
+          <HugeiconsIcon icon={icon} aria-hidden="true" />
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>

@@ -33,7 +33,7 @@ import { useHoverCapable } from "@/hooks/use-hover-capable";
 import { EASE_OUT, SPRING_LAYOUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
-const ETIQUETA_OCULTAS = "Mostrar rutas ocultas";
+const HIDDEN_LABEL = "Mostrar rutas ocultas";
 
 export type BreadcrumbProps = ComponentPropsWithRef<"nav">;
 
@@ -64,7 +64,7 @@ export function BreadcrumbList({
   className,
   children,
   maxItems = 4,
-  overflowLabel = ETIQUETA_OCULTAS,
+  overflowLabel = HIDDEN_LABEL,
   ...props
 }: BreadcrumbListProps) {
   const items = Children.toArray(children);
@@ -242,7 +242,7 @@ export interface BreadcrumbEllipsisProps {
 export function BreadcrumbEllipsis({
   children,
   className,
-  label = ETIQUETA_OCULTAS,
+  label = HIDDEN_LABEL,
 }: BreadcrumbEllipsisProps) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<{

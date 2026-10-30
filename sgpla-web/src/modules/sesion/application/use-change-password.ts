@@ -1,10 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { $api } from "@/lib/api/query";
-import { destinoSeguro } from "../domain/destino-seguro";
-import { establecerSesion } from "./sesion-activa";
+import { safeDestination } from "../domain/safe-destination";
+import { establishSesion } from "./active-sesion";
 
-export function useCambiarContrasena(redirect: string | undefined) {
+export function useChangePassword(redirect: string | undefined) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -13,8 +13,8 @@ export function useCambiarContrasena(redirect: string | undefined) {
     "/api/v1/usuarios/sesion/cambiar-contrasena",
     {
       onSuccess: (data) => {
-        establecerSesion(queryClient, data);
-        void navigate({ to: destinoSeguro(redirect) });
+        establishSesion(queryClient, data);
+        void navigate({ to: safeDestination(redirect) });
       },
     },
   );

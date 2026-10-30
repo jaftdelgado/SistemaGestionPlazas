@@ -4,13 +4,13 @@ import {
   PageHeaderTitle,
 } from "@/components/page-header/page-header";
 import { Button } from "@/components/ui/button";
-import { useUsuariosListado } from "../application/use-usuarios-listado";
-import { UsuariosFiltros } from "../components/usuarios-filtros";
-import { UsuariosPaginacion } from "../components/usuarios-paginacion";
-import { UsuariosTabla } from "../components/usuarios-tabla";
+import { useUsuariosListing } from "../application/use-usuarios-listing";
+import { UsuariosDataGrid } from "../components/usuarios-data-grid";
+import { UsuariosFilters } from "../components/usuarios-filters";
+import { UsuariosPagination } from "../components/usuarios-pagination";
 
 export function UsuariosPage() {
-  const listado = useUsuariosListado();
+  const listing = useUsuariosListing();
 
   return (
     <section className="flex flex-1 flex-col gap-4">
@@ -20,29 +20,29 @@ export function UsuariosPage() {
           <Button>Registrar usuario</Button>
         </PageHeaderActions>
       </PageHeader>
-      <UsuariosFiltros
-        textoBusqueda={listado.textoBusqueda}
-        onBusquedaChange={listado.cambiarBusqueda}
-        filtros={listado.filtros}
-        onFiltrosChange={listado.cambiarFiltros}
+      <UsuariosFilters
+        searchText={listing.searchText}
+        onSearchChange={listing.changeSearch}
+        filters={listing.filters}
+        onFiltersChange={listing.changeFilters}
       />
-      <UsuariosTabla
-        usuarios={listado.usuarios}
-        cargando={listado.isPending}
-        filasCarga={listado.tamanoPagina}
-        hayError={listado.isError}
-        error={listado.error}
-        onReintentar={() => void listado.refetch()}
-        hayCriterios={listado.hayCriterios}
-        onLimpiarCriterios={listado.limpiarCriterios}
+      <UsuariosDataGrid
+        usuarios={listing.usuarios}
+        loading={listing.isPending}
+        loadingRows={listing.pageSize}
+        hasError={listing.isError}
+        error={listing.error}
+        onRetry={() => void listing.refetch()}
+        hasCriteria={listing.hasCriteria}
+        onClearCriteria={listing.clearCriteria}
       />
-      <UsuariosPaginacion
-        pagina={listado.pagina}
-        totalPaginas={listado.totalPaginas}
-        tamanoPagina={listado.tamanoPagina}
-        total={listado.total}
-        onPaginaChange={listado.setPagina}
-        onTamanoPaginaChange={listado.cambiarTamanoPagina}
+      <UsuariosPagination
+        page={listing.page}
+        totalPages={listing.totalPages}
+        pageSize={listing.pageSize}
+        total={listing.total}
+        onPageChange={listing.setPage}
+        onPageSizeChange={listing.changePageSize}
       />
     </section>
   );

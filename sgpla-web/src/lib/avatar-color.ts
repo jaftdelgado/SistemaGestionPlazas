@@ -1,6 +1,6 @@
 // Clases completas y literales: Tailwind no detecta nombres armados por concatenación.
 // Fondos 600 o 700 para que el texto blanco conserve contraste AA.
-const COLORES = [
+const COLORS = [
   "bg-blue-600",
   "bg-emerald-700",
   "bg-violet-600",
@@ -12,17 +12,17 @@ const COLORES = [
 ] as const;
 
 // FNV-1a de 32 bits: estable entre sesiones y reparte bien cadenas cortas.
-function hash(texto: string): number {
+function hash(text: string): number {
   let h = 0x811c9dc5;
-  for (let i = 0; i < texto.length; i++) {
-    h ^= texto.charCodeAt(i);
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
   return h >>> 0;
 }
 
 // El color depende solo de la parte local del correo (antes del @), sin distinguir mayúsculas.
-export function colorAvatar(correo: string): string {
-  const usuario = (correo.split("@")[0] ?? "").trim().toLowerCase();
-  return COLORES[hash(usuario) % COLORES.length] ?? COLORES[0];
+export function getAvatarColor(email: string): string {
+  const localPart = (email.split("@")[0] ?? "").trim().toLowerCase();
+  return COLORS[hash(localPart) % COLORS.length] ?? COLORS[0];
 }

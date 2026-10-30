@@ -46,13 +46,13 @@ function alwaysOpenDrawer() {
   return true;
 }
 
-function sinAcciones() {
+function noActions() {
   return [];
 }
 
-const SIN_SELECCION: string[] = [];
+const NO_SELECTION: string[] = [];
 
-function sinCambios() {}
+function noChanges() {}
 
 export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   rows,
@@ -66,7 +66,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   loadingRowCount = 10,
   loadingSeed = "",
   renderLoadingCell,
-  selectedRowIds = SIN_SELECCION,
+  selectedRowIds = NO_SELECTION,
   onSelectedRowIdsChange,
   isEditableColumn = neverEditable,
   getCellEditValue,
@@ -87,7 +87,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   const [focusedRowId, setFocusedRowId] = React.useState<string | null>(null);
 
   const selectable = onSelectedRowIdsChange !== undefined;
-  const notifySelection = onSelectedRowIdsChange ?? sinCambios;
+  const notifySelection = onSelectedRowIdsChange ?? noChanges;
 
   const gridRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -298,7 +298,7 @@ export function DataGrid<Row extends DataGridRowBase, ColumnId extends string>({
   // foco o edición solo renderice las filas afectadas. `renderCell` debe depender únicamente de `row` y `column`.
   const stableGetRowLabel = useStableCallback(getRowLabel);
   const stableRenderCell = useStableCallback(renderCell);
-  const stableGetRowActions = useStableCallback(getRowActions ?? sinAcciones);
+  const stableGetRowActions = useStableCallback(getRowActions ?? noActions);
   const hasActions = getRowActions !== undefined;
   const tableMinWidth = gridMinWidth + (hasActions ? ACTIONS_COLUMN_WIDTH : 0);
   const stableRowKeyDown = useStableCallback(handleRowKeyDown);

@@ -50,7 +50,7 @@ function DropdownMenu({
             className="min-w-44 origin-(--transform-origin) rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           >
             {items.map(
-              ({ id, label: etiqueta, icon, destructive, ...item }) => (
+              ({ id, label: labelText, icon, destructive, ...item }) => (
                 <MenuPrimitive.Item
                   key={id}
                   disabled={item.disabled}
@@ -63,7 +63,7 @@ function DropdownMenu({
                   {icon ? (
                     <HugeiconsIcon icon={icon} aria-hidden="true" />
                   ) : null}
-                  {etiqueta}
+                  {labelText}
                 </MenuPrimitive.Item>
               ),
             )}

@@ -1,4 +1,4 @@
-export function validarBusquedaConRedirect(search: Record<string, unknown>): {
+export function validateRedirectSearch(search: Record<string, unknown>): {
   redirect?: string;
 } {
   return {

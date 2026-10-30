@@ -33,16 +33,16 @@ function PaginationSummary({
         size="sm"
         aria-label="Registros por página"
         className="w-18"
-        options={pageSizeOptions.map((opcion) => ({
-          value: String(opcion),
-          label: String(opcion),
+        options={pageSizeOptions.map((option) => ({
+          value: String(option),
+          label: String(option),
         }))}
         value={String(pageSize)}
-        onValueChange={(valor) => {
-          if (valor !== null) onPageSizeChange(Number(valor));
+        onValueChange={(value) => {
+          if (value !== null) onPageSizeChange(Number(value));
         }}
       />
-      <span>de {total} elementos</span>
+      <span>de {total} items</span>
     </div>
   );
 }

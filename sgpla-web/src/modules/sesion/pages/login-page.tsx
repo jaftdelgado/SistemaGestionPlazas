@@ -10,28 +10,28 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { erroresDeCampo, mensajeGeneral } from "@/lib/api/problema";
-import { useIniciarSesion } from "../application/use-iniciar-sesion";
+import { getFieldErrors, getGeneralMessage } from "@/lib/api/problem";
+import { useLogin } from "../application/use-login";
 
 export function LoginPage() {
   const { redirect } = useSearch({ from: "/login" });
-  const { mutate, isPending, error } = useIniciarSesion(redirect);
-  const [usuario, setUsuario] = useState("");
-  const [contrasena, setContrasena] = useState("");
+  const { mutate, isPending, error } = useLogin(redirect);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  const errores = erroresDeCampo(error);
-  const errorUsuario = errores["correo"]?.join(" ");
-  const errorContrasena = errores["contrasena"]?.join(" ");
-  const errorGeneral = mensajeGeneral(error);
+  const errors = getFieldErrors(error);
+  const usernameError = errors["correo"]?.join(" ");
+  const passwordError = errors["contrasena"]?.join(" ");
+  const generalError = getGeneralMessage(error);
 
-  function enviar(evento: SubmitEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    mutate({ body: { correo: usuario, contrasena } });
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    mutate({ body: { correo: username, contrasena: password } });
   }
 
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
-      <form className="w-full max-w-sm" onSubmit={enviar}>
+      <form className="w-full max-w-sm" onSubmit={handleSubmit}>
         <FieldGroup>
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-semibold">Iniciar sesión</h1>
@@ -39,38 +39,38 @@ export function LoginPage() {
               Ingresa con tu cuenta institucional.
             </p>
           </div>
-          <Field data-invalid={errorUsuario ? "true" : undefined}>
+          <Field data-invalid={usernameError ? "true" : undefined}>
             <FieldLabel htmlFor="usuario">Usuario</FieldLabel>
             <Input
               id="usuario"
               name="usuario"
               autoComplete="username"
               required
-              value={usuario}
-              onChange={(evento) => setUsuario(evento.target.value)}
-              aria-invalid={errorUsuario ? true : undefined}
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              aria-invalid={usernameError ? true : undefined}
             />
-            <FieldError>{errorUsuario}</FieldError>
+            <FieldError>{usernameError}</FieldError>
           </Field>
-          <Field data-invalid={errorContrasena ? "true" : undefined}>
+          <Field data-invalid={passwordError ? "true" : undefined}>
             <FieldLabel htmlFor="contrasena">Contraseña</FieldLabel>
             <PasswordInput
               id="contrasena"
               name="contrasena"
               autoComplete="current-password"
               required
-              value={contrasena}
-              onChange={(evento) => setContrasena(evento.target.value)}
-              aria-invalid={errorContrasena ? true : undefined}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={passwordError ? true : undefined}
             />
             <FieldDescription>
               Es la misma contraseña de tu correo institucional.
             </FieldDescription>
-            <FieldError>{errorContrasena}</FieldError>
+            <FieldError>{passwordError}</FieldError>
           </Field>
-          {errorGeneral && (
+          {generalError && (
             <p role="alert" className="text-sm text-destructive">
-              {errorGeneral}
+              {generalError}
             </p>
           )}
           <Button type="submit" disabled={isPending}>

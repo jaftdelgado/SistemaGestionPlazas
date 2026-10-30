@@ -3,7 +3,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import { cva } from "class-variance-authority";
 import {
   ArrowRight01Icon,
-  SidebarLeft01Icon,
+  PanelLeftOpenIcon,
   SidebarRight01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -530,7 +530,7 @@ export function SidebarTrigger({
   ...props
 }: ComponentProps<typeof Button>) {
   const { toggle, open, openMobile, isMobile, side } = useSidebar();
-  const icono = side === "right" ? SidebarRight01Icon : SidebarLeft01Icon;
+  const icon = side === "right" ? SidebarRight01Icon : PanelLeftOpenIcon;
   return (
     <Button
       data-slot="sidebar-trigger"
@@ -545,7 +545,7 @@ export function SidebarTrigger({
         if (!event.defaultPrevented) toggle();
       }}
     >
-      <HugeiconsIcon icon={icono} aria-hidden="true" />
+      <HugeiconsIcon icon={icon} aria-hidden="true" />
     </Button>
   );
 }
@@ -775,7 +775,7 @@ export function SidebarMenuItem({
       data-slot="sidebar-menu-item"
       {...props}
       className={cn(
-        "group/menu-item relative has-data-[actions='1']:[&>[data-slot=sidebar-menu-button]]:pr-8 has-data-[actions='2']:[&>[data-slot=sidebar-menu-button]]:pr-14 has-data-[actions='3']:[&>[data-slot=sidebar-menu-button]]:pr-20 has-data-[slot=sidebar-menu-badge]:[&>[data-slot=sidebar-menu-button]]:pr-9",
+        "group/menu-item relative has-data-[actions='1']:*:data-[slot=sidebar-menu-button]:pr-8 has-data-[actions='2']:*:data-[slot=sidebar-menu-button]:pr-14 has-data-[actions='3']:*:data-[slot=sidebar-menu-button]:pr-20 has-data-[slot=sidebar-menu-badge]:*:data-[slot=sidebar-menu-button]:pr-9",
         className,
       )}
     />

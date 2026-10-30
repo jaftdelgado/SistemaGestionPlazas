@@ -1,7 +1,7 @@
 import { keepPreviousData } from "@tanstack/react-query";
 import { $api } from "@/lib/api/query";
 
-export type ConsultaCuentas = {
+export type CuentasQuery = {
   pagina: number;
   tamanoPagina: number;
   rolId?: number;
@@ -11,25 +11,25 @@ export type ConsultaCuentas = {
 };
 
 // Se conserva la página anterior mientras llega la siguiente, para que la tabla no parpadee al paginar o filtrar.
-export function useCuentas(consulta: ConsultaCuentas) {
+export function useCuentas(query: CuentasQuery) {
   return $api.useQuery(
     "get",
     "/api/v1/usuarios/cuentas",
-    { params: { query: consulta } },
+    { params: { query: query } },
     { placeholderData: keepPreviousData },
   );
 }
 
 // Los catálogos cambian poco: se reutilizan sin volver a pedirlos en cada visita.
-const CATALOGO_STALE_TIME = 5 * 60_000;
-const TAMANO_MAXIMO_PAGINA = 100;
+const CATALOG_STALE_TIME = 5 * 60_000;
+const MAX_PAGE_SIZE = 100;
 
 export function useAreasAcademicas() {
   return $api.useQuery(
     "get",
     "/api/v1/institucional/areas-academicas",
     undefined,
-    { staleTime: CATALOGO_STALE_TIME },
+    { staleTime: CATALOG_STALE_TIME },
   );
 }
 
@@ -40,9 +40,9 @@ export function useEntidadesAcademicas(areaAcademicaId: number | undefined) {
     "/api/v1/institucional/entidades-academicas",
     {
       params: {
-        query: { areaAcademicaId, tamanoPagina: TAMANO_MAXIMO_PAGINA },
+        query: { areaAcademicaId, tamanoPagina: MAX_PAGE_SIZE },
       },
     },
-    { staleTime: CATALOGO_STALE_TIME },
+    { staleTime: CATALOG_STALE_TIME },
   );
 }

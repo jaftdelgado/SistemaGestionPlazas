@@ -6,12 +6,12 @@ import { ToastStack } from "@/components/ui/toast-stack";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
-    component: RaizLayout,
-    notFoundComponent: NoEncontrada,
+    component: RootLayout,
+    notFoundComponent: NotFound,
   },
 );
 
-function RaizLayout() {
+function RootLayout() {
   return (
     <>
       <Outlet />
@@ -26,7 +26,7 @@ function RaizLayout() {
   );
 }
 
-function NoEncontrada() {
+function NotFound() {
   return (
     <main>
       <h1>Página no encontrada</h1>

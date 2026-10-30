@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { anchoDeEsqueleto } from "@/components/data-grid/loading-width";
+import { skeletonWidth } from "@/components/data-grid/loading-width";
 import { DataGridRow } from "@/components/data-grid/table-row";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -107,7 +107,7 @@ export function DataGridTableBody<
                   <Skeleton
                     className="h-4"
                     style={{
-                      width: `${anchoDeEsqueleto(loadingSeed, column.id, rowIndex)}%`,
+                      width: `${skeletonWidth(loadingSeed, column.id, rowIndex)}%`,
                     }}
                   />
                 )}

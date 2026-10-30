@@ -1,22 +1,22 @@
-const CLAVE = "sgpla.sesion";
+const STORAGE_KEY = "sgpla.sesion";
 
-export type SesionGuardada = { token: string; expiraEn: string };
+export type SavedSesion = { token: string; expiraEn: string };
 
-export function guardarSesion(sesion: SesionGuardada): void {
+export function saveSesion(sesion: SavedSesion): void {
   try {
-    localStorage.setItem(CLAVE, JSON.stringify(sesion));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sesion));
   } catch {
     // Sin almacenamiento disponible (modo privado o cuota llena) la sesión no se conserva: el usuario deberá iniciar sesión de nuevo.
   }
 }
 
-export function leerToken(): string | null {
+export function readToken(): string | null {
   try {
-    const crudo = localStorage.getItem(CLAVE);
-    if (crudo === null) {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) {
       return null;
     }
-    const sesion: unknown = JSON.parse(crudo);
+    const sesion: unknown = JSON.parse(raw);
     if (
       typeof sesion === "object" &&
       sesion !== null &&
@@ -28,18 +28,18 @@ export function leerToken(): string | null {
     ) {
       return sesion.token;
     }
-    borrarSesion();
+    clearSesion();
     return null;
   } catch {
     // El almacenamiento no está disponible o el JSON es inválido: se trata como sin sesión.
-    borrarSesion();
+    clearSesion();
     return null;
   }
 }
 
-export function borrarSesion(): void {
+export function clearSesion(): void {
   try {
-    localStorage.removeItem(CLAVE);
+    localStorage.removeItem(STORAGE_KEY);
   } catch {
     // Sin almacenamiento disponible no hay nada que borrar.
   }
