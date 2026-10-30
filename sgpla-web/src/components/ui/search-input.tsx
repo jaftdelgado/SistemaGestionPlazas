@@ -1,4 +1,5 @@
-import { SearchRegular } from "@fluentui/react-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import type { ComponentPropsWithRef } from "react";
 import {
   InputGroup,
@@ -14,7 +15,7 @@ export function SearchInput({ className, size, ...props }: SearchInputProps) {
   return (
     <InputGroup data-slot="search-input" size={size} className={className}>
       <InputGroupAddon>
-        <SearchRegular aria-hidden="true" />
+        <HugeiconsIcon icon={Search01Icon} aria-hidden="true" />
       </InputGroupAddon>
       <InputGroupInput type="search" {...props} />
     </InputGroup>

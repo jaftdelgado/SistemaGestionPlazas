@@ -1,4 +1,5 @@
-import { OpenRegular } from "@fluentui/react-icons";
+import { SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import * as React from "react";
 import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
 import { DESVANECIDO_ACCIONES } from "@/components/data-grid/actions-column";
@@ -181,7 +182,10 @@ function DataGridRowInner<
                         });
                       }}
                     >
-                      <OpenRegular aria-hidden="true" />
+                      <HugeiconsIcon
+                        icon={SquareArrowUpRightIcon}
+                        aria-hidden="true"
+                      />
                       Abrir
                     </Button>
                   </div>

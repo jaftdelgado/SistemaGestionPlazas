@@ -1,9 +1,9 @@
 import {
-  BuildingRegular,
-  MailRegular,
-  PersonRegular,
-  ShieldRegular,
-} from "@fluentui/react-icons";
+  Building01Icon,
+  Mail01Icon,
+  Shield01Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons";
 import * as React from "react";
 import {
   DataGrid,
@@ -54,25 +54,25 @@ const COLUMNAS: DataGridColumn<ColumnaUsuario>[] = [
   {
     id: "nombre",
     label: "Nombre",
-    icon: PersonRegular,
+    icon: UserIcon,
     defaultWidth: 260,
   },
   {
     id: "correo",
     label: "Correo",
-    icon: MailRegular,
+    icon: Mail01Icon,
     defaultWidth: 280,
   },
   {
     id: "rol",
     label: "Rol",
-    icon: ShieldRegular,
+    icon: Shield01Icon,
     defaultWidth: 200,
   },
   {
     id: "ambito",
     label: "Ámbito",
-    icon: BuildingRegular,
+    icon: Building01Icon,
     defaultWidth: 320,
   },
 ];

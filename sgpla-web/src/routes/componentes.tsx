@@ -1,15 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ArrowRightRegular,
-  ArrowUpRightRegular,
-  CopyRegular,
-  FolderRegular,
-  HomeRegular,
-  MailRegular,
-  AddRegular,
-  SearchRegular,
-  DeleteRegular,
-} from "@fluentui/react-icons";
+  Add01Icon,
+  ArrowRight01Icon,
+  ArrowUpRight01Icon,
+  Copy01Icon,
+  Delete01Icon,
+  Folder01Icon,
+  Home01Icon,
+  Mail01Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   Breadcrumb,
@@ -104,19 +105,19 @@ function Componentes() {
               variant="secondary"
               aria-label={tamano}
             >
-              <AddRegular />
+              <HugeiconsIcon icon={Add01Icon} />
             </Button>
           ))}
         </Subseccion>
 
         <Subseccion titulo="Con ícono">
           <Button>
-            <AddRegular data-icon="inline-start" />
+            <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
             Agregar
           </Button>
           <Button variant="secondary">
             Siguiente
-            <ArrowRightRegular data-icon="inline-end" />
+            <HugeiconsIcon icon={ArrowRight01Icon} data-icon="inline-end" />
           </Button>
         </Subseccion>
 
@@ -164,7 +165,7 @@ function Componentes() {
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Buscar..." />
             <InputGroupAddon>
-              <SearchRegular />
+              <HugeiconsIcon icon={Search01Icon} />
             </InputGroupAddon>
           </InputGroup>
         </Subseccion>
@@ -173,7 +174,7 @@ function Componentes() {
           <InputGroup className="max-w-xs">
             <InputGroupInput type="email" placeholder="Correo" />
             <InputGroupAddon align="inline-end">
-              <MailRegular />
+              <HugeiconsIcon icon={Mail01Icon} />
             </InputGroupAddon>
           </InputGroup>
         </Subseccion>
@@ -213,7 +214,7 @@ function Componentes() {
             <InputGroupInput defaultValue="https://uv.mx" readOnly />
             <InputGroupAddon align="inline-end">
               <InputGroupButton size="icon-xs" aria-label="Copiar">
-                <CopyRegular />
+                <HugeiconsIcon icon={Copy01Icon} />
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
@@ -241,13 +242,13 @@ function Componentes() {
           <InputGroup className="max-w-xs" data-disabled="true">
             <InputGroupInput placeholder="Deshabilitado" disabled />
             <InputGroupAddon>
-              <SearchRegular />
+              <HugeiconsIcon icon={Search01Icon} />
             </InputGroupAddon>
           </InputGroup>
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Inválido" aria-invalid />
             <InputGroupAddon>
-              <SearchRegular />
+              <HugeiconsIcon icon={Search01Icon} />
             </InputGroupAddon>
           </InputGroup>
         </Subseccion>
@@ -279,7 +280,7 @@ function Componentes() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink href="#inicio">
-                  <HomeRegular aria-hidden="true" />
+                  <HugeiconsIcon icon={Home01Icon} aria-hidden="true" />
                   Inicio
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -376,7 +377,7 @@ function Componentes() {
                 <Button variant="ghost" size="icon" aria-label="Agregar" />
               }
             >
-              <AddRegular />
+              <HugeiconsIcon icon={Add01Icon} />
             </TooltipTrigger>
             <TooltipContent>Agregar elemento</TooltipContent>
           </Tooltip>
@@ -416,7 +417,7 @@ function Componentes() {
             <AlertDialogContent size="sm">
               <AlertDialogHeader>
                 <AlertDialogMedia>
-                  <DeleteRegular />
+                  <HugeiconsIcon icon={Delete01Icon} />
                 </AlertDialogMedia>
                 <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -462,7 +463,9 @@ function BreadcrumbInteractivo() {
               {indice > 0 && <BreadcrumbSeparator />}
               {indice === profundidad ? (
                 <BreadcrumbPage ref={paginaActual} tabIndex={-1}>
-                  {indice === 0 && <HomeRegular aria-hidden="true" />}
+                  {indice === 0 && (
+                    <HugeiconsIcon icon={Home01Icon} aria-hidden="true" />
+                  )}
                   {etiqueta}
                 </BreadcrumbPage>
               ) : (
@@ -482,7 +485,9 @@ function BreadcrumbInteractivo() {
                     setProfundidad(indice);
                   }}
                 >
-                  {indice === 0 && <HomeRegular aria-hidden="true" />}
+                  {indice === 0 && (
+                    <HugeiconsIcon icon={Home01Icon} aria-hidden="true" />
+                  )}
                   {etiqueta}
                 </BreadcrumbLink>
               )}
@@ -502,12 +507,14 @@ function BreadcrumbInteractivo() {
               );
             }}
           >
-            <FolderRegular
+            <HugeiconsIcon
+              icon={Folder01Icon}
               aria-hidden="true"
               className="text-muted-foreground"
             />
             <span className="flex-1">{rutaEjemplo[profundidad + 1]}</span>
-            <ArrowUpRightRegular
+            <HugeiconsIcon
+              icon={ArrowUpRight01Icon}
               aria-hidden="true"
               className="text-muted-foreground"
             />

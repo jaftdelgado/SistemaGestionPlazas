@@ -1,13 +1,13 @@
-import { MoreHorizontalRegular } from "@fluentui/react-icons";
+import { MoreHorizontalIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import type * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export type DropdownMenuItem = {
   id: string;
   label: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: IconSvgElement;
   /** Resalta la acción como destructiva. */
   destructive?: boolean;
   disabled?: boolean;
@@ -37,7 +37,7 @@ function DropdownMenu({
         aria-label={label}
         render={<Button variant="ghost" size="icon-sm" className={className} />}
       >
-        <MoreHorizontalRegular aria-hidden="true" />
+        <HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" />
       </MenuPrimitive.Trigger>
       <MenuPrimitive.Portal>
         <MenuPrimitive.Positioner
@@ -50,7 +50,7 @@ function DropdownMenu({
             className="min-w-44 origin-(--transform-origin) rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           >
             {items.map(
-              ({ id, label: etiqueta, icon: Icon, destructive, ...item }) => (
+              ({ id, label: etiqueta, icon, destructive, ...item }) => (
                 <MenuPrimitive.Item
                   key={id}
                   disabled={item.disabled}
@@ -60,7 +60,9 @@ function DropdownMenu({
                     destructive && "text-destructive",
                   )}
                 >
-                  {Icon ? <Icon aria-hidden="true" /> : null}
+                  {icon ? (
+                    <HugeiconsIcon icon={icon} aria-hidden="true" />
+                  ) : null}
                   {etiqueta}
                 </MenuPrimitive.Item>
               ),

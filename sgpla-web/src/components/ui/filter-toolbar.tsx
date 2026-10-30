@@ -1,9 +1,10 @@
 import {
-  CheckmarkRegular,
-  ChevronLeftRegular,
-  ChevronRightRegular,
-  FilterRegular,
-} from "@fluentui/react-icons";
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  FilterHorizontalIcon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import {
   AnimatePresence,
@@ -218,7 +219,7 @@ function FilterToolbar({
             transition={reducir ? INSTANTANEO : SPRING_SWAP}
             className="inline-flex items-center gap-2"
           >
-            <FilterRegular aria-hidden="true" />
+            <HugeiconsIcon icon={FilterHorizontalIcon} aria-hidden="true" />
             {addLabel}
           </motion.span>
           <AnimatePresence initial={false}>
@@ -290,7 +291,8 @@ function FilterToolbar({
                         onClick={volverACampos}
                         className="mb-1 flex min-h-8 w-full items-center gap-2 rounded-full py-1 pr-3 pl-2 text-left text-base font-medium outline-none hover:bg-muted focus-visible:bg-muted md:text-sm"
                       >
-                        <ChevronLeftRegular
+                        <HugeiconsIcon
+                          icon={ArrowLeft01Icon}
                           aria-hidden="true"
                           className="size-4"
                         />
@@ -315,7 +317,8 @@ function FilterToolbar({
                             >
                               {opcion.label}
                               {aplicado && (
-                                <CheckmarkRegular
+                                <HugeiconsIcon
+                                  icon={Tick01Icon}
                                   aria-hidden="true"
                                   className="absolute right-3 size-4"
                                 />
@@ -344,7 +347,8 @@ function FilterToolbar({
                                 <span className="truncate" title={etiqueta}>
                                   {etiqueta}
                                 </span>
-                                <ChevronRightRegular
+                                <HugeiconsIcon
+                                  icon={ArrowRight01Icon}
                                   aria-hidden="true"
                                   className="size-4 shrink-0"
                                 />

@@ -1,4 +1,5 @@
-import { ArrowUpRegular } from "@fluentui/react-icons";
+import { ArrowUp01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,7 +25,7 @@ function ariaSort(direction: SortDirection | null) {
 // El icono de la columna cede su lugar a una flecha mientras la columna está ordenada; la flecha gira al
 // invertir el sentido.
 function HeaderIcon({
-  icon: Icon,
+  icon,
   direction,
 }: {
   icon: DataGridIcon;
@@ -45,7 +46,7 @@ function HeaderIcon({
             exit={{ opacity: 0, scale: 0.6 }}
             transition={transicion}
           >
-            <Icon className="size-3.5" />
+            <HugeiconsIcon icon={icon} className="size-3.5" />
           </motion.span>
         ) : (
           <motion.span
@@ -62,7 +63,7 @@ function HeaderIcon({
               animate={{ rotate: direction === "desc" ? 180 : 0 }}
               transition={reducir ? { duration: 0 } : SPRING_SWAP}
             >
-              <ArrowUpRegular className="size-3.5" />
+              <HugeiconsIcon icon={ArrowUp01Icon} className="size-3.5" />
             </motion.span>
           </motion.span>
         )}
@@ -131,7 +132,7 @@ export function DataGridTableHeader<ColumnId extends string>({
             />
           </TableHead>
           {columns.map((column, index) => {
-            const Icon = column.icon;
+            const icon = column.icon;
             const width = columnWidths[column.id];
             const sortable =
               (column.sortable ?? false) && onSortToggle !== undefined;
@@ -155,12 +156,15 @@ export function DataGridTableHeader<ColumnId extends string>({
                     className="absolute inset-0 flex min-w-0 items-center gap-1.5 px-2 pr-3 text-left leading-none outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                     onClick={() => onSortToggle?.(column.id)}
                   >
-                    <HeaderIcon icon={Icon} direction={direction} />
+                    <HeaderIcon icon={icon} direction={direction} />
                     <span className="truncate">{column.label}</span>
                   </button>
                 ) : (
                   <span className="flex min-w-0 items-center gap-1.5 leading-none">
-                    <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                    <HugeiconsIcon
+                      icon={icon}
+                      className="size-3.5 shrink-0 text-muted-foreground"
+                    />
                     <span className="truncate">{column.label}</span>
                   </span>
                 )}

@@ -2,10 +2,11 @@ import { Dialog } from "@base-ui/react/dialog";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cva } from "class-variance-authority";
 import {
-  ChevronRightRegular,
-  PanelLeftRegular,
-  PanelRightRegular,
-} from "@fluentui/react-icons";
+  ArrowRight01Icon,
+  SidebarLeft01Icon,
+  SidebarRight01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Children,
   createContext,
@@ -529,7 +530,7 @@ export function SidebarTrigger({
   ...props
 }: ComponentProps<typeof Button>) {
   const { toggle, open, openMobile, isMobile, side } = useSidebar();
-  const Icon = side === "right" ? PanelRightRegular : PanelLeftRegular;
+  const icono = side === "right" ? SidebarRight01Icon : SidebarLeft01Icon;
   return (
     <Button
       data-slot="sidebar-trigger"
@@ -544,7 +545,7 @@ export function SidebarTrigger({
         if (!event.defaultPrevented) toggle();
       }}
     >
-      <Icon aria-hidden="true" />
+      <HugeiconsIcon icon={icono} aria-hidden="true" />
     </Button>
   );
 }
@@ -725,7 +726,8 @@ export function SidebarGroupLabel({
       )}
     >
       <span className="min-w-0 flex-1 truncate text-start">{children}</span>
-      <ChevronRightRegular
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
         aria-hidden="true"
         className={cn(
           "size-3.5 shrink-0 transition-[transform,opacity] duration-200 group-hover/group-label:opacity-100 group-focus-visible/group-label:opacity-100 motion-reduce:transition-none",

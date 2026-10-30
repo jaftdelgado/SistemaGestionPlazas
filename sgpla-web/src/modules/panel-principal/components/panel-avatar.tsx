@@ -1,4 +1,5 @@
-import { SignOutRegular } from "@fluentui/react-icons";
+import { Logout01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { AvatarBadge } from "@/components/ui/avatar";
 import { AvatarUsuario } from "@/components/ui/avatar-usuario";
@@ -46,7 +47,7 @@ export function PanelAvatar() {
             />
           }
         >
-          <SignOutRegular aria-hidden="true" />
+          <HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />
         </TooltipTrigger>
         <TooltipContent side="bottom">Cerrar sesión</TooltipContent>
       </Tooltip>

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { HatGraduationRegular } from "@fluentui/react-icons";
+import { Mortarboard01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +23,10 @@ export function PanelSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" icon={<HatGraduationRegular />}>
+            <SidebarMenuButton
+              size="lg"
+              icon={<HugeiconsIcon icon={Mortarboard01Icon} />}
+            >
               SGPLa
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -34,13 +38,13 @@ export function PanelSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {elementos.map((elemento) => {
-                const { id, titulo, icono: Icono } = elemento;
+                const { id, titulo, icono } = elemento;
                 const to = "to" in elemento ? elemento.to : undefined;
                 return (
                   <SidebarMenuItem key={id}>
                     <SidebarMenuButton
                       isActive={id === activo}
-                      icon={<Icono />}
+                      icon={<HugeiconsIcon icon={icono} />}
                       render={
                         to ? (props) => <Link to={to} {...props} /> : undefined
                       }

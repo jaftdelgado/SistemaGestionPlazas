@@ -1,13 +1,14 @@
 import {
-  AlertRegular,
-  BookOpenRegular,
-  HatGraduationRegular,
-  HomeRegular,
-  MoreHorizontalRegular,
-  EditRegular,
-  SettingsRegular,
-  DeleteRegular,
-} from "@fluentui/react-icons";
+  BookOpen01Icon,
+  Delete01Icon,
+  Edit01Icon,
+  Home01Icon,
+  MoreHorizontalIcon,
+  Mortarboard01Icon,
+  Notification01Icon,
+  Settings01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,7 +96,10 @@ export function SidebarDemo() {
             <SidebarHeader>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton size="lg" icon={<HatGraduationRegular />}>
+                  <SidebarMenuButton
+                    size="lg"
+                    icon={<HugeiconsIcon icon={Mortarboard01Icon} />}
+                  >
                     SGPLa
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -107,13 +111,16 @@ export function SidebarDemo() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton isActive icon={<HomeRegular />}>
+                      <SidebarMenuButton
+                        isActive
+                        icon={<HugeiconsIcon icon={Home01Icon} />}
+                      >
                         Inicio
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        icon={<AlertRegular />}
+                        icon={<HugeiconsIcon icon={Notification01Icon} />}
                         status="unread"
                       >
                         Notificaciones
@@ -122,7 +129,7 @@ export function SidebarDemo() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        icon={<BookOpenRegular />}
+                        icon={<HugeiconsIcon icon={BookOpen01Icon} />}
                         aria-expanded={ofertasAbierto}
                         onClick={() => setOfertasAbierto((valor) => !valor)}
                       >
@@ -130,13 +137,13 @@ export function SidebarDemo() {
                       </SidebarMenuButton>
                       <SidebarMenuActions showOnHover>
                         <SidebarMenuAction aria-label="Editar">
-                          <EditRegular />
+                          <HugeiconsIcon icon={Edit01Icon} />
                         </SidebarMenuAction>
                         <SidebarMenuAction aria-label="Eliminar">
-                          <DeleteRegular />
+                          <HugeiconsIcon icon={Delete01Icon} />
                         </SidebarMenuAction>
                         <SidebarMenuAction aria-label="Más">
-                          <MoreHorizontalRegular />
+                          <HugeiconsIcon icon={MoreHorizontalIcon} />
                         </SidebarMenuAction>
                       </SidebarMenuActions>
                       <SidebarMenuSub open={ofertasAbierto}>
@@ -171,7 +178,10 @@ export function SidebarDemo() {
             <SidebarFooter>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton icon={<SettingsRegular />} status="idle">
+                  <SidebarMenuButton
+                    icon={<HugeiconsIcon icon={Settings01Icon} />}
+                    status="idle"
+                  >
                     Configuración
                   </SidebarMenuButton>
                 </SidebarMenuItem>

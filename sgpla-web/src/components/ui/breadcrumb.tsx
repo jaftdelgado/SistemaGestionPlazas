@@ -1,7 +1,8 @@
 import {
-  ChevronRightRegular,
-  MoreHorizontalRegular,
-} from "@fluentui/react-icons";
+  ArrowRight01Icon,
+  MoreHorizontalIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -225,7 +226,7 @@ export function BreadcrumbSeparator({
         className,
       )}
     >
-      {children ?? <ChevronRightRegular />}
+      {children ?? <HugeiconsIcon icon={ArrowRight01Icon} />}
     </span>
   );
 }
@@ -349,7 +350,11 @@ export function BreadcrumbEllipsis({
               }
             }}
           >
-            <MoreHorizontalRegular aria-hidden="true" className="size-4" />
+            <HugeiconsIcon
+              icon={MoreHorizontalIcon}
+              aria-hidden="true"
+              className="size-4"
+            />
           </button>
         </MorphPopoverTrigger>
         <MorphPopoverContent

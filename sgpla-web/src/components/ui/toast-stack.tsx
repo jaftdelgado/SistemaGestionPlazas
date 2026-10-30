@@ -1,12 +1,12 @@
 import { Toast } from "@base-ui/react/toast";
 import {
-  CheckmarkCircleFilled,
-  DismissCircleFilled,
-  DismissRegular,
-  InfoFilled,
-  WarningFilled,
-  type FluentIcon,
-} from "@fluentui/react-icons";
+  Alert01Icon,
+  Cancel01Icon,
+  CancelCircleIcon,
+  CheckmarkCircle01Icon,
+  InformationCircleIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
 /* Adapted from Bencho's "Toast stack" (MIT, bencho.dev/licence), rebuilt on
    Base UI's Toast: it owns the queue, the auto-dismiss timers, pausing them
@@ -40,11 +40,11 @@ import {
 
 type TipoToast = "success" | "info" | "error" | "warning";
 
-const ICONO: Record<TipoToast, FluentIcon> = {
-  success: CheckmarkCircleFilled,
-  info: InfoFilled,
-  error: DismissCircleFilled,
-  warning: WarningFilled,
+const ICONO: Record<TipoToast, IconSvgElement> = {
+  success: CheckmarkCircle01Icon,
+  info: InformationCircleIcon,
+  error: CancelCircleIcon,
+  warning: Alert01Icon,
 };
 
 // Manager global: permite avisar desde hooks y callbacks sin depender del contexto de React.
@@ -72,7 +72,7 @@ function ListaDeToasts() {
     <Toast.Portal>
       <Toast.Viewport className="tst" aria-label="Notificaciones">
         {toasts.map((t) => {
-          const Icon = ICONO[esTipo(t.type) ? t.type : "info"];
+          const icono = ICONO[esTipo(t.type) ? t.type : "info"];
           return (
             <Toast.Root
               key={t.id}
@@ -83,7 +83,11 @@ function ListaDeToasts() {
             >
               <Toast.Content className="tst-content">
                 <span className="tst-icon">
-                  <Icon className="size-[18px]" aria-hidden="true" />
+                  <HugeiconsIcon
+                    icon={icono}
+                    className="size-[18px]"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span className="tst-text">
                   <Toast.Title className="tst-title" />
@@ -91,7 +95,11 @@ function ListaDeToasts() {
                 </span>
                 {t.actionProps && <Toast.Action className="tst-act" />}
                 <Toast.Close className="tst-x" aria-label="Descartar aviso">
-                  <DismissRegular className="size-4" aria-hidden="true" />
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    className="size-4"
+                    aria-hidden="true"
+                  />
                 </Toast.Close>
               </Toast.Content>
             </Toast.Root>

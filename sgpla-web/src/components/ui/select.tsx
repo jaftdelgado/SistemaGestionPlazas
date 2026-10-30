@@ -1,4 +1,5 @@
-import { CheckmarkRegular, ChevronDownRegular } from "@fluentui/react-icons";
+import { ArrowDown01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +48,11 @@ function Select({
           className="truncate data-placeholder:text-muted-foreground"
         />
         <SelectPrimitive.Icon className="shrink-0 text-muted-foreground transition-transform data-popup-open:rotate-180">
-          <ChevronDownRegular aria-hidden="true" className="size-4" />
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            aria-hidden="true"
+            className="size-4"
+          />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
@@ -72,7 +77,11 @@ function Select({
                     {option.label}
                   </SelectPrimitive.ItemText>
                   <SelectPrimitive.ItemIndicator className="absolute right-3 flex items-center">
-                    <CheckmarkRegular aria-hidden="true" className="size-4" />
+                    <HugeiconsIcon
+                      icon={Tick01Icon}
+                      aria-hidden="true"
+                      className="size-4"
+                    />
                   </SelectPrimitive.ItemIndicator>
                 </SelectPrimitive.Item>
               ))}

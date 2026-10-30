@@ -1,16 +1,16 @@
 import { useRouterState } from "@tanstack/react-router";
 import {
-  BookOpenRegular,
-  HomeRegular,
-  SettingsRegular,
-  PeopleRegular,
-} from "@fluentui/react-icons";
+  BookOpen01Icon,
+  Home01Icon,
+  Settings01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 
 export const elementosNavegacion = [
-  { id: "inicio", titulo: "Inicio", icono: HomeRegular, to: "/" },
-  { id: "ofertas", titulo: "Ofertas educativas", icono: BookOpenRegular },
-  { id: "usuarios", titulo: "Usuarios", icono: PeopleRegular, to: "/usuarios" },
-  { id: "configuracion", titulo: "Configuración", icono: SettingsRegular },
+  { id: "inicio", titulo: "Inicio", icono: Home01Icon, to: "/" },
+  { id: "ofertas", titulo: "Ofertas educativas", icono: BookOpen01Icon },
+  { id: "usuarios", titulo: "Usuarios", icono: UserGroupIcon, to: "/usuarios" },
+  { id: "configuracion", titulo: "Configuración", icono: Settings01Icon },
 ] as const;
 
 // Los elementos sin `to` esperan a que exista su módulo.

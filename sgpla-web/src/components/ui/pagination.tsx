@@ -1,4 +1,5 @@
-import { ChevronLeftRegular, ChevronRightRegular } from "@fluentui/react-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,7 @@ function Pagination({
         disabled={actual === 1}
         onClick={() => onPageChange(actual - 1)}
       >
-        <ChevronLeftRegular data-icon="inline-start" />
+        <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
         Anterior
       </Button>
       <LayoutGroup id={markId}>
@@ -139,7 +140,7 @@ function Pagination({
         onClick={() => onPageChange(actual + 1)}
       >
         Siguiente
-        <ChevronRightRegular data-icon="inline-end" />
+        <HugeiconsIcon icon={ArrowRight01Icon} data-icon="inline-end" />
       </Button>
     </nav>
   );

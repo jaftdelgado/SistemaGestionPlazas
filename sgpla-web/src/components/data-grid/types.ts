@@ -1,11 +1,10 @@
+import type { IconSvgElement } from "@hugeicons/react";
 import type * as React from "react";
 import type { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 export type DataGridRowAction = DropdownMenuItem;
 
-export type DataGridIcon = React.ComponentType<{
-  className?: string;
-}>;
+export type DataGridIcon = IconSvgElement;
 
 export type DataGridRowBase = {
   id: string;
