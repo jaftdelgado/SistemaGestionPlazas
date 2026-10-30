@@ -51,7 +51,7 @@ CREATE TABLE usuarios.usuario
         AND CHARINDEX(' ', correo) = 0
         AND correo COLLATE Latin1_General_100_BIN2 = LOWER(correo)),
     CONSTRAINT ck_usuario__nombre_no_vacio CHECK (LEN(TRIM(nombre)) > 0),
-    CONSTRAINT ck_usuario__correo_institucional CHECK (rol_id = 1 OR correo LIKE '%_@uv.mx')
+    CONSTRAINT ck_usuario__correo_institucional CHECK (rol_id = 1 OR correo LIKE '%_@uv.mx' OR correo LIKE '%_@estudiantes.uv.mx')
 );
 
 CREATE UNIQUE INDEX ux_usuario__correo_activo ON usuarios.usuario (correo) WHERE fecha_eliminacion IS NULL;

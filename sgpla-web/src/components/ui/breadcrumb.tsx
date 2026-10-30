@@ -1,7 +1,8 @@
 import {
-  ChevronRightRegular,
-  MoreHorizontalRegular,
-} from "@fluentui/react-icons";
+  ArrowRight01Icon,
+  MoreHorizontalIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -32,7 +33,7 @@ import { useHoverCapable } from "@/hooks/use-hover-capable";
 import { EASE_OUT, SPRING_LAYOUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
-const ETIQUETA_OCULTAS = "Mostrar rutas ocultas";
+const HIDDEN_LABEL = "Mostrar rutas ocultas";
 
 export type BreadcrumbProps = ComponentPropsWithRef<"nav">;
 
@@ -63,7 +64,7 @@ export function BreadcrumbList({
   className,
   children,
   maxItems = 4,
-  overflowLabel = ETIQUETA_OCULTAS,
+  overflowLabel = HIDDEN_LABEL,
   ...props
 }: BreadcrumbListProps) {
   const items = Children.toArray(children);
@@ -225,7 +226,7 @@ export function BreadcrumbSeparator({
         className,
       )}
     >
-      {children ?? <ChevronRightRegular />}
+      {children ?? <HugeiconsIcon icon={ArrowRight01Icon} />}
     </span>
   );
 }
@@ -241,7 +242,7 @@ export interface BreadcrumbEllipsisProps {
 export function BreadcrumbEllipsis({
   children,
   className,
-  label = ETIQUETA_OCULTAS,
+  label = HIDDEN_LABEL,
 }: BreadcrumbEllipsisProps) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<{
@@ -349,7 +350,11 @@ export function BreadcrumbEllipsis({
               }
             }}
           >
-            <MoreHorizontalRegular aria-hidden="true" className="size-4" />
+            <HugeiconsIcon
+              icon={MoreHorizontalIcon}
+              aria-hidden="true"
+              className="size-4"
+            />
           </button>
         </MorphPopoverTrigger>
         <MorphPopoverContent

@@ -1,5 +1,6 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { DismissRegular } from "@fluentui/react-icons";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import type * as React from "react";
 import { Button } from "@/components/ui/button";
 import { type DataGridColumn } from "@/components/data-grid/types";
@@ -47,7 +48,7 @@ export function DrawerPanel<Row, ColumnId extends string>({
               />
             }
           >
-            <DismissRegular aria-hidden="true" />
+            <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" />
           </DialogPrimitive.Close>
         </div>
 

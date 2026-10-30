@@ -1,13 +1,14 @@
-import { ChevronLeftRegular, ChevronRightRegular } from "@fluentui/react-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { SPRING_LAYOUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
-const MAXIMO_SIN_ELIPSIS = 7;
-const BLOQUE_EXTREMO = 5;
-const UMBRAL_EXTREMO = 4;
+const MAX_WITHOUT_ELLIPSIS = 7;
+const EDGE_BLOCK = 5;
+const EDGE_THRESHOLD = 4;
 
 type PaginationProps = {
   page: number;
@@ -17,39 +18,39 @@ type PaginationProps = {
   className?: string;
 };
 
-type ElementoPagina = number | "elipsis-inicio" | "elipsis-fin";
+type PageItem = number | "elipsis-inicio" | "elipsis-fin";
 
-function rango(desde: number, hasta: number) {
-  return Array.from({ length: hasta - desde + 1 }, (_, i) => desde + i);
+function range(from: number, to: number) {
+  return Array.from({ length: to - from + 1 }, (_, i) => from + i);
 }
 
 // La clave es la posición del hueco, no el número: así los botones no se
 // reordenan en el DOM al cambiar de tramo y la marca no se anima sobre un
 // layout que se movió. Solo cambia la etiqueta de cada hueco.
-function paginasVisibles(page: number, pageCount: number) {
-  return elementosVisibles(page, pageCount).map((elemento, posicion) => ({
-    clave: `hueco-${posicion}`,
-    elemento,
+function visiblePages(page: number, pageCount: number) {
+  return visibleItems(page, pageCount).map((item, position) => ({
+    itemKey: `hueco-${position}`,
+    item,
   }));
 }
 
 // Siempre se muestran la primera y la última página.
-function elementosVisibles(page: number, pageCount: number): ElementoPagina[] {
-  if (pageCount <= MAXIMO_SIN_ELIPSIS) return rango(1, pageCount);
-  if (page <= UMBRAL_EXTREMO) {
-    return [...rango(1, BLOQUE_EXTREMO), "elipsis-fin", pageCount];
+function visibleItems(page: number, pageCount: number): PageItem[] {
+  if (pageCount <= MAX_WITHOUT_ELLIPSIS) return range(1, pageCount);
+  if (page <= EDGE_THRESHOLD) {
+    return [...range(1, EDGE_BLOCK), "elipsis-fin", pageCount];
   }
-  if (page >= pageCount - UMBRAL_EXTREMO + 1) {
+  if (page >= pageCount - EDGE_THRESHOLD + 1) {
     return [
       1,
       "elipsis-inicio",
-      ...rango(pageCount - BLOQUE_EXTREMO + 1, pageCount),
+      ...range(pageCount - EDGE_BLOCK + 1, pageCount),
     ];
   }
   return [
     1,
     "elipsis-inicio",
-    ...rango(page - 1, page + 1),
+    ...range(page - 1, page + 1),
     "elipsis-fin",
     pageCount,
   ];
@@ -63,7 +64,7 @@ function Pagination({
   className,
 }: PaginationProps) {
   const markId = React.useId();
-  const reducirMovimiento = useReducedMotion();
+  const reduceMotion = useReducedMotion();
 
   if (pageCount < 1) {
     return <nav aria-label={label} className={className} />;
@@ -83,16 +84,16 @@ function Pagination({
         disabled={actual === 1}
         onClick={() => onPageChange(actual - 1)}
       >
-        <ChevronLeftRegular data-icon="inline-start" />
+        <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
         Anterior
       </Button>
       <LayoutGroup id={markId}>
-        {paginasVisibles(actual, pageCount).map(
-          ({ clave, elemento: numero }) => {
-            if (typeof numero === "string") {
+        {visiblePages(actual, pageCount).map(
+          ({ itemKey, item: pageNumber }) => {
+            if (typeof pageNumber === "string") {
               return (
                 <span
-                  key={clave}
+                  key={itemKey}
                   aria-hidden
                   className="flex size-8 items-center justify-center text-muted-foreground"
                 >
@@ -100,15 +101,15 @@ function Pagination({
                 </span>
               );
             }
-            const esActual = numero === actual;
+            const esActual = pageNumber === actual;
             return (
               <Button
-                key={clave}
+                key={itemKey}
                 variant="ghost"
                 size="icon-sm"
-                aria-label={`Página ${numero}`}
+                aria-label={`Página ${pageNumber}`}
                 aria-current={esActual ? "page" : undefined}
-                onClick={() => onPageChange(numero)}
+                onClick={() => onPageChange(pageNumber)}
                 className={cn(
                   "relative tabular-nums",
                   esActual &&
@@ -120,12 +121,10 @@ function Pagination({
                     layoutId="pagination-mark"
                     aria-hidden
                     className="absolute inset-0 rounded-full bg-primary"
-                    transition={
-                      reducirMovimiento ? { duration: 0 } : SPRING_LAYOUT
-                    }
+                    transition={reduceMotion ? { duration: 0 } : SPRING_LAYOUT}
                   />
                 )}
-                <span className="relative">{numero}</span>
+                <span className="relative">{pageNumber}</span>
               </Button>
             );
           },
@@ -139,7 +138,7 @@ function Pagination({
         onClick={() => onPageChange(actual + 1)}
       >
         Siguiente
-        <ChevronRightRegular data-icon="inline-end" />
+        <HugeiconsIcon icon={ArrowRight01Icon} data-icon="inline-end" />
       </Button>
     </nav>
   );

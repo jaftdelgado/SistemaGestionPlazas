@@ -6,16 +6,16 @@ import {
 } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
-import { crearQueryClient } from "@/lib/query-client";
+import { createQueryClient } from "@/lib/query-client";
 import { routeTree } from "@/routeTree.gen";
 
 // router.load() precarga los componentes que el plugin separa en fragmentos,
 // así que el render no depende del tiempo que tarde su importación.
-async function renderizarEn(ruta: string) {
-  const queryClient = crearQueryClient();
+async function renderAt(path: string) {
+  const queryClient = createQueryClient();
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: [ruta] }),
+    history: createMemoryHistory({ initialEntries: [path] }),
     context: { queryClient },
   });
   await router.load();
@@ -28,7 +28,7 @@ async function renderizarEn(ruta: string) {
 }
 
 it("redirige al inicio de sesión cuando no hay sesión en la ruta raíz", async () => {
-  await renderizarEn("/");
+  await renderAt("/");
 
   expect(
     await screen.findByRole("heading", { name: "Iniciar sesión" }),
@@ -36,7 +36,7 @@ it("redirige al inicio de sesión cuando no hay sesión en la ruta raíz", async
 });
 
 it("muestra la página 404 en una ruta inexistente", async () => {
-  await renderizarEn("/ruta-inexistente");
+  await renderAt("/ruta-inexistente");
 
   expect(await screen.findByText("Página no encontrada")).toBeInTheDocument();
 });

@@ -2,10 +2,11 @@ import { Dialog } from "@base-ui/react/dialog";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cva } from "class-variance-authority";
 import {
-  ChevronRightRegular,
-  PanelLeftRegular,
-  PanelRightRegular,
-} from "@fluentui/react-icons";
+  ArrowRight01Icon,
+  PanelLeftOpenIcon,
+  SidebarRight01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Children,
   createContext,
@@ -529,7 +530,7 @@ export function SidebarTrigger({
   ...props
 }: ComponentProps<typeof Button>) {
   const { toggle, open, openMobile, isMobile, side } = useSidebar();
-  const Icon = side === "right" ? PanelRightRegular : PanelLeftRegular;
+  const icon = side === "right" ? SidebarRight01Icon : PanelLeftOpenIcon;
   return (
     <Button
       data-slot="sidebar-trigger"
@@ -544,7 +545,7 @@ export function SidebarTrigger({
         if (!event.defaultPrevented) toggle();
       }}
     >
-      <Icon aria-hidden="true" />
+      <HugeiconsIcon icon={icon} aria-hidden="true" />
     </Button>
   );
 }
@@ -725,7 +726,8 @@ export function SidebarGroupLabel({
       )}
     >
       <span className="min-w-0 flex-1 truncate text-start">{children}</span>
-      <ChevronRightRegular
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
         aria-hidden="true"
         className={cn(
           "size-3.5 shrink-0 transition-[transform,opacity] duration-200 group-hover/group-label:opacity-100 group-focus-visible/group-label:opacity-100 motion-reduce:transition-none",
@@ -773,7 +775,7 @@ export function SidebarMenuItem({
       data-slot="sidebar-menu-item"
       {...props}
       className={cn(
-        "group/menu-item relative has-data-[actions='1']:[&>[data-slot=sidebar-menu-button]]:pr-8 has-data-[actions='2']:[&>[data-slot=sidebar-menu-button]]:pr-14 has-data-[actions='3']:[&>[data-slot=sidebar-menu-button]]:pr-20 has-data-[slot=sidebar-menu-badge]:[&>[data-slot=sidebar-menu-button]]:pr-9",
+        "group/menu-item relative has-data-[actions='1']:*:data-[slot=sidebar-menu-button]:pr-8 has-data-[actions='2']:*:data-[slot=sidebar-menu-button]:pr-14 has-data-[actions='3']:*:data-[slot=sidebar-menu-button]:pr-20 has-data-[slot=sidebar-menu-badge]:*:data-[slot=sidebar-menu-button]:pr-9",
         className,
       )}
     />

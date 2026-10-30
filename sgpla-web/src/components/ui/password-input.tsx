@@ -1,4 +1,5 @@
-import { EyeOffRegular, EyeRegular } from "@fluentui/react-icons";
+import { ViewIcon, ViewOffIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState, type ComponentPropsWithRef } from "react";
 import {
   InputGroup,
@@ -22,7 +23,7 @@ export function PasswordInput({
   ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
-  const Icono = visible ? EyeOffRegular : EyeRegular;
+  const icon = visible ? ViewOffIcon : ViewIcon;
 
   return (
     <InputGroup
@@ -48,7 +49,7 @@ export function PasswordInput({
           disabled={disabled}
           onClick={() => setVisible((actual) => !actual)}
         >
-          <Icono aria-hidden="true" />
+          <HugeiconsIcon icon={icon} aria-hidden="true" />
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>

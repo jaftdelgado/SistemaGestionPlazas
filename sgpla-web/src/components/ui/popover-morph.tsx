@@ -233,16 +233,16 @@ export interface MorphPopoverContentProps {
 }
 
 // El portal solo existe en el cliente: en el servidor no hay `document.body` donde montarlo.
-const noSuscribir = () => () => {};
+const noopSubscribe = () => () => {};
 
 export function MorphPopoverContent(props: MorphPopoverContentProps) {
   const ctx = useMorphContext("MorphPopoverContent");
-  const montado = useSyncExternalStore(
-    noSuscribir,
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
     () => true,
     () => false,
   );
-  if (!montado) return null;
+  if (!mounted) return null;
   return createPortal(
     <AnimatePresence>
       {ctx.open && <MorphPopoverSurface {...props} />}

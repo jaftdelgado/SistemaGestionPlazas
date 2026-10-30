@@ -1,13 +1,14 @@
 import {
-  AlertRegular,
-  BookOpenRegular,
-  HatGraduationRegular,
-  HomeRegular,
-  MoreHorizontalRegular,
-  EditRegular,
-  SettingsRegular,
-  DeleteRegular,
-} from "@fluentui/react-icons";
+  BookOpen01Icon,
+  Delete01Icon,
+  Edit01Icon,
+  Home01Icon,
+  MoreHorizontalIcon,
+  Mortarboard01Icon,
+  Notification01Icon,
+  Settings01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,7 @@ type Opciones = {
   collapsible: "offcanvas" | "none";
 };
 
-const opciones = {
+const options = {
   side: ["left", "right"],
   variant: ["sidebar", "floating", "inset"],
   peek: ["none", "hover", "click"],
@@ -54,24 +55,26 @@ export function SidebarDemo() {
     peek: "hover",
     collapsible: "offcanvas",
   });
-  const [ofertasAbierto, setOfertasAbierto] = useState(true);
+  const [offersOpen, setOffersOpen] = useState(true);
 
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="flex flex-wrap gap-x-6 gap-y-2">
-        {(Object.keys(opciones) as (keyof Opciones)[]).map((clave) => (
-          <div key={clave} className="flex items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">{clave}</span>
-            {opciones[clave].map((valor) => (
+        {(Object.keys(options) as (keyof Opciones)[]).map((itemKey) => (
+          <div key={itemKey} className="flex items-center gap-1">
+            <span className="mr-1 text-xs text-muted-foreground">
+              {itemKey}
+            </span>
+            {options[itemKey].map((value) => (
               <Button
-                key={valor}
+                key={value}
                 size="sm"
-                variant={config[clave] === valor ? "default" : "secondary"}
+                variant={config[itemKey] === value ? "default" : "secondary"}
                 onClick={() =>
-                  setConfig((actual) => ({ ...actual, [clave]: valor }))
+                  setConfig((actual) => ({ ...actual, [itemKey]: value }))
                 }
               >
-                {valor}
+                {value}
               </Button>
             ))}
           </div>
@@ -95,7 +98,10 @@ export function SidebarDemo() {
             <SidebarHeader>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton size="lg" icon={<HatGraduationRegular />}>
+                  <SidebarMenuButton
+                    size="lg"
+                    icon={<HugeiconsIcon icon={Mortarboard01Icon} />}
+                  >
                     SGPLa
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -107,13 +113,16 @@ export function SidebarDemo() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton isActive icon={<HomeRegular />}>
+                      <SidebarMenuButton
+                        isActive
+                        icon={<HugeiconsIcon icon={Home01Icon} />}
+                      >
                         Inicio
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        icon={<AlertRegular />}
+                        icon={<HugeiconsIcon icon={Notification01Icon} />}
                         status="unread"
                       >
                         Notificaciones
@@ -122,24 +131,24 @@ export function SidebarDemo() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        icon={<BookOpenRegular />}
-                        aria-expanded={ofertasAbierto}
-                        onClick={() => setOfertasAbierto((valor) => !valor)}
+                        icon={<HugeiconsIcon icon={BookOpen01Icon} />}
+                        aria-expanded={offersOpen}
+                        onClick={() => setOffersOpen((value) => !value)}
                       >
                         Ofertas educativas
                       </SidebarMenuButton>
                       <SidebarMenuActions showOnHover>
                         <SidebarMenuAction aria-label="Editar">
-                          <EditRegular />
+                          <HugeiconsIcon icon={Edit01Icon} />
                         </SidebarMenuAction>
                         <SidebarMenuAction aria-label="Eliminar">
-                          <DeleteRegular />
+                          <HugeiconsIcon icon={Delete01Icon} />
                         </SidebarMenuAction>
                         <SidebarMenuAction aria-label="Más">
-                          <MoreHorizontalRegular />
+                          <HugeiconsIcon icon={MoreHorizontalIcon} />
                         </SidebarMenuAction>
                       </SidebarMenuActions>
-                      <SidebarMenuSub open={ofertasAbierto}>
+                      <SidebarMenuSub open={offersOpen}>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton isActive={false}>
                             Licenciaturas
@@ -159,8 +168,8 @@ export function SidebarDemo() {
                 <SidebarGroupLabel>Cargando</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {[0, 1, 2].map((indice) => (
-                      <SidebarMenuItem key={indice}>
+                    {[0, 1, 2].map((index) => (
+                      <SidebarMenuItem key={index}>
                         <SidebarMenuSkeleton showIcon />
                       </SidebarMenuItem>
                     ))}
@@ -171,7 +180,10 @@ export function SidebarDemo() {
             <SidebarFooter>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton icon={<SettingsRegular />} status="idle">
+                  <SidebarMenuButton
+                    icon={<HugeiconsIcon icon={Settings01Icon} />}
+                    status="idle"
+                  >
                     Configuración
                   </SidebarMenuButton>
                 </SidebarMenuItem>

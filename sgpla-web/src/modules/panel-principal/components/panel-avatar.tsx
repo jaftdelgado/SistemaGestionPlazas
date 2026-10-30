@@ -1,7 +1,8 @@
-import { SignOutRegular } from "@fluentui/react-icons";
+import { Logout01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { AvatarBadge } from "@/components/ui/avatar";
-import { AvatarUsuario } from "@/components/ui/avatar-usuario";
+import { UsuarioAvatar } from "@/components/ui/usuario-avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -9,11 +10,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { sesionQueryOptions, useCerrarSesion } from "@/modules/sesion";
+import { sesionQueryOptions, useLogout } from "@/modules/sesion";
 
 export function PanelAvatar() {
   const { data: usuario } = useSuspenseQuery(sesionQueryOptions);
-  const cerrarSesion = useCerrarSesion();
+  const cerrarSesion = useLogout();
   return (
     <div className="flex items-center gap-3">
       <div className="hidden flex-col items-end leading-tight sm:flex">
@@ -22,9 +23,9 @@ export function PanelAvatar() {
           {usuario.rol.nombre}
         </span>
       </div>
-      <AvatarUsuario
-        nombre={usuario.nombre}
-        correo={usuario.correo}
+      <UsuarioAvatar
+        name={usuario.nombre}
+        email={usuario.correo}
         className="size-9"
       >
         <AvatarBadge
@@ -32,7 +33,7 @@ export function PanelAvatar() {
           aria-label="En línea"
           className="bg-green-600 dark:bg-green-800"
         />
-      </AvatarUsuario>
+      </UsuarioAvatar>
       <Separator orientation="vertical" className="h-5 self-auto" />
       <Tooltip>
         <TooltipTrigger
@@ -46,7 +47,7 @@ export function PanelAvatar() {
             />
           }
         >
-          <SignOutRegular aria-hidden="true" />
+          <HugeiconsIcon icon={Logout01Icon} aria-hidden="true" />
         </TooltipTrigger>
         <TooltipContent side="bottom">Cerrar sesión</TooltipContent>
       </Tooltip>

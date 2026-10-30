@@ -1,9 +1,10 @@
 import {
-  CheckmarkRegular,
-  ChevronLeftRegular,
-  ChevronRightRegular,
-  FilterRegular,
-} from "@fluentui/react-icons";
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  FilterHorizontalIcon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import {
   AnimatePresence,
@@ -27,6 +28,7 @@ export type FilterFieldOption = { value: string; label: string };
 export type FilterField = {
   id: string;
   label: string;
+  icon?: IconSvgElement;
   options: FilterFieldOption[];
 };
 
@@ -46,37 +48,36 @@ export type FilterToolbarProps = {
   className?: string;
 };
 
-const DESPLAZAMIENTO_PASO = 18;
-const INSTANTANEO = { duration: 0 };
+const STEP_OFFSET = 18;
+const INSTANT = { duration: 0 };
 const EASE = [...EASE_OUT] as [number, number, number, number];
 
 const ITEM_CLASS =
   "relative flex min-h-8 w-full cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-left text-base outline-none select-none hover:bg-muted focus-visible:bg-muted md:text-sm";
 
 // Los pasos viajan en la dirección del movimiento: avanzar entra por el borde final, volver por el inicial.
-function pasos(reducir: boolean): Variants {
+function stepVariants(reduceMotion: boolean): Variants {
   return {
-    entra: (direccion: number) =>
-      reducir
+    enter: (direction: number) =>
+      reduceMotion
         ? { opacity: 0 }
         : {
             opacity: 0,
-            x: direccion * DESPLAZAMIENTO_PASO,
-            filter: "blur(4px)",
+            x: direction * STEP_OFFSET,
           },
-    centro: {
+    center: {
       opacity: 1,
       x: 0,
-      filter: "blur(0px)",
-      transition: reducir ? { duration: 0.1 } : { duration: 0.22, ease: EASE },
+      transition: reduceMotion
+        ? { duration: 0.1 }
+        : { duration: 0.22, ease: EASE },
     },
-    sale: (direccion: number) =>
-      reducir
-        ? { opacity: 0, transition: INSTANTANEO }
+    exit: (direction: number) =>
+      reduceMotion
+        ? { opacity: 0, transition: INSTANT }
         : {
             opacity: 0,
-            x: direccion * -DESPLAZAMIENTO_PASO,
-            filter: "blur(2px)",
+            x: direction * -STEP_OFFSET,
             transition: { duration: 0.12, ease: EASE },
           },
   };
@@ -93,97 +94,102 @@ function FilterToolbar({
   label = "Filtros activos",
   className,
 }: FilterToolbarProps) {
-  const esSm = size === "sm";
-  const reducir = useReducedMotion() ?? false;
-  const [abierto, setAbierto] = React.useState(false);
-  const [campoId, setCampoId] = React.useState<string | null>(null);
-  const [direccion, setDireccion] = React.useState(1);
+  const isSmall = size === "sm";
+  const reduceMotion = useReducedMotion() ?? false;
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [activeFieldId, setActiveFieldId] = React.useState<string | null>(null);
+  const [direction, setDirection] = React.useState(1);
   // Alto del paso visible; el contenedor lo sigue con un resorte al cambiar de paso.
-  const [alto, setAlto] = React.useState<number | null>(null);
-  const lista = React.useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = React.useState<number | null>(null);
+  const listRef = React.useRef<HTMLDivElement>(null);
   // Fila que recibe el foco tras cambiar de paso; null si no hay cambio pendiente.
-  const enfocar = React.useRef<string | null>(null);
+  const pendingFocus = React.useRef<string | null>(null);
 
-  const campo = fields.find((f) => f.id === campoId) ?? null;
+  const activeField = fields.find((f) => f.id === activeFieldId) ?? null;
 
   React.useLayoutEffect(() => {
-    if (!abierto || !lista.current) return;
-    setAlto(lista.current.offsetHeight);
-  }, [abierto, campoId]);
+    if (!isOpen || !listRef.current) return;
+    setContentHeight(listRef.current.offsetHeight);
+  }, [isOpen, activeFieldId]);
 
   React.useEffect(() => {
-    const clave = enfocar.current;
-    if (clave === null) return;
-    enfocar.current = null;
-    const filas = Array.from(
-      lista.current?.querySelectorAll<HTMLElement>("[data-row]") ?? [],
+    const itemKey = pendingFocus.current;
+    if (itemKey === null) return;
+    pendingFocus.current = null;
+    const rows = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("[data-row]") ?? [],
     );
-    const fila =
-      clave === "primera"
-        ? filas[0]
-        : filas.find((f) => f.dataset.row === clave);
-    (fila ?? filas[0])?.focus();
-  }, [campoId]);
+    const row =
+      itemKey === "primera"
+        ? rows[0]
+        : rows.find((f) => f.dataset.row === itemKey);
+    (row ?? rows[0])?.focus();
+  }, [activeFieldId]);
 
-  function cambiarApertura(siguiente: boolean) {
-    setAbierto(siguiente);
-    if (siguiente) {
-      setCampoId(null);
-      setAlto(null);
+  function changeOpen(next: boolean) {
+    setIsOpen(next);
+    if (next) {
+      setActiveFieldId(null);
+      setContentHeight(null);
     }
   }
 
-  function entrarEnCampo(id: string) {
-    enfocar.current = "primera";
-    setDireccion(1);
-    setCampoId(id);
+  function enterField(id: string) {
+    pendingFocus.current = "primera";
+    setDirection(1);
+    setActiveFieldId(id);
   }
 
-  function volverACampos() {
-    if (!campo) return;
-    enfocar.current = campo.id;
-    setDireccion(-1);
-    setCampoId(null);
+  function backToFields() {
+    if (!activeField) return;
+    pendingFocus.current = activeField.id;
+    setDirection(-1);
+    setActiveFieldId(null);
   }
 
   // Elegir de nuevo el valor aplicado lo quita.
-  function elegirValor(opcion: FilterFieldOption) {
-    if (!campo) return;
-    const aplicado = filters.some(
-      (f) => f.id === campo.id && f.value === opcion.value,
+  function selectValue(option: FilterFieldOption) {
+    if (!activeField) return;
+    const applied = filters.some(
+      (f) => f.id === activeField.id && f.value === option.value,
     );
-    if (aplicado) onRemove(campo.id);
-    else onAdd({ id: campo.id, label: campo.label, value: opcion.value });
-    setAbierto(false);
+    if (applied) onRemove(activeField.id);
+    else
+      onAdd({
+        id: activeField.id,
+        label: activeField.label,
+        value: option.value,
+      });
+    setIsOpen(false);
   }
 
-  function onKeyDown(evento: React.KeyboardEvent<HTMLDivElement>) {
-    const filas = Array.from(
-      lista.current?.querySelectorAll<HTMLElement>("[data-row]") ?? [],
+  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    const rows = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("[data-row]") ?? [],
     );
-    const indice = filas.indexOf(document.activeElement as HTMLElement);
-    function ir(siguiente: number) {
-      evento.preventDefault();
-      filas[siguiente]?.focus();
+    const index = rows.indexOf(document.activeElement as HTMLElement);
+    function ir(next: number) {
+      event.preventDefault();
+      rows[next]?.focus();
     }
-    if (evento.key === "ArrowDown") return ir((indice + 1) % filas.length);
-    if (evento.key === "ArrowUp") {
-      return ir((indice - 1 + filas.length) % filas.length);
+    if (event.key === "ArrowDown") return ir((index + 1) % rows.length);
+    if (event.key === "ArrowUp") {
+      return ir((index - 1 + rows.length) % rows.length);
     }
-    if (evento.key === "Home") return ir(0);
-    if (evento.key === "End") return ir(filas.length - 1);
-    const filaActual = filas[indice]?.dataset.row ?? "";
+    if (event.key === "Home") return ir(0);
+    if (event.key === "End") return ir(rows.length - 1);
+    const currentRow = rows[index]?.dataset.row ?? "";
     if (
-      evento.key === "ArrowRight" &&
-      !campo &&
-      fields.some((f) => f.id === filaActual)
+      event.key === "ArrowRight" &&
+      !activeField &&
+      fields.some((f) => f.id === currentRow)
     ) {
-      evento.preventDefault();
-      entrarEnCampo(filaActual);
+      event.preventDefault();
+      enterField(currentRow);
     }
-    if (evento.key === "ArrowLeft" && campo) {
-      evento.preventDefault();
-      volverACampos();
+    if (event.key === "ArrowLeft" && activeField) {
+      event.preventDefault();
+      backToFields();
     }
   }
 
@@ -199,18 +205,18 @@ function FilterToolbar({
         <Button
           type="button"
           variant="ghost"
-          size={esSm ? "sm" : "default"}
+          size={isSmall ? "sm" : "default"}
           onClick={onClearAll}
         >
           Limpiar filtros
         </Button>
       )}
-      <PopoverPrimitive.Root open={abierto} onOpenChange={cambiarApertura}>
+      <PopoverPrimitive.Root open={isOpen} onOpenChange={changeOpen}>
         <PopoverPrimitive.Trigger
           data-slot="filter-toolbar-trigger"
           className={cn(
-            "relative inline-flex h-10 w-32 items-center gap-2 rounded-full border border-transparent bg-input px-4 py-1 text-base font-medium shadow-border transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm [&_svg]:size-4 [&_svg]:shrink-0",
-            esSm && "h-8 w-32 px-3",
+            "relative inline-flex h-10 w-32 items-center gap-2 rounded-full border border-transparent bg-input px-4 py-1 text-base font-medium shadow-border transition-colors outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm [&_svg]:size-4 [&_svg]:shrink-0",
+            isSmall && "h-8 w-32 px-3",
             filters.length > 0 ? "justify-start" : "justify-center",
           )}
         >
@@ -218,10 +224,10 @@ function FilterToolbar({
               del flujo para que su salida no retrase el regreso del grupo al centro. */}
           <motion.span
             layout="position"
-            transition={reducir ? INSTANTANEO : SPRING_SWAP}
+            transition={reduceMotion ? INSTANT : SPRING_SWAP}
             className="inline-flex items-center gap-2"
           >
-            <FilterRegular aria-hidden="true" />
+            <HugeiconsIcon icon={FilterHorizontalIcon} aria-hidden="true" />
             {addLabel}
           </motion.span>
           <AnimatePresence initial={false}>
@@ -229,21 +235,21 @@ function FilterToolbar({
               <motion.span
                 key="insignia"
                 aria-label={`${filters.length} filtros aplicados`}
-                initial={reducir ? false : { opacity: 0, scale: 0.6 }}
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={
-                  reducir
-                    ? { opacity: 0, transition: INSTANTANEO }
+                  reduceMotion
+                    ? { opacity: 0, transition: INSTANT }
                     : {
                         opacity: 0,
                         scale: 0.6,
                         transition: { duration: 0.12, ease: EASE },
                       }
                 }
-                transition={reducir ? INSTANTANEO : SPRING_SWAP}
+                transition={reduceMotion ? INSTANT : SPRING_SWAP}
                 className={cn(
                   "absolute top-1/2 -mt-2.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground tabular-nums",
-                  esSm ? "right-1.5" : "right-2.5",
+                  isSmall ? "right-1.5" : "right-2.5",
                 )}
               >
                 {filters.length}
@@ -259,66 +265,71 @@ function FilterToolbar({
           >
             <PopoverPrimitive.Popup
               data-slot="filter-toolbar-content"
-              className="max-h-(--available-height) w-64 origin-(--transform-origin) overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+              className="max-h-(--available-height) w-68 origin-(--transform-origin) overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
             >
               <motion.div
                 className="relative overflow-hidden"
                 initial={false}
-                animate={alto === null ? undefined : { height: alto }}
+                animate={
+                  contentHeight === null ? undefined : { height: contentHeight }
+                }
                 transition={
-                  reducir ? INSTANTANEO : { duration: 0.22, ease: EASE }
+                  reduceMotion ? INSTANT : { duration: 0.22, ease: EASE }
                 }
               >
                 <AnimatePresence
                   mode="popLayout"
                   initial={false}
-                  custom={direccion}
+                  custom={direction}
                 >
                   <motion.div
-                    key={campo?.id ?? "campos"}
-                    ref={lista}
+                    key={activeField?.id ?? "campos"}
+                    ref={listRef}
                     role="menu"
-                    aria-label={campo ? campo.label : addLabel}
-                    custom={direccion}
-                    variants={pasos(reducir)}
-                    initial="entra"
-                    animate="centro"
-                    exit="sale"
+                    aria-label={activeField ? activeField.label : addLabel}
+                    custom={direction}
+                    variants={stepVariants(reduceMotion)}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
                     onKeyDown={onKeyDown}
                   >
-                    {campo && (
+                    {activeField && (
                       <button
                         type="button"
                         aria-label="Volver a los campos"
-                        onClick={volverACampos}
+                        onClick={backToFields}
                         className="mb-1 flex min-h-8 w-full items-center gap-2 rounded-full py-1 pr-3 pl-2 text-left text-base font-medium outline-none hover:bg-muted focus-visible:bg-muted md:text-sm"
                       >
-                        <ChevronLeftRegular
+                        <HugeiconsIcon
+                          icon={ArrowLeft01Icon}
                           aria-hidden="true"
                           className="size-4"
                         />
-                        {campo.label}
+                        {activeField.label}
                       </button>
                     )}
-                    {campo
-                      ? campo.options.map((opcion) => {
-                          const aplicado = filters.some(
+                    {activeField
+                      ? activeField.options.map((option) => {
+                          const applied = filters.some(
                             (f) =>
-                              f.id === campo.id && f.value === opcion.value,
+                              f.id === activeField.id &&
+                              f.value === option.value,
                           );
                           return (
                             <button
-                              key={opcion.value}
+                              key={option.value}
                               type="button"
                               role="menuitemradio"
-                              aria-checked={aplicado}
-                              data-row={opcion.value}
+                              aria-checked={applied}
+                              data-row={option.value}
                               className={ITEM_CLASS}
-                              onClick={() => elegirValor(opcion)}
+                              onClick={() => selectValue(option)}
                             >
-                              {opcion.label}
-                              {aplicado && (
-                                <CheckmarkRegular
+                              {option.label}
+                              {applied && (
+                                <HugeiconsIcon
+                                  icon={Tick01Icon}
                                   aria-hidden="true"
                                   className="absolute right-3 size-4"
                                 />
@@ -327,24 +338,37 @@ function FilterToolbar({
                           );
                         })
                       : fields.map((f) => {
-                          const valor = filters.find(
+                          const value = filters.find(
                             (x) => x.id === f.id,
                           )?.value;
+                          const labelText =
+                            f.options.find((o) => o.value === value)?.label ??
+                            value;
                           return (
                             <button
                               key={f.id}
                               type="button"
                               role="menuitem"
                               data-row={f.id}
-                              className={ITEM_CLASS}
-                              onClick={() => entrarEnCampo(f.id)}
+                              className={cn(ITEM_CLASS, "pr-3")}
+                              onClick={() => enterField(f.id)}
                             >
-                              {f.label}
-                              <span className="absolute right-3 flex items-center gap-1 text-muted-foreground">
-                                {valor}
-                                <ChevronRightRegular
+                              {f.icon && (
+                                <HugeiconsIcon
+                                  icon={f.icon}
                                   aria-hidden="true"
-                                  className="size-4"
+                                  className="size-4 shrink-0"
+                                />
+                              )}
+                              <span className="shrink-0">{f.label}</span>
+                              <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-muted-foreground">
+                                <span className="truncate" title={labelText}>
+                                  {labelText}
+                                </span>
+                                <HugeiconsIcon
+                                  icon={ArrowRight01Icon}
+                                  aria-hidden="true"
+                                  className="size-4 shrink-0"
                                 />
                               </span>
                             </button>

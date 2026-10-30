@@ -9,35 +9,37 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
-import { erroresDeCampo, mensajeGeneral } from "@/lib/api/problema";
-import { useCambiarContrasena } from "../application/use-cambiar-contrasena";
+import { getFieldErrors, getGeneralMessage } from "@/lib/api/problem";
+import { useChangePassword } from "../application/use-change-password";
 
-export function CambiarContrasenaPage() {
+export function ChangePasswordPage() {
   const { redirect } = useSearch({ from: "/cambiar-contrasena" });
-  const { mutate, isPending, error } = useCambiarContrasena(redirect);
-  const [contrasenaActual, setContrasenaActual] = useState("");
-  const [contrasenaNueva, setContrasenaNueva] = useState("");
-  const [confirmacion, setConfirmacion] = useState("");
-  const [noCoincide, setNoCoincide] = useState(false);
+  const { mutate, isPending, error } = useChangePassword(redirect);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [mismatch, setMismatch] = useState(false);
 
-  const errores = erroresDeCampo(error);
-  const errorActual = errores["contrasenaActual"]?.join(" ");
-  const errorNueva = errores["contrasenaNueva"]?.join(" ");
-  const errorGeneral = mensajeGeneral(error);
+  const errors = getFieldErrors(error);
+  const currentError = errors["contrasenaActual"]?.join(" ");
+  const newError = errors["contrasenaNueva"]?.join(" ");
+  const generalError = getGeneralMessage(error);
 
-  function enviar(evento: SubmitEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    if (contrasenaNueva !== confirmacion) {
-      setNoCoincide(true);
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (newPassword !== confirmation) {
+      setMismatch(true);
       return;
     }
-    setNoCoincide(false);
-    mutate({ body: { contrasenaActual, contrasenaNueva } });
+    setMismatch(false);
+    mutate({
+      body: { contrasenaActual: currentPassword, contrasenaNueva: newPassword },
+    });
   }
 
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
-      <form className="w-full max-w-sm" onSubmit={enviar}>
+      <form className="w-full max-w-sm" onSubmit={handleSubmit}>
         <FieldGroup>
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-semibold">Cambia tu contraseña</h1>
@@ -45,7 +47,7 @@ export function CambiarContrasenaPage() {
               Tu contraseña es temporal. Elige una nueva para continuar.
             </p>
           </div>
-          <Field data-invalid={errorActual ? "true" : undefined}>
+          <Field data-invalid={currentError ? "true" : undefined}>
             <FieldLabel htmlFor="contrasena-actual">
               Contraseña actual
             </FieldLabel>
@@ -54,30 +56,30 @@ export function CambiarContrasenaPage() {
               name="contrasenaActual"
               autoComplete="current-password"
               required
-              value={contrasenaActual}
-              onChange={(evento) => setContrasenaActual(evento.target.value)}
-              aria-invalid={errorActual ? true : undefined}
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              aria-invalid={currentError ? true : undefined}
             />
-            <FieldError>{errorActual}</FieldError>
+            <FieldError>{currentError}</FieldError>
           </Field>
-          <Field data-invalid={errorNueva ? "true" : undefined}>
+          <Field data-invalid={newError ? "true" : undefined}>
             <FieldLabel htmlFor="contrasena-nueva">Contraseña nueva</FieldLabel>
             <PasswordInput
               id="contrasena-nueva"
               name="contrasenaNueva"
               autoComplete="new-password"
               required
-              value={contrasenaNueva}
-              onChange={(evento) => setContrasenaNueva(evento.target.value)}
-              aria-invalid={errorNueva ? true : undefined}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              aria-invalid={newError ? true : undefined}
             />
             <FieldDescription>
               De 8 a 128 caracteres, con al menos una mayúscula, una minúscula,
               un número y un símbolo.
             </FieldDescription>
-            <FieldError>{errorNueva}</FieldError>
+            <FieldError>{newError}</FieldError>
           </Field>
-          <Field data-invalid={noCoincide ? "true" : undefined}>
+          <Field data-invalid={mismatch ? "true" : undefined}>
             <FieldLabel htmlFor="confirmacion">
               Confirma la contraseña nueva
             </FieldLabel>
@@ -86,17 +88,15 @@ export function CambiarContrasenaPage() {
               name="confirmacion"
               autoComplete="new-password"
               required
-              value={confirmacion}
-              onChange={(evento) => setConfirmacion(evento.target.value)}
-              aria-invalid={noCoincide ? true : undefined}
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
+              aria-invalid={mismatch ? true : undefined}
             />
-            {noCoincide && (
-              <FieldError>Las contraseñas no coinciden.</FieldError>
-            )}
+            {mismatch && <FieldError>Las contraseñas no coinciden.</FieldError>}
           </Field>
-          {errorGeneral && (
+          {generalError && (
             <p role="alert" className="text-sm text-destructive">
-              {errorGeneral}
+              {generalError}
             </p>
           )}
           <Button type="submit" disabled={isPending}>

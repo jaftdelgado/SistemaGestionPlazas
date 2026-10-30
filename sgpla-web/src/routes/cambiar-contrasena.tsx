@@ -1,18 +1,18 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
-  CambiarContrasenaPage,
-  destinoSeguro,
-  exigirSesion,
-  validarBusquedaConRedirect,
+  ChangePasswordPage,
+  safeDestination,
+  requireSesion,
+  validateRedirectSearch,
 } from "@/modules/sesion";
 
 export const Route = createFileRoute("/cambiar-contrasena")({
-  validateSearch: validarBusquedaConRedirect,
+  validateSearch: validateRedirectSearch,
   beforeLoad: async ({ context, search }) => {
-    const sesion = await exigirSesion(context.queryClient);
+    const sesion = await requireSesion(context.queryClient);
     if (!sesion.cambioContrasenaPendiente) {
-      throw redirect({ to: destinoSeguro(search.redirect) });
+      throw redirect({ to: safeDestination(search.redirect) });
     }
   },
-  component: CambiarContrasenaPage,
+  component: ChangePasswordPage,
 });

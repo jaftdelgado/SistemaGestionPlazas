@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { HatGraduationRegular } from "@fluentui/react-icons";
+import { Mortarboard01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,17 +13,20 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useNavegacion } from "./use-navegacion";
+import { useNavigation } from "./use-navigation";
 
 export function PanelSidebar() {
-  const { elementos, activo } = useNavegacion();
+  const { items, active } = useNavigation();
 
   return (
     <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" icon={<HatGraduationRegular />}>
+            <SidebarMenuButton
+              size="lg"
+              icon={<HugeiconsIcon icon={Mortarboard01Icon} />}
+            >
               SGPLa
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -33,19 +37,19 @@ export function PanelSidebar() {
           <SidebarGroupLabel>General</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {elementos.map((elemento) => {
-                const { id, titulo, icono: Icono } = elemento;
-                const to = "to" in elemento ? elemento.to : undefined;
+              {items.map((item) => {
+                const { id, title, icon } = item;
+                const to = "to" in item ? item.to : undefined;
                 return (
                   <SidebarMenuItem key={id}>
                     <SidebarMenuButton
-                      isActive={id === activo}
-                      icon={<Icono />}
+                      isActive={id === active}
+                      icon={<HugeiconsIcon icon={icon} />}
                       render={
                         to ? (props) => <Link to={to} {...props} /> : undefined
                       }
                     >
-                      {titulo}
+                      {title}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

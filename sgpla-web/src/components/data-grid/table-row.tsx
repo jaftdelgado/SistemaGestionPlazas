@@ -1,12 +1,16 @@
-import { OpenRegular } from "@fluentui/react-icons";
+import { SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import * as React from "react";
 import { SelectionCheckbox } from "@/components/data-grid/selection-checkbox";
+import { ACTIONS_FADE } from "@/components/data-grid/actions-column";
 import {
   type DataGridColumn,
+  type DataGridRowAction,
   type DataGridRowBase,
   type EditingCell,
 } from "@/components/data-grid/types";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -15,6 +19,7 @@ type DataGridRowProps<Row extends DataGridRowBase, ColumnId extends string> = {
   row: Row;
   rowIndex: number;
   columns: DataGridColumn<ColumnId>[];
+  selectable: boolean;
   isSelected: boolean;
   isActive: boolean;
   // Solo la fila en edición recibe la columna y el borrador; el resto mantiene props idénticas y no se renderiza.
@@ -22,6 +27,7 @@ type DataGridRowProps<Row extends DataGridRowBase, ColumnId extends string> = {
   draftValue: string;
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
+  getRowActions?: (row: Row) => DataGridRowAction[];
   onActiveRowChange: (rowId: string) => void;
   onRowKeyDown: (
     event: React.KeyboardEvent<HTMLTableRowElement>,
@@ -47,12 +53,14 @@ function DataGridRowInner<
   row,
   rowIndex,
   columns,
+  selectable,
   isSelected,
   isActive,
   editingColumnId,
   draftValue,
   getRowLabel,
   renderCell,
+  getRowActions,
   onActiveRowChange,
   onRowKeyDown,
   onToggleRowSelection,
@@ -80,16 +88,18 @@ function DataGridRowInner<
       onFocus={() => onActiveRowChange(row.id)}
       onKeyDown={(event) => onRowKeyDown(event, row, rowIndex)}
     >
-      <TableCell className="h-10 border-r px-0 py-0 text-center">
-        <SelectionCheckbox
-          aria-label={`Seleccionar ${getRowLabel(row)}`}
-          checked={isSelected}
-          tabIndex={controlTabIndex}
-          onToggle={(checked) => onToggleRowSelection(row.id, checked)}
-          onDragStart={() => onSelectionDragStart(rowIndex)}
-        />
-      </TableCell>
-      {columns.map((column) => {
+      {selectable ? (
+        <TableCell className="h-10 border-r px-0 py-0 text-center">
+          <SelectionCheckbox
+            aria-label={`Seleccionar ${getRowLabel(row)}`}
+            checked={isSelected}
+            tabIndex={controlTabIndex}
+            onToggle={(checked) => onToggleRowSelection(row.id, checked)}
+            onDragStart={() => onSelectionDragStart(rowIndex)}
+          />
+        </TableCell>
+      ) : null}
+      {columns.map((column, index) => {
         const isEditing = editingColumnId === column.id;
         const editable = canEditColumn(column.id);
         const showDrawerAction = canOpenDrawer(column.id);
@@ -99,6 +109,8 @@ function DataGridRowInner<
             key={column.id}
             className={cn(
               "group/cell relative h-10 overflow-hidden border-r px-2 py-1 whitespace-nowrap",
+              // La columna de acciones no lleva divisoria a su izquierda.
+              getRowActions && index === columns.length - 1 && "border-r-0",
               editable && "cursor-text",
             )}
             onDoubleClick={() => {
@@ -176,7 +188,10 @@ function DataGridRowInner<
                         });
                       }}
                     >
-                      <OpenRegular aria-hidden="true" />
+                      <HugeiconsIcon
+                        icon={SquareArrowUpRightIcon}
+                        aria-hidden="true"
+                      />
                       Abrir
                     </Button>
                   </div>
@@ -186,6 +201,21 @@ function DataGridRowInner<
           </TableCell>
         );
       })}
+      {getRowActions ? (
+        <TableCell
+          className={cn(
+            "sticky right-0 z-10 h-10 bg-card p-0 text-center in-data-[state=selected]:bg-secondary",
+            ACTIONS_FADE,
+            "before:from-card in-data-[state=selected]:before:from-secondary",
+          )}
+        >
+          <DropdownMenu
+            label={`Acciones de ${getRowLabel(row)}`}
+            items={getRowActions(row)}
+            triggerTabIndex={controlTabIndex}
+          />
+        </TableCell>
+      ) : null}
     </TableRow>
   );
 }

@@ -1,12 +1,12 @@
 import { Toast } from "@base-ui/react/toast";
 import {
-  CheckmarkCircleFilled,
-  DismissCircleFilled,
-  DismissRegular,
-  InfoFilled,
-  WarningFilled,
-  type FluentIcon,
-} from "@fluentui/react-icons";
+  Alert01Icon,
+  Cancel01Icon,
+  CancelCircleIcon,
+  CheckmarkCircle01Icon,
+  InformationCircleIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
 /* Adapted from Bencho's "Toast stack" (MIT, bencho.dev/licence), rebuilt on
    Base UI's Toast: it owns the queue, the auto-dismiss timers, pausing them
@@ -38,41 +38,41 @@ import {
    Dismiss one and it slides away. The provider's limit is three: older
    ones are flagged limited and fade out rather than pile up. */
 
-type TipoToast = "success" | "info" | "error" | "warning";
+type ToastType = "success" | "info" | "error" | "warning";
 
-const ICONO: Record<TipoToast, FluentIcon> = {
-  success: CheckmarkCircleFilled,
-  info: InfoFilled,
-  error: DismissCircleFilled,
-  warning: WarningFilled,
+const ICONS: Record<ToastType, IconSvgElement> = {
+  success: CheckmarkCircle01Icon,
+  info: InformationCircleIcon,
+  error: CancelCircleIcon,
+  warning: Alert01Icon,
 };
 
 // Manager global: permite avisar desde hooks y callbacks sin depender del contexto de React.
 const toastManager = Toast.createToastManager();
 
-function avisar(tipo: TipoToast) {
+function notify(type: ToastType) {
   return (title: string, description?: string) =>
-    toastManager.add({ type: tipo, title, description });
+    toastManager.add({ type: type, title, description });
 }
 
 export const toast = {
-  success: avisar("success"),
-  info: avisar("info"),
-  error: avisar("error"),
-  warning: avisar("warning"),
+  success: notify("success"),
+  info: notify("info"),
+  error: notify("error"),
+  warning: notify("warning"),
 };
 
-function esTipo(tipo: string | undefined): tipo is TipoToast {
-  return tipo !== undefined && tipo in ICONO;
+function isToastType(type: string | undefined): type is ToastType {
+  return type !== undefined && type in ICONS;
 }
 
-function ListaDeToasts() {
+function ToastList() {
   const { toasts } = Toast.useToastManager();
   return (
     <Toast.Portal>
       <Toast.Viewport className="tst" aria-label="Notificaciones">
         {toasts.map((t) => {
-          const Icon = ICONO[esTipo(t.type) ? t.type : "info"];
+          const icon = ICONS[isToastType(t.type) ? t.type : "info"];
           return (
             <Toast.Root
               key={t.id}
@@ -83,7 +83,11 @@ function ListaDeToasts() {
             >
               <Toast.Content className="tst-content">
                 <span className="tst-icon">
-                  <Icon className="size-[18px]" aria-hidden="true" />
+                  <HugeiconsIcon
+                    icon={icon}
+                    className="size-[18px]"
+                    aria-hidden="true"
+                  />
                 </span>
                 <span className="tst-text">
                   <Toast.Title className="tst-title" />
@@ -91,7 +95,11 @@ function ListaDeToasts() {
                 </span>
                 {t.actionProps && <Toast.Action className="tst-act" />}
                 <Toast.Close className="tst-x" aria-label="Descartar aviso">
-                  <DismissRegular className="size-4" aria-hidden="true" />
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    className="size-4"
+                    aria-hidden="true"
+                  />
                 </Toast.Close>
               </Toast.Content>
             </Toast.Root>
@@ -106,7 +114,7 @@ function ListaDeToasts() {
 export function ToastStack() {
   return (
     <Toast.Provider toastManager={toastManager} limit={3} timeout={4000}>
-      <ListaDeToasts />
+      <ToastList />
     </Toast.Provider>
   );
 }

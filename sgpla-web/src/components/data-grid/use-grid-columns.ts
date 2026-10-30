@@ -16,8 +16,8 @@ type UseGridColumnsParams<ColumnId extends string> = {
 
 // La tabla de TanStack solo administra los anchos; las filas las renderiza el grid.
 const features = tableFeatures({ columnSizingFeature, columnResizingFeature });
-type FilaVacia = Record<string, never>;
-const SIN_FILAS: FilaVacia[] = [];
+type EmptyRow = Record<string, never>;
+const NO_ROWS: EmptyRow[] = [];
 
 export type GridResizeEvent = React.MouseEvent | React.TouchEvent;
 
@@ -26,7 +26,7 @@ export function useGridColumns<ColumnId extends string>({
   minColumnWidth,
   controlColumnWidth,
 }: UseGridColumnsParams<ColumnId>) {
-  const columnDefs = React.useMemo<ColumnDef<typeof features, FilaVacia>[]>(
+  const columnDefs = React.useMemo<ColumnDef<typeof features, EmptyRow>[]>(
     () =>
       columns.map((column) => ({
         id: column.id,
@@ -39,7 +39,7 @@ export function useGridColumns<ColumnId extends string>({
   const table = useTable({
     features,
     columns: columnDefs,
-    data: SIN_FILAS,
+    data: NO_ROWS,
     columnResizeMode: "onChange",
   });
 

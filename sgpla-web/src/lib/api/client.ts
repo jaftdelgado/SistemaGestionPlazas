@@ -1,12 +1,12 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "@/lib/api/schema";
 
-export function crearMiddlewareAutorizacion(
-  leerToken: () => string | null,
+export function createAuthorizationMiddleware(
+  readToken: () => string | null,
 ): Middleware {
   return {
     onRequest({ request }) {
-      const token = leerToken();
+      const token = readToken();
       if (token) {
         request.headers.set("Authorization", `Bearer ${token}`);
       }
@@ -16,11 +16,13 @@ export function crearMiddlewareAutorizacion(
 }
 
 // Un 401 a una petición con token significa sesión vencida o revocada; el inicio de sesión no envía token.
-export function crearMiddlewareSesionVencida(alVencer: () => void): Middleware {
+export function createExpiredSesionMiddleware(
+  onExpired: () => void,
+): Middleware {
   return {
     onResponse({ request, response }) {
       if (response.status === 401 && request.headers.has("Authorization")) {
-        alVencer();
+        onExpired();
       }
       return response;
     },

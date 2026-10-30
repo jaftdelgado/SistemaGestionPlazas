@@ -31,7 +31,13 @@ sgpla-web/
   scripts/          verify.sh y generar-api.sh
 ```
 
-Los nombres de módulo van en español; el resto de las carpetas, en inglés. Los identificadores de dominio van en español sin acentos, los términos técnicos en inglés, y la interfaz y los comentarios en español.
+Los nombres de módulo van en español; el resto de las carpetas, en inglés.
+
+### Nombres en el código
+
+Los archivos, componentes, funciones, hooks, props y variables van en inglés. En español solo queda el sustantivo del dominio, sin acentos: `UsuariosDataGrid`, `UsuariosFilters`, `useUsuariosListing`, `UsuarioRow`, `Sesion`, `Cuenta`, `Rol`, `Ambito`. La interfaz, los `aria-label` y los comentarios van en español.
+
+Dos excepciones: los campos que vienen del contrato generado (`nombre`, `correo`, `pagina`, `tamanoPagina`, `elementos`, `rolId`…) conservan su nombre, y los archivos de `routes/` conservan el suyo en español porque son la URL (`cambiar-contrasena.tsx`).
 
 ### Arquitectura de un módulo
 
@@ -48,14 +54,14 @@ modules/<modulo>/
   index.ts          contrato: lo único que importan las rutas y los demás módulos
 ```
 
-| Capa             | Equivale en el backend  | Puede depender de                                                                    | Nunca depende de                                             |
-| ---------------- | ----------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| `domain`         | `Domain`                | Nada fuera del módulo                                                                | React, TanStack, `lib/api`, `components`, las otras capas    |
-| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                           | `pages`, `components`                                        |
-| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                      | `pages`, `components`                                        |
-| `pages`          | `Endpoints`             | `components`, `application`, `domain`, `components/` compartidos, `lib/api/problema` | `infrastructure`, `lib/api/client`, `lib/api/query`          |
-| `components`     | `Endpoints`             | `application`, `domain`, `components/` compartidos, `lib/api/problema`               | `pages`, `infrastructure`, `lib/api/client`, `lib/api/query` |
-| `index.ts`       | `Application/Contracts` | Todas las capas                                                                      | —                                                            |
+| Capa             | Equivale en el backend  | Puede depender de                                                                   | Nunca depende de                                             |
+| ---------------- | ----------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `domain`         | `Domain`                | Nada fuera del módulo                                                               | React, TanStack, `lib/api`, `components`, las otras capas    |
+| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                          | `pages`, `components`                                        |
+| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                     | `pages`, `components`                                        |
+| `pages`          | `Endpoints`             | `components`, `application`, `domain`, `components/` compartidos, `lib/api/problem` | `infrastructure`, `lib/api/client`, `lib/api/query`          |
+| `components`     | `Endpoints`             | `application`, `domain`, `components/` compartidos, `lib/api/problem`               | `pages`, `infrastructure`, `lib/api/client`, `lib/api/query` |
+| `index.ts`       | `Application/Contracts` | Todas las capas                                                                     | —                                                            |
 
 Las rutas de `routes/` son adaptadores delgados, como los `Map…Endpoints`: validan la búsqueda, ejecutan la guarda en `beforeLoad` y montan la página. `main.tsx` es la raíz de composición de la aplicación. Dentro de un módulo se importa con rutas relativas; desde fuera, solo `@/modules/<modulo>`.
 

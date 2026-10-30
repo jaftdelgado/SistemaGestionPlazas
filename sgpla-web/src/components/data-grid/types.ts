@@ -1,8 +1,10 @@
+import type { IconSvgElement } from "@hugeicons/react";
 import type * as React from "react";
+import type { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
-export type DataGridIcon = React.ComponentType<{
-  className?: string;
-}>;
+export type DataGridRowAction = DropdownMenuItem;
+
+export type DataGridIcon = IconSvgElement;
 
 export type DataGridRowBase = {
   id: string;
@@ -65,8 +67,21 @@ export type DataGridProps<
   onSortChange?: (sort: DataGridSort<ColumnId>) => void;
   getRowLabel: (row: Row) => string;
   renderCell: (row: Row, column: DataGridColumn<ColumnId>) => React.ReactNode;
-  selectedRowIds: string[];
-  onSelectedRowIdsChange: (rowIds: string[]) => void;
+  // Con él, el grid agrega una columna fija al final con un menú de acciones por fila; sin él, no hay columna.
+  getRowActions?: (row: Row) => DataGridRowAction[];
+  // Mientras carga, el cuerpo muestra filas de esqueleto en lugar de las filas y del estado vacío.
+  loading?: boolean;
+  loadingRowCount?: number;
+  // Varía el ancho de los esqueletos por celda: es estable entre cargas y distinto entre grids con otra semilla.
+  loadingSeed?: string;
+  // Contenido de esqueleto de una celda mientras carga; por defecto, una barra.
+  renderLoadingCell?: (
+    column: DataGridColumn<ColumnId>,
+    rowIndex: number,
+  ) => React.ReactNode;
+  // La selección es opcional: con onSelectedRowIdsChange el grid agrega la columna de casillas; sin él, no hay columna.
+  selectedRowIds?: string[];
+  onSelectedRowIdsChange?: (rowIds: string[]) => void;
   // La edición en celda es opcional: solo se activa en las columnas que isEditableColumn acepta y si se pasan
   // getCellEditValue y applyCellEdit.
   isEditableColumn?: (columnId: ColumnId) => boolean;

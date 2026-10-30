@@ -1,4 +1,5 @@
-import { FolderRegular } from "@fluentui/react-icons";
+import { Folder01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +35,7 @@ function EmptyState({
         aria-hidden="true"
         className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-6"
       >
-        {icon ?? <FolderRegular />}
+        {icon ?? <HugeiconsIcon icon={Folder01Icon} />}
       </div>
       <div className="flex flex-col items-center gap-1">
         <h3 className="text-base font-medium">{title}</h3>

@@ -1,15 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ArrowRightRegular,
-  ArrowUpRightRegular,
-  CopyRegular,
-  FolderRegular,
-  HomeRegular,
-  MailRegular,
-  AddRegular,
-  SearchRegular,
-  DeleteRegular,
-} from "@fluentui/react-icons";
+  Add01Icon,
+  ArrowRight01Icon,
+  ArrowUpRight01Icon,
+  Copy01Icon,
+  Delete01Icon,
+  Folder01Icon,
+  Home01Icon,
+  Mail01Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   Breadcrumb,
@@ -49,17 +50,17 @@ import {
 import { SidebarDemo } from "./-sidebar-demo";
 
 // Página provisional de desarrollo: galería para probar y ajustar los componentes.
-// Cada componente nuevo agrega una <Seccion> con sus variantes y tamaños.
+// Cada componente nuevo agrega una <Section> con sus variantes y tamaños.
 export const Route = createFileRoute("/componentes")({
   component: Componentes,
 });
 
-const variantes = ["default", "secondary", "ghost", "destructive"] as const;
+const variants = ["default", "secondary", "ghost", "destructive"] as const;
 
-const tamanos = ["sm", "default"] as const;
-const tamanosIcono = ["icon-sm", "icon"] as const;
+const sizes = ["sm", "default"] as const;
+const iconSizes = ["icon-sm", "icon"] as const;
 
-const rutaEjemplo = [
+const exampleRoute = [
   "Inicio",
   "Ofertas educativas",
   "Licenciaturas",
@@ -79,71 +80,71 @@ function Componentes() {
         </p>
       </header>
 
-      <Seccion titulo="Button">
-        <Subseccion titulo="Variantes">
-          {variantes.map((variante) => (
-            <Button key={variante} variant={variante}>
-              {variante}
+      <Section title="Button">
+        <Subsection title="Variantes">
+          {variants.map((variant) => (
+            <Button key={variant} variant={variant}>
+              {variant}
             </Button>
           ))}
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Tamaños">
-          {tamanos.map((tamano) => (
-            <Button key={tamano} size={tamano}>
-              {tamano}
+        <Subsection title="Tamaños">
+          {sizes.map((size) => (
+            <Button key={size} size={size}>
+              {size}
             </Button>
           ))}
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Tamaños de ícono">
-          {tamanosIcono.map((tamano) => (
+        <Subsection title="Tamaños de ícono">
+          {iconSizes.map((size) => (
             <Button
-              key={tamano}
-              size={tamano}
+              key={size}
+              size={size}
               variant="secondary"
-              aria-label={tamano}
+              aria-label={size}
             >
-              <AddRegular />
+              <HugeiconsIcon icon={Add01Icon} />
             </Button>
           ))}
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Con ícono">
+        <Subsection title="Con ícono">
           <Button>
-            <AddRegular data-icon="inline-start" />
+            <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
             Agregar
           </Button>
           <Button variant="secondary">
             Siguiente
-            <ArrowRightRegular data-icon="inline-end" />
+            <HugeiconsIcon icon={ArrowRight01Icon} data-icon="inline-end" />
           </Button>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Deshabilitado">
-          {variantes.map((variante) => (
-            <Button key={variante} variant={variante} disabled>
-              {variante}
+        <Subsection title="Deshabilitado">
+          {variants.map((variant) => (
+            <Button key={variant} variant={variant} disabled>
+              {variant}
             </Button>
           ))}
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Inválido (aria-invalid)">
-          {variantes.map((variante) => (
-            <Button key={variante} variant={variante} aria-invalid>
-              {variante}
+        <Subsection title="Inválido (aria-invalid)">
+          {variants.map((variant) => (
+            <Button key={variant} variant={variant} aria-invalid>
+              {variant}
             </Button>
           ))}
-        </Subseccion>
-      </Seccion>
+        </Subsection>
+      </Section>
 
-      <Seccion titulo="Input">
-        <Subseccion titulo="Básico">
+      <Section title="Input">
+        <Subsection title="Básico">
           <Input className="max-w-xs" placeholder="Escribe aquí" />
           <Input className="max-w-xs" defaultValue="Con valor" />
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Tipos">
+        <Subsection title="Tipos">
           <Input className="max-w-xs" type="email" placeholder="Correo" />
           <Input
             className="max-w-xs"
@@ -151,52 +152,52 @@ function Componentes() {
             placeholder="Contraseña"
           />
           <Input className="max-w-xs" type="file" />
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Estados">
+        <Subsection title="Estados">
           <Input className="max-w-xs" placeholder="Deshabilitado" disabled />
           <Input className="max-w-xs" placeholder="Inválido" aria-invalid />
-        </Subseccion>
-      </Seccion>
+        </Subsection>
+      </Section>
 
-      <Seccion titulo="Input Group">
-        <Subseccion titulo="Align inline-start (predeterminado)">
+      <Section title="Input Group">
+        <Subsection title="Align inline-start (predeterminado)">
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Buscar..." />
             <InputGroupAddon>
-              <SearchRegular />
+              <HugeiconsIcon icon={Search01Icon} />
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Align inline-end">
+        <Subsection title="Align inline-end">
           <InputGroup className="max-w-xs">
             <InputGroupInput type="email" placeholder="Correo" />
             <InputGroupAddon align="inline-end">
-              <MailRegular />
+              <HugeiconsIcon icon={Mail01Icon} />
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Align block-start">
+        <Subsection title="Align block-start">
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Usuario" />
             <InputGroupAddon align="block-start">
               <InputGroupText>Nombre de usuario</InputGroupText>
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Align block-end">
+        <Subsection title="Align block-end">
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Monto" />
             <InputGroupAddon align="block-end">
               <InputGroupText>Cantidad en pesos</InputGroupText>
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Texto">
+        <Subsection title="Texto">
           <InputGroup className="max-w-xs">
             <InputGroupAddon>
               <InputGroupText>https://</InputGroupText>
@@ -206,14 +207,14 @@ function Componentes() {
               <InputGroupText>.mx</InputGroupText>
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Botón">
+        <Subsection title="Botón">
           <InputGroup className="max-w-xs">
             <InputGroupInput defaultValue="https://uv.mx" readOnly />
             <InputGroupAddon align="inline-end">
               <InputGroupButton size="icon-xs" aria-label="Copiar">
-                <CopyRegular />
+                <HugeiconsIcon icon={Copy01Icon} />
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
@@ -223,9 +224,9 @@ function Componentes() {
               <InputGroupButton variant="secondary">Buscar</InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Textarea">
+        <Subsection title="Textarea">
           <InputGroup className="max-w-xs">
             <InputGroupTextarea placeholder="Escribe un mensaje..." />
             <InputGroupAddon align="block-end">
@@ -235,26 +236,26 @@ function Componentes() {
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Estados">
+        <Subsection title="Estados">
           <InputGroup className="max-w-xs" data-disabled="true">
             <InputGroupInput placeholder="Deshabilitado" disabled />
             <InputGroupAddon>
-              <SearchRegular />
+              <HugeiconsIcon icon={Search01Icon} />
             </InputGroupAddon>
           </InputGroup>
           <InputGroup className="max-w-xs">
             <InputGroupInput placeholder="Inválido" aria-invalid />
             <InputGroupAddon>
-              <SearchRegular />
+              <HugeiconsIcon icon={Search01Icon} />
             </InputGroupAddon>
           </InputGroup>
-        </Subseccion>
-      </Seccion>
+        </Subsection>
+      </Section>
 
-      <Seccion titulo="Breadcrumb">
-        <Subseccion titulo="Básico">
+      <Section title="Breadcrumb">
+        <Subsection title="Básico">
           <Breadcrumb className="w-full max-w-lg">
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -272,14 +273,14 @@ function Componentes() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Con ícono">
+        <Subsection title="Con ícono">
           <Breadcrumb className="w-full max-w-lg">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink href="#inicio">
-                  <HomeRegular aria-hidden="true" />
+                  <HugeiconsIcon icon={Home01Icon} aria-hidden="true" />
                   Inicio
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -295,9 +296,9 @@ function Componentes() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Separador personalizado">
+        <Subsection title="Separador personalizado">
           <Breadcrumb className="w-full max-w-lg">
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -315,28 +316,28 @@ function Componentes() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Colapsado (maxItems = 3)">
+        <Subsection title="Colapsado (maxItems = 3)">
           <Breadcrumb className="w-full max-w-lg">
             <BreadcrumbList maxItems={3}>
-              {rutaEjemplo.map((etiqueta, indice) => (
-                <BreadcrumbItem key={etiqueta}>
-                  {indice > 0 && <BreadcrumbSeparator />}
-                  {indice === rutaEjemplo.length - 1 ? (
-                    <BreadcrumbPage>{etiqueta}</BreadcrumbPage>
+              {exampleRoute.map((labelText, index) => (
+                <BreadcrumbItem key={labelText}>
+                  {index > 0 && <BreadcrumbSeparator />}
+                  {index === exampleRoute.length - 1 ? (
+                    <BreadcrumbPage>{labelText}</BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink href={`#${etiqueta.toLowerCase()}`}>
-                      {etiqueta}
+                    <BreadcrumbLink href={`#${labelText.toLowerCase()}`}>
+                      {labelText}
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
               ))}
             </BreadcrumbList>
           </Breadcrumb>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Con enrutador">
+        <Subsection title="Con enrutador">
           <Breadcrumb className="w-full max-w-lg">
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -350,41 +351,41 @@ function Componentes() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Interactivo">
-          <BreadcrumbInteractivo />
-        </Subseccion>
-      </Seccion>
+        <Subsection title="Interactivo">
+          <InteractiveBreadcrumb />
+        </Subsection>
+      </Section>
 
-      <Seccion titulo="Tooltip">
-        <Subseccion titulo="Lados">
-          {(["top", "right", "bottom", "left"] as const).map((lado) => (
-            <Tooltip key={lado}>
+      <Section title="Tooltip">
+        <Subsection title="Lados">
+          {(["top", "right", "bottom", "left"] as const).map((side) => (
+            <Tooltip key={side}>
               <TooltipTrigger render={<Button variant="secondary" />}>
-                {lado}
+                {side}
               </TooltipTrigger>
-              <TooltipContent side={lado}>Tooltip hacia {lado}</TooltipContent>
+              <TooltipContent side={side}>Tooltip hacia {side}</TooltipContent>
             </Tooltip>
           ))}
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Con ícono">
+        <Subsection title="Con ícono">
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button variant="ghost" size="icon" aria-label="Agregar" />
               }
             >
-              <AddRegular />
+              <HugeiconsIcon icon={Add01Icon} />
             </TooltipTrigger>
             <TooltipContent>Agregar elemento</TooltipContent>
           </Tooltip>
-        </Subseccion>
-      </Seccion>
+        </Subsection>
+      </Section>
 
-      <Seccion titulo="Alert Dialog">
-        <Subseccion titulo="Predeterminado">
+      <Section title="Alert Dialog">
+        <Subsection title="Predeterminado">
           <AlertDialog>
             <AlertDialogTrigger render={<Button variant="secondary" />}>
               Eliminar plan
@@ -406,9 +407,9 @@ function Componentes() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </Subseccion>
+        </Subsection>
 
-        <Subseccion titulo="Tamaño sm con ícono">
+        <Subsection title="Tamaño sm con ícono">
           <AlertDialog>
             <AlertDialogTrigger render={<Button variant="secondary" />}>
               Descartar cambios
@@ -416,7 +417,7 @@ function Componentes() {
             <AlertDialogContent size="sm">
               <AlertDialogHeader>
                 <AlertDialogMedia>
-                  <DeleteRegular />
+                  <HugeiconsIcon icon={Delete01Icon} />
                 </AlertDialogMedia>
                 <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -429,61 +430,65 @@ function Componentes() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </Subseccion>
-      </Seccion>
+        </Subsection>
+      </Section>
 
-      <Seccion titulo="Sidebar">
-        <Subseccion titulo="Interactivo">
+      <Section title="Sidebar">
+        <Subsection title="Interactivo">
           <SidebarDemo />
-        </Subseccion>
-      </Seccion>
+        </Subsection>
+      </Section>
     </main>
   );
 }
 
-function BreadcrumbInteractivo() {
-  const [profundidad, setProfundidad] = useState(5);
-  const paginaActual = useRef<HTMLSpanElement>(null);
-  const enfocarEn = useRef<number | null>(null);
+function InteractiveBreadcrumb() {
+  const [depth, setDepth] = useState(5);
+  const currentPage = useRef<HTMLSpanElement>(null);
+  const focusOn = useRef<number | null>(null);
 
   useLayoutEffect(() => {
-    if (enfocarEn.current === profundidad) {
-      paginaActual.current?.focus();
-      enfocarEn.current = null;
+    if (focusOn.current === depth) {
+      currentPage.current?.focus();
+      focusOn.current = null;
     }
-  }, [profundidad]);
+  }, [depth]);
 
   return (
     <div className="w-full max-w-lg space-y-8">
       <Breadcrumb className="min-h-[4.25rem] sm:min-h-8">
         <BreadcrumbList maxItems={3}>
-          {rutaEjemplo.slice(0, profundidad + 1).map((etiqueta, indice) => (
-            <BreadcrumbItem key={etiqueta}>
-              {indice > 0 && <BreadcrumbSeparator />}
-              {indice === profundidad ? (
-                <BreadcrumbPage ref={paginaActual} tabIndex={-1}>
-                  {indice === 0 && <HomeRegular aria-hidden="true" />}
-                  {etiqueta}
+          {exampleRoute.slice(0, depth + 1).map((labelText, index) => (
+            <BreadcrumbItem key={labelText}>
+              {index > 0 && <BreadcrumbSeparator />}
+              {index === depth ? (
+                <BreadcrumbPage ref={currentPage} tabIndex={-1}>
+                  {index === 0 && (
+                    <HugeiconsIcon icon={Home01Icon} aria-hidden="true" />
+                  )}
+                  {labelText}
                 </BreadcrumbPage>
               ) : (
                 <BreadcrumbLink
-                  href={`#${etiqueta.toLowerCase()}`}
-                  onClick={(evento) => {
+                  href={`#${labelText.toLowerCase()}`}
+                  onClick={(event) => {
                     if (
-                      evento.metaKey ||
-                      evento.ctrlKey ||
-                      evento.shiftKey ||
-                      evento.altKey ||
-                      evento.button !== 0
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey ||
+                      event.button !== 0
                     )
                       return;
-                    evento.preventDefault();
-                    enfocarEn.current = indice;
-                    setProfundidad(indice);
+                    event.preventDefault();
+                    focusOn.current = index;
+                    setDepth(index);
                   }}
                 >
-                  {indice === 0 && <HomeRegular aria-hidden="true" />}
-                  {etiqueta}
+                  {index === 0 && (
+                    <HugeiconsIcon icon={Home01Icon} aria-hidden="true" />
+                  )}
+                  {labelText}
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>
@@ -491,23 +496,23 @@ function BreadcrumbInteractivo() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="min-h-20 border-t pt-5">
-        {profundidad < rutaEjemplo.length - 1 ? (
+        {depth < exampleRoute.length - 1 ? (
           <Button
             variant="ghost"
             className="h-auto w-full justify-start gap-3 border-border px-4 py-3 text-start"
             onClick={() => {
-              enfocarEn.current = profundidad + 1;
-              setProfundidad((valor) =>
-                Math.min(valor + 1, rutaEjemplo.length - 1),
-              );
+              focusOn.current = depth + 1;
+              setDepth((value) => Math.min(value + 1, exampleRoute.length - 1));
             }}
           >
-            <FolderRegular
+            <HugeiconsIcon
+              icon={Folder01Icon}
               aria-hidden="true"
               className="text-muted-foreground"
             />
-            <span className="flex-1">{rutaEjemplo[profundidad + 1]}</span>
-            <ArrowUpRightRegular
+            <span className="flex-1">{exampleRoute[depth + 1]}</span>
+            <HugeiconsIcon
+              icon={ArrowUpRight01Icon}
               aria-hidden="true"
               className="text-muted-foreground"
             />
@@ -522,31 +527,25 @@ function BreadcrumbInteractivo() {
   );
 }
 
-function Seccion({
-  titulo,
-  children,
-}: {
-  titulo: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-6">
-      <h2 className="border-b pb-2 text-xl font-semibold">{titulo}</h2>
+      <h2 className="border-b pb-2 text-xl font-semibold">{title}</h2>
       {children}
     </section>
   );
 }
 
-function Subseccion({
-  titulo,
+function Subsection({
+  title,
   children,
 }: {
-  titulo: string;
+  title: string;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-medium text-muted-foreground">{titulo}</h3>
+      <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
       <div className="flex flex-wrap items-center gap-3">{children}</div>
     </div>
   );
