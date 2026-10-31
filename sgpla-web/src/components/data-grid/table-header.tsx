@@ -181,15 +181,18 @@ export function DataGridTableHeader<ColumnId extends string>({
                     <span className="truncate">{column.label}</span>
                   </span>
                 )}
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  aria-label={`Redimensionar la columna ${column.label}`}
-                  className="absolute top-0 right-0 h-full w-3 cursor-col-resize touch-none"
-                  onMouseDown={(event) => onResizeStart(event, column.id)}
-                  onTouchStart={(event) => onResizeStart(event, column.id)}
-                  onDoubleClick={() => onResizeReset(column.id)}
-                />
+                {/* La última columna absorbe el sobrante y no fija su ancho: no se redimensiona. */}
+                {index < columns.length - 1 ? (
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={`Redimensionar la columna ${column.label}`}
+                    className="absolute top-0 right-0 h-full w-3 cursor-col-resize touch-none"
+                    onMouseDown={(event) => onResizeStart(event, column.id)}
+                    onTouchStart={(event) => onResizeStart(event, column.id)}
+                    onDoubleClick={() => onResizeReset(column.id)}
+                  />
+                ) : null}
               </TableHead>
             );
           })}

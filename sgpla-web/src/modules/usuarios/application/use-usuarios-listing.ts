@@ -1,11 +1,13 @@
 import * as React from "react";
 import type { FilterChip } from "@/components/ui/filter-toolbar";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useMinimumDuration } from "@/hooks/use-minimum-duration";
 import { useCuentas } from "./usuarios-queries";
 import { toUsuarioRow, type UsuarioRow } from "./usuario-row";
 
 const INITIAL_PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
+const MIN_SKELETON_MS = 300;
 
 export function getFilterValue(filters: FilterChip[], id: string) {
   const value = filters.find((filter) => filter.id === id)?.value;
@@ -29,6 +31,8 @@ export function useUsuariosListing() {
     entidadAcademicaId: getFilterValue(filters, "entidad"),
     busqueda: search === "" ? undefined : search,
   });
+
+  const showSkeleton = useMinimumDuration(isPending, MIN_SKELETON_MS);
 
   const usuarios = React.useMemo<UsuarioRow[]>(
     () => (data?.elementos ?? []).map(toUsuarioRow),
@@ -71,7 +75,7 @@ export function useUsuariosListing() {
     changeSearch,
     clearCriteria,
     hasCriteria: filters.length > 0 || search !== "",
-    isPending,
+    isPending: showSkeleton,
     isError,
     error,
     refetch,
