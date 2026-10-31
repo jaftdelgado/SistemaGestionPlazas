@@ -24,14 +24,15 @@ export function useUsuariosListing() {
 
   const search = useDebouncedValue(searchText.trim(), SEARCH_DEBOUNCE_MS);
 
-  const { data, isPending, isError, error, refetch } = useCuentas({
-    pagina: page,
-    tamanoPagina: pageSize,
-    rolId: getFilterValue(filters, "rol"),
-    areaAcademicaId: getFilterValue(filters, "area"),
-    entidadAcademicaId: getFilterValue(filters, "entidad"),
-    busqueda: search === "" ? undefined : search,
-  });
+  const { data, isPending, isPlaceholderData, isError, error, refetch } =
+    useCuentas({
+      pagina: page,
+      tamanoPagina: pageSize,
+      rolId: getFilterValue(filters, "rol"),
+      areaAcademicaId: getFilterValue(filters, "area"),
+      entidadAcademicaId: getFilterValue(filters, "entidad"),
+      busqueda: search === "" ? undefined : search,
+    });
 
   const showSkeleton = useMinimumDuration(isPending, MIN_SKELETON_MS);
 
@@ -50,6 +51,19 @@ export function useUsuariosListing() {
     0,
     Number(data?.total ?? 0) - (allUsuarios.length - usuarios.length),
   );
+
+  // Si tras una baja la página ya no existe (era el último usuario de la última página), se retrocede a la última.
+  const serverTotal = Number(data?.total ?? 0);
+  const lastPage = Math.ceil(serverTotal / pageSize);
+  if (
+    data !== undefined &&
+    !isPlaceholderData &&
+    allUsuarios.length === 0 &&
+    serverTotal > 0 &&
+    page > lastPage
+  ) {
+    setPage(lastPage);
+  }
 
   // Al cambiar los criterios, la página actual podría no existir; se vuelve a la primera.
   function changeSearch(text: string) {
