@@ -33,6 +33,8 @@
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
+  --color-overlay-foreground: var(--overlay-foreground);
+  --color-overlay: var(--overlay);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --color-foreground: var(--foreground);
@@ -57,6 +59,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
+  --overlay: #1e1e1e;
+  --overlay-foreground: oklch(0.985 0 0);
   --primary: #005baa;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
@@ -112,8 +116,8 @@
    the viewport. */
 .tst {
   --tst-r: 20px;
-  --tst-mute: color-mix(in srgb, var(--foreground) 52%, var(--card));
-  --tst-wash: color-mix(in srgb, var(--foreground) 6%, var(--card));
+  --tst-mute: color-mix(in srgb, var(--overlay-foreground) 60%, var(--overlay));
+  --tst-wash: color-mix(in srgb, var(--overlay-foreground) 12%, var(--overlay));
   position: fixed;
   top: 1rem;
   left: 50%;
@@ -121,7 +125,7 @@
   z-index: 60;
   width: 300px;
   font-family: var(--font-sans);
-  color: var(--foreground);
+  color: var(--overlay-foreground);
 }
 
 /* Base UI gives each toast its place in line (--toast-index, 0 at the
@@ -152,20 +156,20 @@
      sliver has a line to read by; the front one has neither */
   background: color-mix(
     in srgb,
-    var(--foreground) calc(min(var(--toast-index), 1) * 6%),
-    var(--card)
+    var(--overlay-foreground) calc(min(var(--toast-index), 1) * 8%),
+    var(--overlay)
   );
   box-shadow: 0 0 0 1px
     color-mix(
       in srgb,
-      var(--foreground) calc(min(var(--toast-index), 1) * 6%),
+      var(--overlay-foreground) calc(min(var(--toast-index), 1) * 14%),
       transparent
     );
   /* the same settle for every move, a touch under critical */
   transition:
     transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    translate 220ms ease,
-    opacity 220ms ease,
+    translate 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
     background-color 220ms ease,
     box-shadow 220ms ease;
 }
@@ -179,7 +183,7 @@
           var(--toast-index) * var(--gap)
       )
     );
-  background: var(--card);
+  background: var(--overlay);
   box-shadow: none;
 }
 
@@ -193,6 +197,8 @@
   opacity: 0;
   translate: 0 -24px;
   transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  /* same property order as the base transition: transform, translate, opacity, background, shadow */
+  transition-duration: 320ms, 140ms, 140ms, 220ms, 220ms;
 }
 
 .tst-toast[data-limited] {
@@ -216,13 +222,51 @@
   align-items: center;
   gap: 12px;
   height: 100%;
-  padding: 0 12px 0 16px;
+  padding: 0 34px 0 16px;
   transition: opacity 220ms ease;
 }
 
 /* only the front one is read while stacked; the rest are slivers */
 .tst-content[data-behind]:not([data-expanded]) {
   opacity: 0;
+}
+
+/* optional bar that empties over the toast's lifetime; hovering or
+   focusing the stack pauses Base UI's timer, so it pauses the bar too */
+.tst-progress-track {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--tst-r);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tst-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: var(--primary);
+  transform-origin: left center;
+  animation: tst-progress linear forwards;
+}
+
+.tst:hover .tst-progress,
+.tst:focus-within .tst-progress {
+  animation-play-state: paused;
+}
+
+@keyframes tst-progress {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tst-progress-track {
+    display: none;
+  }
 }
 
 .tst-icon {
@@ -298,9 +342,11 @@
 }
 
 .tst-x {
-  flex: none;
-  width: 28px;
-  height: 28px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   border: 0;
@@ -315,7 +361,7 @@
 
 .tst-x:hover {
   background: var(--tst-wash);
-  color: var(--foreground);
+  color: var(--overlay-foreground);
 }
 
 .tst-act:focus-visible,

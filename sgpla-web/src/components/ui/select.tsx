@@ -63,7 +63,7 @@ function Select({
         >
           <SelectPrimitive.Popup
             data-slot="select-content"
-            className="max-h-(--available-height) w-(--anchor-width) min-w-(--anchor-width) origin-(--transform-origin) overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-border data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            className="max-h-(--available-height) w-(--anchor-width) min-w-(--anchor-width) origin-(--transform-origin) overflow-y-auto rounded-2xl bg-overlay p-1 text-overlay-foreground shadow-border data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           >
             <SelectPrimitive.List>
               {options.map((option) => (
@@ -71,7 +71,7 @@ function Select({
                   key={option.value}
                   value={option.value}
                   disabled={option.disabled}
-                  className="relative flex min-h-8 cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-base outline-none select-none data-highlighted:bg-muted md:text-sm data-disabled:pointer-events-none data-disabled:opacity-50"
+                  className="relative flex min-h-8 cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-base outline-none select-none data-highlighted:bg-overlay-foreground/15 md:text-sm data-disabled:pointer-events-none data-disabled:opacity-50"
                 >
                   <SelectPrimitive.ItemText className="truncate">
                     {option.label}

@@ -53,7 +53,7 @@ const INSTANT = { duration: 0 };
 const EASE = [...EASE_OUT] as [number, number, number, number];
 
 const ITEM_CLASS =
-  "relative flex min-h-8 w-full cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-left text-base outline-none select-none hover:bg-muted focus-visible:bg-muted md:text-sm";
+  "relative flex min-h-8 w-full cursor-default items-center gap-2 rounded-full py-1 pr-8 pl-3 text-left text-base outline-none select-none hover:bg-overlay-foreground/15 focus-visible:bg-overlay-foreground/15 md:text-sm";
 
 // Los pasos viajan en la dirección del movimiento: avanzar entra por el borde final, volver por el inicial.
 function stepVariants(reduceMotion: boolean): Variants {
@@ -265,7 +265,7 @@ function FilterToolbar({
           >
             <PopoverPrimitive.Popup
               data-slot="filter-toolbar-content"
-              className="max-h-(--available-height) w-68 origin-(--transform-origin) overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+              className="max-h-(--available-height) w-68 origin-(--transform-origin) overflow-y-auto rounded-2xl bg-overlay p-1 text-overlay-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
             >
               <motion.div
                 className="relative overflow-hidden"
@@ -299,7 +299,7 @@ function FilterToolbar({
                         type="button"
                         aria-label="Volver a los campos"
                         onClick={backToFields}
-                        className="mb-1 flex min-h-8 w-full items-center gap-2 rounded-full py-1 pr-3 pl-2 text-left text-base font-medium outline-none hover:bg-muted focus-visible:bg-muted md:text-sm"
+                        className="mb-1 flex min-h-8 w-full items-center gap-2 rounded-full py-1 pr-3 pl-2 text-left text-base font-medium outline-none hover:bg-overlay-foreground/15 focus-visible:bg-overlay-foreground/15 md:text-sm"
                       >
                         <HugeiconsIcon
                           icon={ArrowLeft01Icon}
@@ -361,7 +361,7 @@ function FilterToolbar({
                                 />
                               )}
                               <span className="shrink-0">{f.label}</span>
-                              <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-muted-foreground">
+                              <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-overlay-foreground/60">
                                 <span className="truncate" title={labelText}>
                                   {labelText}
                                 </span>

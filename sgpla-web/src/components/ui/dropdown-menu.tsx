@@ -47,7 +47,7 @@ function DropdownMenu({
         >
           <MenuPrimitive.Popup
             data-slot="dropdown-menu-content"
-            className="min-w-44 origin-(--transform-origin) rounded-2xl bg-popover p-1 text-popover-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            className="min-w-44 origin-(--transform-origin) rounded-2xl bg-overlay p-1 text-overlay-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           >
             {items.map(
               ({ id, label: labelText, icon, destructive, ...item }) => (
@@ -56,7 +56,7 @@ function DropdownMenu({
                   disabled={item.disabled}
                   onClick={item.onSelect}
                   className={cn(
-                    "flex min-h-8 w-full cursor-default items-center gap-2 rounded-full py-1 pr-3 pl-3 text-left text-base outline-none select-none data-highlighted:bg-muted md:text-sm data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+                    "flex min-h-8 w-full cursor-default items-center gap-2 rounded-full py-1 pr-3 pl-3 text-left text-base outline-none select-none data-highlighted:bg-overlay-foreground/15 md:text-sm data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
                     destructive && "text-destructive",
                   )}
                 >

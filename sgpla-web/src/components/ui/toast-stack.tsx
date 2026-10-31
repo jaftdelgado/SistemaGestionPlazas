@@ -60,7 +60,57 @@ export const toast = {
   info: notify("info"),
   error: notify("error"),
   warning: notify("warning"),
+  undoable,
 };
+
+// Tiempo por defecto antes de que un aviso se cierre solo; la barra de progreso lo usa si el aviso no trae el suyo.
+const DEFAULT_TIMEOUT = 4000;
+const UNDO_TIMEOUT = 4000;
+
+type UndoableOptions = {
+  title: string;
+  description?: string;
+  // Se ejecuta si la persona deshace dentro del plazo.
+  onUndo?: () => void;
+  // Se ejecuta cuando el aviso se cierra sin que se haya deshecho (vence el plazo o se descarta).
+  onCommit: () => void;
+};
+
+// Aviso con barra de progreso y "Deshacer": la acción real se difiere hasta que el aviso se cierra.
+function undoable({ title, description, onUndo, onCommit }: UndoableOptions) {
+  let undone = false;
+  const id = toastManager.add({
+    type: "info",
+    title,
+    description,
+    timeout: UNDO_TIMEOUT,
+    data: { progress: true },
+    actionProps: {
+      children: "Deshacer",
+      onClick: () => {
+        undone = true;
+        onUndo?.();
+        toastManager.close(id);
+      },
+    },
+    onClose: () => {
+      if (!undone) {
+        onCommit();
+      }
+    },
+  });
+  return id;
+}
+
+// Con data.progress el aviso muestra una barra que se vacía durante su tiempo de vida.
+function wantsProgress(data: unknown) {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "progress" in data &&
+    data.progress === true
+  );
+}
 
 function isToastType(type: string | undefined): type is ToastType {
   return type !== undefined && type in ICONS;
@@ -97,11 +147,21 @@ function ToastList() {
                 <Toast.Close className="tst-x" aria-label="Descartar aviso">
                   <HugeiconsIcon
                     icon={Cancel01Icon}
-                    className="size-4"
+                    className="size-3"
                     aria-hidden="true"
                   />
                 </Toast.Close>
               </Toast.Content>
+              {wantsProgress(t.data) && t.type !== "loading" ? (
+                <span className="tst-progress-track" aria-hidden="true">
+                  <span
+                    className="tst-progress"
+                    style={{
+                      animationDuration: `${t.timeout ?? DEFAULT_TIMEOUT}ms`,
+                    }}
+                  />
+                </span>
+              ) : null}
             </Toast.Root>
           );
         })}
@@ -113,7 +173,11 @@ function ToastList() {
 // Se monta una sola vez en la raíz, para que el aviso sobreviva a la navegación.
 export function ToastStack() {
   return (
-    <Toast.Provider toastManager={toastManager} limit={3} timeout={4000}>
+    <Toast.Provider
+      toastManager={toastManager}
+      limit={3}
+      timeout={DEFAULT_TIMEOUT}
+    >
       <ToastList />
     </Toast.Provider>
   );
