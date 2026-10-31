@@ -35,6 +35,7 @@ export function UsuariosPage() {
         onRetry={() => void listing.refetch()}
         hasCriteria={listing.hasCriteria}
         onClearCriteria={listing.clearCriteria}
+        onDeactivate={listing.deactivate}
       />
       <UsuariosPagination
         page={listing.page}

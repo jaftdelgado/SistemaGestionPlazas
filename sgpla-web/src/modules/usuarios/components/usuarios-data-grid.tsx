@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import {
   Building01Icon,
@@ -27,9 +28,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/components/ui/toast-stack";
 import { UsuarioAvatar } from "@/components/ui/usuario-avatar";
 import { getProblemMessage } from "@/lib/api/problem";
+import { sesionQueryOptions } from "@/modules/sesion";
 import type { UsuarioRow } from "../application/usuario-row";
 
 type UsuarioColumn = "name" | "email" | "rol" | "ambito";
@@ -62,26 +63,6 @@ const COLUMNS: DataGridColumn<UsuarioColumn>[] = [
 ];
 
 const LOADING_SEED = "usuarios";
-
-// Maqueta: la baja y su reversión están simuladas hasta que existan los endpoints.
-function simulateRequest() {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, 1500);
-  });
-}
-
-function deactivateUsuario(usuario: UsuarioRow) {
-  toast.undoable({
-    title: "Se dará de baja al usuario",
-    description: usuario.name,
-    onCommit: () => {
-      simulateRequest().then(
-        () => toast.success("Usuario dado de baja", usuario.name),
-        () => toast.error("No se pudo dar de baja", usuario.name),
-      );
-    },
-  });
-}
 
 function neverOpenDrawer() {
   return false;
@@ -141,6 +122,7 @@ type UsuariosDataGridProps = {
   onRetry: () => void;
   hasCriteria: boolean;
   onClearCriteria: () => void;
+  onDeactivate: (usuario: UsuarioRow) => void;
 };
 
 export function UsuariosDataGrid({
@@ -152,7 +134,11 @@ export function UsuariosDataGrid({
   onRetry,
   hasCriteria,
   onClearCriteria,
+  onDeactivate,
 }: UsuariosDataGridProps) {
+  const { data: sesionUsuario } = useSuspenseQuery(sesionQueryOptions);
+  const ownId = String(sesionUsuario.id);
+
   // El usuario se conserva al cerrar para que el texto no cambie durante la animación de salida.
   const [usuarioToDeactivate, setUsuarioToDeactivate] =
     useState<UsuarioRow | null>(null);
@@ -160,21 +146,27 @@ export function UsuariosDataGrid({
 
   // Acciones provisionales: ver detalle y editar aún no hacen nada hasta que existan sus flujos.
   const getUsuarioActions = useCallback(
-    (usuario: UsuarioRow): DataGridRowAction[] => [
-      { id: "detail", label: "Ver detalle", icon: ViewIcon },
-      { id: "edit", label: "Editar", icon: Edit02Icon },
-      {
-        id: "deactivate",
-        label: "Dar de baja",
-        icon: Delete02Icon,
-        destructive: true,
-        onSelect: () => {
-          setUsuarioToDeactivate(usuario);
-          setDeactivateOpen(true);
-        },
-      },
-    ],
-    [],
+    (usuario: UsuarioRow): DataGridRowAction[] => {
+      const actions: DataGridRowAction[] = [
+        { id: "detail", label: "Ver detalle", icon: ViewIcon },
+        { id: "edit", label: "Editar", icon: Edit02Icon },
+      ];
+      // Nadie puede darse de baja a sí mismo: la API respondería 409.
+      if (usuario.id !== ownId) {
+        actions.push({
+          id: "deactivate",
+          label: "Dar de baja",
+          icon: Delete02Icon,
+          destructive: true,
+          onSelect: () => {
+            setUsuarioToDeactivate(usuario);
+            setDeactivateOpen(true);
+          },
+        });
+      }
+      return actions;
+    },
+    [ownId],
   );
 
   if (hasError) {
@@ -241,7 +233,7 @@ export function UsuariosDataGrid({
               onClick={() => {
                 setDeactivateOpen(false);
                 if (usuarioToDeactivate) {
-                  deactivateUsuario(usuarioToDeactivate);
+                  onDeactivate(usuarioToDeactivate);
                 }
               }}
             >

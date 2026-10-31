@@ -2,6 +2,7 @@ import * as React from "react";
 import type { FilterChip } from "@/components/ui/filter-toolbar";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMinimumDuration } from "@/hooks/use-minimum-duration";
+import { useDeactivateUsuario } from "./use-deactivate-usuario";
 import { useCuentas } from "./usuarios-queries";
 import { toUsuarioRow, type UsuarioRow } from "./usuario-row";
 
@@ -34,11 +35,21 @@ export function useUsuariosListing() {
 
   const showSkeleton = useMinimumDuration(isPending, MIN_SKELETON_MS);
 
-  const usuarios = React.useMemo<UsuarioRow[]>(
+  const { hiddenIds, deactivate } = useDeactivateUsuario();
+
+  const allUsuarios = React.useMemo<UsuarioRow[]>(
     () => (data?.elementos ?? []).map(toUsuarioRow),
     [data],
   );
-  const total = Number(data?.total ?? 0);
+  const usuarios = React.useMemo(
+    () => allUsuarios.filter((usuario) => !hiddenIds.has(usuario.id)),
+    [allUsuarios, hiddenIds],
+  );
+  // El total descuenta los ocultos de esta página, que el servidor aún cuenta.
+  const total = Math.max(
+    0,
+    Number(data?.total ?? 0) - (allUsuarios.length - usuarios.length),
+  );
 
   // Al cambiar los criterios, la página actual podría no existir; se vuelve a la primera.
   function changeSearch(text: string) {
@@ -74,6 +85,7 @@ export function useUsuariosListing() {
     searchText,
     changeSearch,
     clearCriteria,
+    deactivate,
     hasCriteria: filters.length > 0 || search !== "",
     isPending: showSkeleton,
     isError,
