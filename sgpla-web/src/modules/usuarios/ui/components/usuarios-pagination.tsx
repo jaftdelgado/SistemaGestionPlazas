@@ -1,5 +1,5 @@
-import { Pagination } from "@/components/ui/pagination";
-import { PaginationSummary } from "@/components/ui/pagination-summary";
+import { Pagination } from "@/shared/ui/pagination";
+import { PaginationSummary } from "@/shared/ui/pagination-summary";
 
 type UsuariosPaginationProps = {
   page: number;
