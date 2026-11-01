@@ -3,21 +3,28 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from "@/shared/ui/sidebar";
+import { usePanelLayout } from "../../hooks/use-panel-layout";
 import { PanelAvatar } from "../components/panel-avatar";
 import { PanelBreadcrumb } from "../components/panel-breadcrumb";
 import { PanelSidebar } from "../components/panel-sidebar";
 
 export function PanelLayout() {
+  const panel = usePanelLayout();
+
   return (
     <SidebarProvider>
-      <PanelSidebar />
+      <PanelSidebar items={panel.navigationItems} activeId={panel.activeId} />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <PanelBreadcrumb />
+          <PanelBreadcrumb activeId={panel.activeId} title={panel.pageTitle} />
           <div className="ml-auto">
-            <PanelAvatar />
+            <PanelAvatar
+              usuario={panel.usuario}
+              onLogout={panel.onLogout}
+              isLoggingOut={panel.isLoggingOut}
+            />
           </div>
         </header>
         <div className="flex flex-1 flex-col p-6">

@@ -6,15 +6,14 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { useNavigation } from "./use-navigation";
+} from "@/shared/ui/breadcrumb";
 
-export function PanelBreadcrumb() {
-  const { items, active } = useNavigation();
-  const pageTitle =
-    active === "inicio"
-      ? "Panel principal"
-      : items.find((e) => e.id === active)?.title;
+type PanelBreadcrumbProps = {
+  activeId: string;
+  title: string;
+};
+
+export function PanelBreadcrumb({ activeId, title }: PanelBreadcrumbProps) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
@@ -24,9 +23,9 @@ export function PanelBreadcrumb() {
           </BreadcrumbLink>
         </BreadcrumbItem>
         {/* La key por ruta hace que el item saliente y el entrante se animen al navegar. */}
-        <BreadcrumbItem key={active}>
+        <BreadcrumbItem key={activeId}>
           <BreadcrumbSeparator />
-          <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+          <BreadcrumbPage>{title}</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
