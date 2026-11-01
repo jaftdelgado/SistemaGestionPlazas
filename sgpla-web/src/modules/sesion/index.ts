@@ -1,9 +1,10 @@
 // Contrato del módulo: lo único que las rutas y los demás módulos pueden importar.
-export { requireSesion, hasSavedSesion } from "./application/guards";
-export { sesionQueryOptions } from "./application/sesion-queries";
-export { useLogout } from "./application/use-logout";
+export type { SesionUsuario } from "./domain/sesion";
 export { safeDestination } from "./domain/safe-destination";
-export { validateRedirectSearch } from "./pages/redirect-search";
-export { ChangePasswordPage } from "./pages/change-password-page";
-export { LoginPage } from "./pages/login-page";
+export { requireSesion, hasSavedSesion } from "./hooks/guards";
+export { validateRedirectSearch } from "./hooks/redirect-search";
+export { useLogout } from "./hooks/use-logout";
+export { useSesionUsuario } from "./hooks/use-sesion-usuario";
+export { ChangePasswordPage } from "./ui/pages/change-password-page";
+export { LoginPage } from "./ui/pages/login-page";
 export { registerSesion } from "./sesion-module";

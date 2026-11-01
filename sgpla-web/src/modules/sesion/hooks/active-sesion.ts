@@ -1,17 +1,15 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { components } from "@/lib/api/schema";
-import { clearSesion, saveSesion } from "../infrastructure/sesion-token";
-import { sesionQueryOptions } from "./sesion-queries";
-
-type SesionResponse = components["schemas"]["SesionResponse"];
+import { sesionKeys } from "../api/sesion";
+import type { SesionIniciada } from "../domain/sesion";
+import { clearSesion, saveSesion } from "../storage/sesion-token";
 
 // La sesión se conserva y el usuario queda en caché, así la guarda de ruta no vuelve a pedirlo.
 export function establishSesion(
   queryClient: QueryClient,
-  sesion: SesionResponse,
+  sesion: SesionIniciada,
 ): void {
   saveSesion({ token: sesion.token, expiraEn: sesion.expiraEn });
-  queryClient.setQueryData(sesionQueryOptions.queryKey, sesion.usuario);
+  queryClient.setQueryData(sesionKeys.current, sesion.usuario);
 }
 
 // Se limpia toda la caché: los datos del usuario anterior no deben quedar visibles para el siguiente.

@@ -1,40 +1,25 @@
-import { useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field";
-import { PasswordInput } from "@/components/ui/password-input";
-import { getFieldErrors, getGeneralMessage } from "@/lib/api/problem";
-import { useChangePassword } from "../application/use-change-password";
+} from "@/shared/ui/field";
+import { PasswordInput } from "@/shared/ui/password-input";
+import { useChangePasswordPage } from "../../hooks/use-change-password-page";
 
 export function ChangePasswordPage() {
-  const { redirect } = useSearch({ from: "/cambiar-contrasena" });
-  const { mutate, isPending, error } = useChangePassword(redirect);
+  const { submit, isPending, mismatch, currentError, newError, generalError } =
+    useChangePasswordPage();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [mismatch, setMismatch] = useState(false);
-
-  const errors = getFieldErrors(error);
-  const currentError = errors["contrasenaActual"]?.join(" ");
-  const newError = errors["contrasenaNueva"]?.join(" ");
-  const generalError = getGeneralMessage(error);
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (newPassword !== confirmation) {
-      setMismatch(true);
-      return;
-    }
-    setMismatch(false);
-    mutate({
-      body: { contrasenaActual: currentPassword, contrasenaNueva: newPassword },
-    });
+    submit({ currentPassword, newPassword, confirmation });
   }
 
   return (
