@@ -81,7 +81,7 @@ if git -C "$RAIZ" rev-parse --verify --quiet "$BASE" > /dev/null; then
   # Líneas agregadas (confirmadas o no) desde la base común, con archivo y línea. Solo código y package.json: este
   # script contiene los patrones que busca y no debe avisarse a sí mismo. Los archivos generados quedan fuera.
   atajos="$(git -C "$RAIZ" diff -U0 "$base_comun" -- 'sgpla-web/*.ts' 'sgpla-web/*.tsx' 'sgpla-web/*.js' \
-    'sgpla-web/*.mjs' 'sgpla-web/*.json' ':!sgpla-web/src/routeTree.gen.ts' ':!sgpla-web/src/lib/api/schema.d.ts' | awk '
+    'sgpla-web/*.mjs' 'sgpla-web/*.json' ':!sgpla-web/src/routeTree.gen.ts' ':!sgpla-web/src/shared/api/schema.d.ts' | awk '
     /^\+\+\+ b\// { archivo = substr($0, 7); next }
     /^@@/ { split($3, r, ","); linea = substr(r[1], 2) + 0; next }
     /^\+/ {

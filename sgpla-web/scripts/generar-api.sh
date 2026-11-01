@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenera sgpla-web/src/lib/api/schema.d.ts desde el documento OpenAPI de la API, solo con Docker.
+# Regenera sgpla-web/src/shared/api/schema.d.ts desde el documento OpenAPI de la API, solo con Docker.
 # Requiere la API levantada en Development (docker compose up -d). El generador vive aislado en
 # sgpla-web/tools/openapi con su propio TypeScript, porque TypeScript 7 no expone la API que usa openapi-typescript.
 #

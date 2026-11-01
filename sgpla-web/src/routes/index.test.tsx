@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
-import { createQueryClient } from "@/lib/query-client";
+import { createQueryClient } from "@/shared/api/query-client";
 import { routeTree } from "@/routeTree.gen";
 
 // router.load() precarga los componentes que el plugin separa en fragmentos,

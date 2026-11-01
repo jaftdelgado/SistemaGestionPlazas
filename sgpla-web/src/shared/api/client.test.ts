@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
 import { expect, it } from "vitest";
-import { createAuthorizationMiddleware } from "@/lib/api/client";
-import type { paths } from "@/lib/api/schema";
+import { createAuthorizationMiddleware } from "@/shared/api/client";
+import type { paths } from "@/shared/api/schema";
 
 async function authorizationSent(token: string | null) {
   let request: Request | undefined;

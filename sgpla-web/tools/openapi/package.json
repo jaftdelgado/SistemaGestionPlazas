@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@12.8.1",
   "scripts": {
-    "generar": "openapi-typescript $SGPLA_OPENAPI_URL -o ../../src/lib/api/schema.d.ts"
+    "generar": "openapi-typescript $SGPLA_OPENAPI_URL -o ../../src/shared/api/schema.d.ts"
   },
   "devDependencies": {
     "openapi-typescript": "7.13.0",

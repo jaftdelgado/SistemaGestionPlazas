@@ -1,5 +1,5 @@
 import createClient, { type Middleware } from "openapi-fetch";
-import type { paths } from "@/lib/api/schema";
+import type { paths } from "@/shared/api/schema";
 
 export function createAuthorizationMiddleware(
   readToken: () => string | null,
