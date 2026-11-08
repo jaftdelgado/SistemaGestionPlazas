@@ -1,5 +1,5 @@
 dist
 src/routeTree.gen.ts
-src/lib/api/schema.d.ts
+src/shared/api/schema.d.ts
 pnpm-lock.yaml
 tools/openapi/node_modules

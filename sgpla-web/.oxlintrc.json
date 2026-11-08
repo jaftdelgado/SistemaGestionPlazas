@@ -26,11 +26,11 @@
       "error",
       {
         "name": "localStorage",
-        "message": "El almacenamiento del navegador solo se usa en la capa infrastructure de un módulo."
+        "message": "El almacenamiento del navegador solo se usa en la capa storage de un módulo."
       },
       {
         "name": "sessionStorage",
-        "message": "El almacenamiento del navegador solo se usa en la capa infrastructure de un módulo."
+        "message": "El almacenamiento del navegador solo se usa en la capa storage de un módulo."
       }
     ]
   },
@@ -43,22 +43,68 @@
           {
             "patterns": [
               {
-                "group": ["@/modules/*/**"],
-                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+                "group": [
+                  "@/**",
+                  "react",
+                  "react-dom",
+                  "@tanstack/*",
+                  "../api/*",
+                  "../storage/*",
+                  "../hooks/*",
+                  "../pages/**",
+                  "../components/**"
+                ],
+                "message": "domain es TypeScript puro: no depende de otras capas, de otros módulos, de shared ni de React o TanStack."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/*/api/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": [
+                  "useQuery",
+                  "useSuspenseQuery",
+                  "useQueries",
+                  "useSuspenseQueries",
+                  "useInfiniteQuery",
+                  "useSuspenseInfiniteQuery",
+                  "useMutation",
+                  "useQueryClient",
+                  "useIsFetching",
+                  "useIsMutating",
+                  "QueryClientProvider"
+                ],
+                "message": "api solo define consultas y llamadas; los hooks de TanStack Query se usan en la capa hooks."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@/modules/*", "@/modules/*/**"],
+                "message": "api solo se conecta con los recursos de su módulo; los datos de otro módulo se piden desde hooks, por su contrato."
               },
               {
                 "group": [
                   "react",
                   "react-dom",
-                  "@tanstack/*",
-                  "@/lib/api/*",
-                  "@/components/**",
-                  "../application/*",
-                  "../infrastructure/*",
-                  "../pages/*",
-                  "../components/*"
+                  "@tanstack/react-router",
+                  "@/shared/ui/**",
+                  "@/shared/hooks/**",
+                  "@/shared/lib/notifications",
+                  "../storage/*",
+                  "../hooks/*",
+                  "../pages/**",
+                  "../components/**"
                 ],
-                "message": "domain es TypeScript puro: sin React, TanStack, la API ni las otras capas del módulo."
+                "message": "api depende solo de domain y de shared/api: sin React, router, interfaz ni las capas superiores."
               }
             ]
           }
@@ -66,39 +112,24 @@
       }
     },
     {
-      "files": ["src/modules/*/application/**"],
+      "files": ["src/modules/*/storage/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "patterns": [
               {
-                "group": ["@/modules/*/**"],
-                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
-              },
-              {
-                "group": ["../pages/*", "../components/*"],
-                "message": "application no depende de pages ni de components."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["src/modules/*/infrastructure/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["@/modules/*/**"],
-                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
-              },
-              {
-                "group": ["../pages/*", "../components/*"],
-                "message": "infrastructure no depende de pages ni de components."
+                "group": [
+                  "@/**",
+                  "react",
+                  "react-dom",
+                  "@tanstack/*",
+                  "../api/*",
+                  "../hooks/*",
+                  "../pages/**",
+                  "../components/**"
+                ],
+                "message": "storage solo adapta el navegador: depende únicamente de domain."
               }
             ]
           }
@@ -107,7 +138,7 @@
       }
     },
     {
-      "files": ["src/modules/*/pages/**"],
+      "files": ["src/modules/*/hooks/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -119,11 +150,59 @@
               },
               {
                 "group": [
-                  "../infrastructure/*",
-                  "@/lib/api/client",
-                  "@/lib/api/query"
+                  "../pages/**",
+                  "../components/**",
+                  "@/shared/ui/**",
+                  "@/shared/api/client"
                 ],
-                "message": "pages llega a los datos solo por application."
+                "message": "hooks no depende de la interfaz ni llama al cliente HTTP: los datos llegan por api."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/*/pages/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-router",
+                "importNames": [
+                  "useNavigate",
+                  "useSearch",
+                  "useParams",
+                  "useRouterState",
+                  "useRouter",
+                  "useLocation",
+                  "useMatch",
+                  "useLoaderData",
+                  "useRouteContext",
+                  "useBlocker",
+                  "getRouteApi",
+                  "redirect"
+                ],
+                "message": "La interfaz no navega ni lee la dirección: eso lo hace su hook. Solo puede usar Link y Outlet."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@/modules/*", "@/modules/*/**"],
+                "message": "Una página llega a otros módulos solo por su hook."
+              },
+              {
+                "group": [
+                  "../api/*",
+                  "../storage/*",
+                  "../domain/*",
+                  "@/shared/api/**",
+                  "@/shared/lib/notifications",
+                  "@tanstack/react-query"
+                ],
+                "message": "Una página usa su hook y compone componentes: no consulta datos, no avisa ni conoce el dominio."
               }
             ]
           }
@@ -136,19 +215,107 @@
         "no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "@tanstack/react-router",
+                "importNames": [
+                  "useNavigate",
+                  "useSearch",
+                  "useParams",
+                  "useRouterState",
+                  "useRouter",
+                  "useLocation",
+                  "useMatch",
+                  "useLoaderData",
+                  "useRouteContext",
+                  "useBlocker",
+                  "getRouteApi",
+                  "redirect",
+                  "Outlet"
+                ],
+                "message": "Un componente no navega ni lee la dirección: solo puede usar Link."
+              }
+            ],
             "patterns": [
               {
-                "group": ["@/modules/*/**"],
-                "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
+                "group": ["@/modules/*", "@/modules/*/**"],
+                "message": "Un componente recibe todo por props: no importa otros módulos."
               },
               {
                 "group": [
-                  "../infrastructure/*",
-                  "@/lib/api/client",
-                  "@/lib/api/query",
-                  "../pages/*"
+                  "../hooks/*",
+                  "../api/*",
+                  "../storage/*",
+                  "../domain/*",
+                  "../pages/*",
+                  "@/shared/api/**",
+                  "@/shared/lib/notifications",
+                  "@tanstack/react-query"
                 ],
-                "message": "components llega a los datos solo por application y no depende de pages."
+                "message": "Un componente es pasivo: recibe datos y callbacks por props y no depende de hooks, api, domain ni pages."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/shared/ui/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/modules/*",
+                  "@/modules/*/**",
+                  "@/shared/api/**",
+                  "@tanstack/react-query"
+                ],
+                "message": "shared/ui es presentación compartida: no conoce los módulos ni la API."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/shared/hooks/**", "src/shared/lib/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/modules/*",
+                  "@/modules/*/**",
+                  "@/shared/ui/**",
+                  "@/shared/api/**"
+                ],
+                "message": "shared/hooks y shared/lib son utilidades genéricas: no conocen los módulos, la interfaz ni la API."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/shared/api/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/modules/*",
+                  "@/modules/*/**",
+                  "@/shared/ui/**",
+                  "@/shared/hooks/**"
+                ],
+                "message": "shared/api es la conexión común con la API: no conoce los módulos ni la interfaz."
               }
             ]
           }
@@ -160,7 +327,7 @@
     "node_modules",
     "dist",
     "src/routeTree.gen.ts",
-    "src/lib/api/schema.d.ts",
+    "src/shared/api/schema.d.ts",
     "tools/"
   ]
 }

@@ -3,74 +3,77 @@ import {
   GraduationScrollIcon,
   Shield01Icon,
 } from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react";
 import * as React from "react";
 import {
   FilterToolbar,
   type FilterChip,
   type FilterField,
-} from "@/components/ui/filter-toolbar";
-import { SearchInput } from "@/components/ui/search-input";
-import {
-  useAreasAcademicas,
-  useEntidadesAcademicas,
-} from "../application/usuarios-queries";
-import { abbreviateFacultad } from "../application/usuario-row";
-import { getFilterValue } from "../application/use-usuarios-listing";
-import { ROLES } from "../domain/roles";
+  type FilterFieldOption,
+} from "@/shared/ui/filter-toolbar";
+import { SearchInput } from "@/shared/ui/search-input";
 
-const ROL_FIELD: FilterField = {
-  id: "rol",
-  label: "Rol",
-  icon: Shield01Icon,
-  options: ROLES.map((rol) => ({
-    value: String(rol.id),
-    label: rol.name,
-  })),
-};
+type FilterKey = "rolId" | "areaAcademicaId" | "entidadAcademicaId";
+
+type UsuariosFilterValues = Partial<Record<FilterKey, number>>;
+
+const FIELDS: { key: FilterKey; label: string; icon: IconSvgElement }[] = [
+  { key: "rolId", label: "Rol", icon: Shield01Icon },
+  {
+    key: "areaAcademicaId",
+    label: "Área académica",
+    icon: GraduationScrollIcon,
+  },
+  {
+    key: "entidadAcademicaId",
+    label: "Entidad académica",
+    icon: Building03Icon,
+  },
+];
+
+function isFilterKey(id: string): id is FilterKey {
+  return FIELDS.some((field) => field.key === id);
+}
 
 type UsuariosFiltersProps = {
   searchText: string;
   onSearchChange: (text: string) => void;
-  filters: FilterChip[];
-  onFiltersChange: (filters: FilterChip[]) => void;
+  values: UsuariosFilterValues;
+  rolOptions: FilterFieldOption[];
+  areaOptions: FilterFieldOption[];
+  entidadOptions: FilterFieldOption[];
+  onFiltersChange: (values: UsuariosFilterValues) => void;
 };
 
 export function UsuariosFilters({
   searchText,
   onSearchChange,
-  filters,
+  values,
+  rolOptions,
+  areaOptions,
+  entidadOptions,
   onFiltersChange,
 }: UsuariosFiltersProps) {
-  const { data: areas } = useAreasAcademicas();
-  const { data: entidades } = useEntidadesAcademicas(
-    getFilterValue(filters, "area"),
-  );
+  const fields = React.useMemo<FilterField[]>(() => {
+    const options: Record<FilterKey, FilterFieldOption[]> = {
+      rolId: rolOptions,
+      areaAcademicaId: areaOptions,
+      entidadAcademicaId: entidadOptions,
+    };
+    return FIELDS.map((field) => ({
+      id: field.key,
+      label: field.label,
+      icon: field.icon,
+      options: options[field.key],
+    }));
+  }, [rolOptions, areaOptions, entidadOptions]);
 
-  // Con un área elegida, el filtro de entidad solo ofrece las de esa área.
-  const fields = React.useMemo<FilterField[]>(
-    () => [
-      ROL_FIELD,
-      {
-        id: "area",
-        label: "Área académica",
-        icon: GraduationScrollIcon,
-        options: (areas ?? []).map((area) => ({
-          value: String(area.id),
-          label: area.nombre,
-        })),
-      },
-      {
-        id: "entidad",
-        label: "Entidad académica",
-        icon: Building03Icon,
-        options: (entidades?.elementos ?? []).map((entidad) => ({
-          value: String(entidad.id),
-          label: abbreviateFacultad(entidad.nombre),
-        })),
-      },
-    ],
-    [areas, entidades],
-  );
+  const chips: FilterChip[] = FIELDS.flatMap((field) => {
+    const value = values[field.key];
+    return value === undefined
+      ? []
+      : [{ id: field.key, label: field.label, value: String(value) }];
+  });
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -82,21 +85,19 @@ export function UsuariosFilters({
         onChange={(event) => onSearchChange(event.target.value)}
       />
       <FilterToolbar
-        filters={filters}
+        filters={chips}
         fields={fields}
-        onAdd={(filter) =>
-          onFiltersChange([
-            // Cambiar el área invalida la entidad elegida, que podría ser de otra área.
-            ...filters.filter(
-              (f) =>
-                f.id !== filter.id &&
-                !(filter.id === "area" && f.id === "entidad"),
-            ),
-            filter,
-          ])
-        }
-        onRemove={(id) => onFiltersChange(filters.filter((f) => f.id !== id))}
-        onClearAll={() => onFiltersChange([])}
+        onAdd={(chip) => {
+          if (isFilterKey(chip.id)) {
+            onFiltersChange({ ...values, [chip.id]: Number(chip.value) });
+          }
+        }}
+        onRemove={(id) => {
+          if (isFilterKey(id)) {
+            onFiltersChange({ ...values, [id]: undefined });
+          }
+        }}
+        onClearAll={() => onFiltersChange({})}
       />
     </div>
   );

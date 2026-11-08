@@ -1,6 +1,12 @@
-import { Link } from "@tanstack/react-router";
-import { Mortarboard01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  BookOpen01Icon,
+  Home01Icon,
+  Mortarboard01Icon,
+  Settings01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Link, type LinkProps } from "@tanstack/react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -12,12 +18,30 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { useNavigation } from "./use-navigation";
+} from "@/shared/ui/sidebar";
 
-export function PanelSidebar() {
-  const { items, active } = useNavigation();
+type PanelSectionId = "inicio" | "ofertas" | "usuarios" | "configuracion";
 
+// Una sección nueva no compila hasta que tenga su ícono.
+const ICONS: Record<PanelSectionId, IconSvgElement> = {
+  inicio: Home01Icon,
+  ofertas: BookOpen01Icon,
+  usuarios: UserGroupIcon,
+  configuracion: Settings01Icon,
+};
+
+type PanelSidebarItem = {
+  id: PanelSectionId;
+  title: string;
+  to?: LinkProps["to"];
+};
+
+type PanelSidebarProps = {
+  items: readonly PanelSidebarItem[];
+  activeId: PanelSectionId;
+};
+
+export function PanelSidebar({ items, activeId }: PanelSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader>
@@ -37,23 +61,19 @@ export function PanelSidebar() {
           <SidebarGroupLabel>General</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
-                const { id, title, icon } = item;
-                const to = "to" in item ? item.to : undefined;
-                return (
-                  <SidebarMenuItem key={id}>
-                    <SidebarMenuButton
-                      isActive={id === active}
-                      icon={<HugeiconsIcon icon={icon} />}
-                      render={
-                        to ? (props) => <Link to={to} {...props} /> : undefined
-                      }
-                    >
-                      {title}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {items.map(({ id, title, to }) => (
+                <SidebarMenuItem key={id}>
+                  <SidebarMenuButton
+                    isActive={id === activeId}
+                    icon={<HugeiconsIcon icon={ICONS[id]} />}
+                    render={
+                      to ? (props) => <Link to={to} {...props} /> : undefined
+                    }
+                  >
+                    {title}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,32 +1,25 @@
-import { useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { getFieldErrors, getGeneralMessage } from "@/lib/api/problem";
-import { useLogin } from "../application/use-login";
+} from "@/shared/ui/field";
+import { Input } from "@/shared/ui/input";
+import { PasswordInput } from "@/shared/ui/password-input";
+import { useLoginPage } from "../hooks/use-login-page";
 
 export function LoginPage() {
-  const { redirect } = useSearch({ from: "/login" });
-  const { mutate, isPending, error } = useLogin(redirect);
+  const { submit, isPending, usernameError, passwordError, generalError } =
+    useLoginPage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const errors = getFieldErrors(error);
-  const usernameError = errors["correo"]?.join(" ");
-  const passwordError = errors["contrasena"]?.join(" ");
-  const generalError = getGeneralMessage(error);
-
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    mutate({ body: { correo: username, contrasena: password } });
+    submit({ correo: username, contrasena: password });
   }
 
   return (

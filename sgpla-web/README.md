@@ -11,7 +11,7 @@ Frontend de SGPLa: el panel principal y el inicio de sesión contra la API REST 
 | TypeScript                                | 7.0.2                           | Estricto, con `noUncheckedIndexedAccess`                                      |
 | React, Vite                               | Ver `package.json`              | Aplicación y servidor de desarrollo                                           |
 | TanStack Router y Query                   | Ver `package.json`              | Rutas por archivos y datos del servidor                                       |
-| `openapi-fetch`, `openapi-react-query`    | Ver `package.json`              | Cliente tipado de la API                                                      |
+| `openapi-fetch`                           | Ver `package.json`              | Cliente tipado de la API, envuelto por las consultas de TanStack Query        |
 | Tailwind v4, shadcn/ui con Base UI        | Ver `package.json`              | Estilos y componentes                                                         |
 | Oxlint, Prettier, Vitest, Testing Library | Ver `package.json`              | Lint con tipos, formato y pruebas                                             |
 
@@ -22,52 +22,79 @@ Todas las versiones son exactas: sin `^` ni `~`. `saveExact: true` en `pnpm-work
 ```text
 sgpla-web/
   src/
+    main.tsx        raíz de composición de la aplicación
     modules/        un directorio por módulo, en kebab-case y en español (solicitudes-apertura/, oferta-educativa/…)
     routes/         rutas por archivos de TanStack Router
-    components/ui/  componentes de shadcn/ui
-    lib/            utilidades, QueryClient y cliente de la API (lib/api/)
+    shared/
+      api/          cliente openapi-fetch, ApiError y mensajes de error, paginación, QueryClient y el schema generado
+      hooks/        hooks visuales genéricos (debounce, media query…)
+      lib/          utilidades, tokens de movimiento y el servicio de avisos (notifications)
+      ui/           componentes de shadcn/ui y los compartidos propios (data-grid, filter-toolbar, page-header…)
     test/           preparación de las pruebas
   tools/openapi/    generador de tipos de la API, aislado
   scripts/          verify.sh y generar-api.sh
 ```
 
-Los nombres de módulo van en español; el resto de las carpetas, en inglés.
+Los nombres de módulo van en español; el resto de las carpetas, en inglés. `components.json` apunta los alias de shadcn a `shared/`, así que los componentes que se agregan con su CLI caen en `shared/ui`.
 
 ### Nombres en el código
 
-Los archivos, componentes, funciones, hooks, props y variables van en inglés. En español solo queda el sustantivo del dominio, sin acentos: `UsuariosDataGrid`, `UsuariosFilters`, `useUsuariosListing`, `UsuarioRow`, `Sesion`, `Cuenta`, `Rol`, `Ambito`. La interfaz, los `aria-label` y los comentarios van en español.
+Los archivos, componentes, funciones, hooks, props y variables van en inglés. En español solo queda el sustantivo del dominio, sin acentos: `UsuariosDataGrid`, `UsuariosFilters`, `useUsuariosPage`, `UsuarioRow`, `Sesion`, `Cuenta`, `Rol`, `Ambito`. La interfaz, los `aria-label` y los comentarios van en español.
 
 Dos excepciones: los campos que vienen del contrato generado (`nombre`, `correo`, `pagina`, `tamanoPagina`, `elementos`, `rolId`…) conservan su nombre, y los archivos de `routes/` conservan el suyo en español porque son la URL (`cambiar-contrasena.tsx`).
 
 ### Arquitectura de un módulo
 
-Cada módulo replica las capas de los módulos del backend, con la ceremonia proporcional a su lógica: una capa sin contenido no se crea.
+Cada módulo separa la presentación, el código de enlace y la conexión con la API. Las dependencias van en una sola dirección:
+
+```text
+routes ──► pages ──► components (pasivos)
+              │
+              ▼
+            hooks  (código de enlace)
+            │    │
+            ▼    ▼
+           api   storage
+            │    │
+            ▼    ▼
+           domain
+```
 
 ```text
 modules/<modulo>/
-  domain/           reglas en TypeScript puro: sin React, TanStack ni la API
-  application/      casos de uso: queryOptions, hooks de mutación y guardas de ruta
-  infrastructure/   adaptadores del navegador (localStorage, por ejemplo)
-  pages/            lo que monta una ruta: páginas, layouts y la validación de su búsqueda
-  components/       piezas de presentación del módulo y sus hooks de interfaz
+  domain/           tipos del modelo y reglas puras, sin dependencias
+  api/              un archivo por recurso de la API: llamadas, claves de caché, queryOptions y mapeo de DTO a modelo
+  storage/          adaptadores del navegador (localStorage); solo si el módulo los necesita
+  hooks/            código de enlace: un hook por página, los hooks de acción con estado propio, las guardas y la validación de la búsqueda
+  pages/            una por ruta: usa su hook y compone componentes
+  components/       presentación pasiva: recibe datos y callbacks por props
   <modulo>-module.ts  raíz de composición, si el módulo se conecta al cliente de la API u otra pieza global
   index.ts          contrato: lo único que importan las rutas y los demás módulos
 ```
 
-| Capa             | Equivale en el backend  | Puede depender de                                                                   | Nunca depende de                                             |
-| ---------------- | ----------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `domain`         | `Domain`                | Nada fuera del módulo                                                               | React, TanStack, `lib/api`, `components`, las otras capas    |
-| `application`    | `Application`           | `domain`, `infrastructure`, `lib/`, toasts                                          | `pages`, `components`                                        |
-| `infrastructure` | `Infrastructure`        | `domain`, `application`, `lib/`                                                     | `pages`, `components`                                        |
-| `pages`          | `Endpoints`             | `components`, `application`, `domain`, `components/` compartidos, `lib/api/problem` | `infrastructure`, `lib/api/client`, `lib/api/query`          |
-| `components`     | `Endpoints`             | `application`, `domain`, `components/` compartidos, `lib/api/problem`               | `pages`, `infrastructure`, `lib/api/client`, `lib/api/query` |
-| `index.ts`       | `Application/Contracts` | Todas las capas                                                                     | —                                                            |
+| Capa         | Responsabilidad                                                                                                | Puede depender de                                                                                                                  | Nunca depende de                                                                |
+| ------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `domain`     | Modelo del cliente y reglas puras                                                                              | Nada                                                                                                                               | Todo lo demás                                                                   |
+| `api`        | Llamar a la API, traducir DTO a modelo (incluidos los enteros que el contrato publica como `number \| string`) | `domain`, `shared/api`, `queryOptions` y `keepPreviousData` de TanStack Query                                                      | React, hooks de TanStack, router, `hooks`, `pages`, `components`, otros módulos |
+| `storage`    | Adaptar el almacenamiento del navegador                                                                        | `domain`                                                                                                                           | Todo lo demás                                                                   |
+| `hooks`      | Conectar las capas: consultas, mutaciones, invalidación, estado en la dirección, navegación, avisos y mensajes | `api`, `storage`, `domain`, React, TanStack Query y Router, `shared/api`, `shared/hooks`, `shared/lib`, contratos de otros módulos | `pages`, `components`, `shared/ui`, `shared/api/client`                         |
+| `pages`      | Llamar a su hook y componer componentes                                                                        | `hooks` propios, `components`, `shared/ui`, `shared/hooks`, `Link` y `Outlet`                                                      | `api`, `storage`, `domain`, `shared/api`, TanStack Query, otros módulos         |
+| `components` | Mostrar datos y emitir eventos                                                                                 | Otros componentes, `shared/ui`, `shared/hooks`, `shared/lib/utils`, `Link`                                                         | `hooks`, `api`, `storage`, `domain`, `pages`, `shared/api`, otros módulos       |
+| `index.ts`   | Contrato del módulo                                                                                            | `pages`, `hooks`, las consultas de `api` y los tipos de `domain`                                                                   | `storage`, `components`                                                         |
 
-Las rutas de `routes/` son adaptadores delgados, como los `Map…Endpoints`: validan la búsqueda, ejecutan la guarda en `beforeLoad` y montan la página. `main.tsx` es la raíz de composición de la aplicación. Dentro de un módulo se importa con rutas relativas; desde fuera, solo `@/modules/<modulo>`.
+Reglas que evitan la atomicidad excesiva:
 
-`.oxlintrc.json` verifica estas reglas en el lint, como `Sgpla.ArchitectureTests` en el backend: los imports profundos entre módulos, los imports prohibidos por capa y el uso de `localStorage` o `sessionStorage` fuera de `infrastructure`. No detecta imports relativos que crucen de un módulo a otro; esos se revisan en el PR.
+- `api/`: un archivo por recurso, no por endpoint; el mapeo de DTO a modelo vive en el mismo archivo y no se exporta.
+- `hooks/`: un hook por página. Un hook de acción va aparte solo si tiene estado propio (la baja con deshacer) o lo usan dos páginas; nunca un hook por consulta, que se escribe con `useQuery(<recurso>Query(...))` dentro del hook de la página.
+- Los datos de otro módulo se piden por su contrato: `institucional` exporta las consultas de áreas y entidades, y `sesion` exporta `useSesionUsuario` y `useLogout`.
 
-`routeTree.gen.ts` y `lib/api/schema.d.ts` son archivos generados que se versionan: no se editan a mano.
+Los componentes declaran el tipo de sus props sin importar `domain`: el hook entrega objetos con esa forma y TypeScript la valida en la página. Los criterios de un listado (página, tamaño, filtros y búsqueda) viven en la dirección y los valida el `validateSearch` de su ruta.
+
+Las rutas de `routes/` son adaptadores delgados, como los `Map…Endpoints`: validan la búsqueda, ejecutan la guarda en `beforeLoad` y montan la página. Dentro de un módulo se importa con rutas relativas; desde fuera, solo `@/modules/<modulo>`.
+
+`.oxlintrc.json` verifica estas reglas en el lint, como `Sgpla.ArchitectureTests` en el backend: los imports profundos entre módulos, los imports prohibidos por capa (también en `shared/`) y el uso de `localStorage` o `sessionStorage` fuera de `storage`. No detecta imports relativos que crucen de un módulo a otro ni que un componente reciba un hook por props; eso se revisa en el PR.
+
+`routeTree.gen.ts` y `shared/api/schema.d.ts` son archivos generados que se versionan: no se editan a mano.
 
 ### `tools/openapi`: el generador de tipos
 
@@ -84,7 +111,7 @@ docker compose up -d
 # Verificar: instalación, formato, lint, tipos, pruebas y build, más el aviso de atajos
 sgpla-web/scripts/verify.sh
 
-# Regenerar src/lib/api/schema.d.ts (requiere la API levantada en Development)
+# Regenerar src/shared/api/schema.d.ts (requiere la API levantada en Development)
 sgpla-web/scripts/generar-api.sh
 
 # Agregar un paquete (revisa antes la licencia del paquete y de sus dependencias)
@@ -97,7 +124,7 @@ El CI no regenera `schema.d.ts`, porque no tiene la API: tras un cambio de contr
 
 ## Sesión
 
-El token que devuelve `POST /api/v1/usuarios/iniciar-sesion` se guarda en `localStorage`, bajo la clave `sgpla.sesion`, junto con su vencimiento (`expiraEn`), y se descarta al vencer. El módulo `sesion` conecta el token con el cliente de la API desde `main.tsx` (`registrarSesion`), y el cliente lo envía como `Authorization: Bearer` en cada petición. Un 401 con token borra la sesión y lleva al inicio de sesión. Las rutas del panel exigen una sesión vigente, y una cuenta con contraseña temporal solo puede abrir `/cambiar-contrasena`.
+El token que devuelve `POST /api/v1/usuarios/iniciar-sesion` se guarda en `localStorage`, bajo la clave `sgpla.sesion`, junto con su vencimiento (`expiraEn`), y se descarta al vencer. El módulo `sesion` conecta el token con el cliente de la API desde `main.tsx` (`registerSesion`), y el cliente lo envía como `Authorization: Bearer` en cada petición. Un 401 con token borra la sesión y lleva al inicio de sesión. Las rutas del panel exigen una sesión vigente, y una cuenta con contraseña temporal solo puede abrir `/cambiar-contrasena`.
 
 ## Variables
 
