@@ -9,7 +9,7 @@ import {
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { PasswordInput } from "@/shared/ui/password-input";
-import { useLoginPage } from "../../hooks/use-login-page";
+import { useLoginPage } from "../hooks/use-login-page";
 
 export function LoginPage() {
   const { submit, isPending, usernameError, passwordError, generalError } =

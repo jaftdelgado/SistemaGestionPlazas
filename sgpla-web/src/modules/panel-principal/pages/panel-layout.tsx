@@ -4,7 +4,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/shared/ui/sidebar";
-import { usePanelLayout } from "../../hooks/use-panel-layout";
+import { usePanelLayout } from "../hooks/use-panel-layout";
 import { PanelAvatar } from "../components/panel-avatar";
 import { PanelBreadcrumb } from "../components/panel-breadcrumb";
 import { PanelSidebar } from "../components/panel-sidebar";

@@ -51,7 +51,8 @@
                   "../api/*",
                   "../storage/*",
                   "../hooks/*",
-                  "../ui/**"
+                  "../pages/**",
+                  "../components/**"
                 ],
                 "message": "domain es TypeScript puro: no depende de otras capas, de otros módulos, de shared ni de React o TanStack."
               }
@@ -100,7 +101,8 @@
                   "@/shared/lib/notifications",
                   "../storage/*",
                   "../hooks/*",
-                  "../ui/**"
+                  "../pages/**",
+                  "../components/**"
                 ],
                 "message": "api depende solo de domain y de shared/api: sin React, router, interfaz ni las capas superiores."
               }
@@ -124,7 +126,8 @@
                   "@tanstack/*",
                   "../api/*",
                   "../hooks/*",
-                  "../ui/**"
+                  "../pages/**",
+                  "../components/**"
                 ],
                 "message": "storage solo adapta el navegador: depende únicamente de domain."
               }
@@ -146,7 +149,12 @@
                 "message": "Un módulo se importa solo por su contrato (@/modules/<modulo>); dentro del módulo se usan rutas relativas."
               },
               {
-                "group": ["../ui/**", "@/shared/ui/**", "@/shared/api/client"],
+                "group": [
+                  "../pages/**",
+                  "../components/**",
+                  "@/shared/ui/**",
+                  "@/shared/api/client"
+                ],
                 "message": "hooks no depende de la interfaz ni llama al cliente HTTP: los datos llegan por api."
               }
             ]
@@ -155,7 +163,7 @@
       }
     },
     {
-      "files": ["src/modules/*/ui/pages/**"],
+      "files": ["src/modules/*/pages/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -187,9 +195,9 @@
               },
               {
                 "group": [
-                  "../../api/*",
-                  "../../storage/*",
-                  "../../domain/*",
+                  "../api/*",
+                  "../storage/*",
+                  "../domain/*",
                   "@/shared/api/**",
                   "@/shared/lib/notifications",
                   "@tanstack/react-query"
@@ -202,7 +210,7 @@
       }
     },
     {
-      "files": ["src/modules/*/ui/components/**"],
+      "files": ["src/modules/*/components/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -235,10 +243,10 @@
               },
               {
                 "group": [
-                  "../../hooks/*",
-                  "../../api/*",
-                  "../../storage/*",
-                  "../../domain/*",
+                  "../hooks/*",
+                  "../api/*",
+                  "../storage/*",
+                  "../domain/*",
                   "../pages/*",
                   "@/shared/api/**",
                   "@/shared/lib/notifications",

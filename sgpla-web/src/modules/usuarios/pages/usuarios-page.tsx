@@ -4,7 +4,7 @@ import {
   PageHeaderActions,
   PageHeaderTitle,
 } from "@/shared/ui/page-header";
-import { useUsuariosPage } from "../../hooks/use-usuarios-page";
+import { useUsuariosPage } from "../hooks/use-usuarios-page";
 import { UsuariosDataGrid } from "../components/usuarios-data-grid";
 import { UsuariosFilters } from "../components/usuarios-filters";
 import { UsuariosPagination } from "../components/usuarios-pagination";

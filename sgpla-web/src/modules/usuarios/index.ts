@@ -1,3 +1,3 @@
 // Contrato del módulo: lo único que las rutas y los demás módulos pueden importar.
 export { validateUsuariosSearch } from "./hooks/usuarios-search";
-export { UsuariosPage } from "./ui/pages/usuarios-page";
+export { UsuariosPage } from "./pages/usuarios-page";

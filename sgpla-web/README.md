@@ -48,7 +48,7 @@ Dos excepciones: los campos que vienen del contrato generado (`nombre`, `correo`
 Cada módulo separa la presentación, el código de enlace y la conexión con la API. Las dependencias van en una sola dirección:
 
 ```text
-routes ──► ui/pages ──► ui/components (pasivos)
+routes ──► pages ──► components (pasivos)
               │
               ▼
             hooks  (código de enlace)
@@ -66,21 +66,21 @@ modules/<modulo>/
   api/              un archivo por recurso de la API: llamadas, claves de caché, queryOptions y mapeo de DTO a modelo
   storage/          adaptadores del navegador (localStorage); solo si el módulo los necesita
   hooks/            código de enlace: un hook por página, los hooks de acción con estado propio, las guardas y la validación de la búsqueda
-  ui/pages/         una por ruta: usa su hook y compone componentes
-  ui/components/    presentación pasiva: recibe datos y callbacks por props
+  pages/            una por ruta: usa su hook y compone componentes
+  components/       presentación pasiva: recibe datos y callbacks por props
   <modulo>-module.ts  raíz de composición, si el módulo se conecta al cliente de la API u otra pieza global
   index.ts          contrato: lo único que importan las rutas y los demás módulos
 ```
 
-| Capa            | Responsabilidad                                                                                                | Puede depender de                                                                                                                  | Nunca depende de                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `domain`        | Modelo del cliente y reglas puras                                                                              | Nada                                                                                                                               | Todo lo demás                                                             |
-| `api`           | Llamar a la API, traducir DTO a modelo (incluidos los enteros que el contrato publica como `number \| string`) | `domain`, `shared/api`, `queryOptions` y `keepPreviousData` de TanStack Query                                                      | React, hooks de TanStack, router, `hooks`, `ui`, otros módulos            |
-| `storage`       | Adaptar el almacenamiento del navegador                                                                        | `domain`                                                                                                                           | Todo lo demás                                                             |
-| `hooks`         | Conectar las capas: consultas, mutaciones, invalidación, estado en la dirección, navegación, avisos y mensajes | `api`, `storage`, `domain`, React, TanStack Query y Router, `shared/api`, `shared/hooks`, `shared/lib`, contratos de otros módulos | `ui`, `shared/ui`, `shared/api/client`                                    |
-| `ui/pages`      | Llamar a su hook y componer componentes                                                                        | `hooks` propios, `ui/components`, `shared/ui`, `shared/hooks`, `Link` y `Outlet`                                                   | `api`, `storage`, `domain`, `shared/api`, TanStack Query, otros módulos   |
-| `ui/components` | Mostrar datos y emitir eventos                                                                                 | Otros componentes, `shared/ui`, `shared/hooks`, `shared/lib/utils`, `Link`                                                         | `hooks`, `api`, `storage`, `domain`, `pages`, `shared/api`, otros módulos |
-| `index.ts`      | Contrato del módulo                                                                                            | `ui/pages`, `hooks`, las consultas de `api` y los tipos de `domain`                                                                | `storage`, `ui/components`                                                |
+| Capa         | Responsabilidad                                                                                                | Puede depender de                                                                                                                  | Nunca depende de                                                                |
+| ------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `domain`     | Modelo del cliente y reglas puras                                                                              | Nada                                                                                                                               | Todo lo demás                                                                   |
+| `api`        | Llamar a la API, traducir DTO a modelo (incluidos los enteros que el contrato publica como `number \| string`) | `domain`, `shared/api`, `queryOptions` y `keepPreviousData` de TanStack Query                                                      | React, hooks de TanStack, router, `hooks`, `pages`, `components`, otros módulos |
+| `storage`    | Adaptar el almacenamiento del navegador                                                                        | `domain`                                                                                                                           | Todo lo demás                                                                   |
+| `hooks`      | Conectar las capas: consultas, mutaciones, invalidación, estado en la dirección, navegación, avisos y mensajes | `api`, `storage`, `domain`, React, TanStack Query y Router, `shared/api`, `shared/hooks`, `shared/lib`, contratos de otros módulos | `pages`, `components`, `shared/ui`, `shared/api/client`                         |
+| `pages`      | Llamar a su hook y componer componentes                                                                        | `hooks` propios, `components`, `shared/ui`, `shared/hooks`, `Link` y `Outlet`                                                      | `api`, `storage`, `domain`, `shared/api`, TanStack Query, otros módulos         |
+| `components` | Mostrar datos y emitir eventos                                                                                 | Otros componentes, `shared/ui`, `shared/hooks`, `shared/lib/utils`, `Link`                                                         | `hooks`, `api`, `storage`, `domain`, `pages`, `shared/api`, otros módulos       |
+| `index.ts`   | Contrato del módulo                                                                                            | `pages`, `hooks`, las consultas de `api` y los tipos de `domain`                                                                   | `storage`, `components`                                                         |
 
 Reglas que evitan la atomicidad excesiva:
 

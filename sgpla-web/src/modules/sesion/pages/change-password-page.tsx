@@ -8,7 +8,7 @@ import {
   FieldLabel,
 } from "@/shared/ui/field";
 import { PasswordInput } from "@/shared/ui/password-input";
-import { useChangePasswordPage } from "../../hooks/use-change-password-page";
+import { useChangePasswordPage } from "../hooks/use-change-password-page";
 
 export function ChangePasswordPage() {
   const { submit, isPending, mismatch, currentError, newError, generalError } =
