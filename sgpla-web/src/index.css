@@ -53,15 +53,15 @@
 }
 
 :root {
-  --background: #f3f6fa;
-  --foreground: oklch(0.145 0 0);
+  --background: hsl(210, 37%, 97%);
+  --foreground: hsl(208, 100%, 6%);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --overlay: #1e1e1e;
   --overlay-foreground: oklch(0.985 0 0);
-  --primary: #005baa;
+  --primary: hsl(208, 100%, 33%);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -70,9 +70,9 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
+  --border: rgba(0, 0, 0, 0.12);
   --input: #ffffff;
-  --table-header: #ebeced;
+  --table-header: hsl(210, 37%, 96%);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -168,8 +168,8 @@
   /* the same settle for every move, a touch under critical */
   transition:
     transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    translate 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    translate 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms cubic-bezier(0.23, 1, 0.32, 1),
     background-color 220ms ease,
     box-shadow 220ms ease;
 }
