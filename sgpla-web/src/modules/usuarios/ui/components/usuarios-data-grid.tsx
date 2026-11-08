@@ -81,6 +81,7 @@ function getCellValue(usuario: UsuarioRow, columnId: UsuarioColumn) {
 function renderUsuarioCell(
   usuario: UsuarioRow,
   column: DataGridColumn<UsuarioColumn>,
+  ownId: string,
 ) {
   if (column.id === "ambito") {
     if (usuario.ambitoType === null) return "—";
@@ -96,6 +97,9 @@ function renderUsuarioCell(
         fallbackClassName="text-[10px]"
       />
       <span className="truncate">{usuario.name}</span>
+      {usuario.id === ownId && (
+        <span className="shrink-0 text-muted-foreground">(Tú)</span>
+      )}
     </span>
   );
 }
@@ -149,6 +153,12 @@ export function UsuariosDataGrid({
     useState<UsuarioRow | null>(null);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
 
+  const renderCell = useCallback(
+    (usuario: UsuarioRow, column: DataGridColumn<UsuarioColumn>) =>
+      renderUsuarioCell(usuario, column, ownId),
+    [ownId],
+  );
+
   // Acciones provisionales: ver detalle y editar aún no hacen nada hasta que existan sus flujos.
   const getUsuarioActions = useCallback(
     (usuario: UsuarioRow): DataGridRowAction[] => {
@@ -195,7 +205,7 @@ export function UsuariosDataGrid({
         rows={rows}
         columns={COLUMNS}
         getRowLabel={(usuario) => usuario.name}
-        renderCell={renderUsuarioCell}
+        renderCell={renderCell}
         getRowActions={getUsuarioActions}
         loading={loading}
         loadingSeed={LOADING_SEED}
