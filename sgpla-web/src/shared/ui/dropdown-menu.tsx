@@ -16,9 +16,7 @@ export type DropdownMenuItem = {
 
 export type DropdownMenuProps = {
   items: DropdownMenuItem[];
-  /** Nombre accesible del botón que abre el menú. */
   label: string;
-  /** Orden de tabulación del botón; -1 lo saca del recorrido con Tab. */
   triggerTabIndex?: number;
   className?: string;
 };
@@ -47,7 +45,7 @@ function DropdownMenu({
         >
           <MenuPrimitive.Popup
             data-slot="dropdown-menu-content"
-            className="min-w-44 origin-(--transform-origin) rounded-2xl bg-overlay p-1 text-overlay-foreground shadow-border outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            className="min-w-44 origin-(--transform-origin) rounded-2xl bg-overlay p-1 text-overlay-foreground outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           >
             {items.map(
               ({ id, label: labelText, icon, destructive, ...item }) => (
