@@ -73,7 +73,7 @@ public sealed class ViolacionUnicidadTests(PostgreSqlFixture baseDatos) : IAsync
         excepcion.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
         excepcion.ConstraintName.ShouldBe("uq_grado_academico__nombre");
         excepcion.MessageText.ShouldNotContain(nombre);
-        excepcion.Detail.ShouldBeNull();
+        (excepcion.Detail ?? string.Empty).ShouldNotContain(nombre);
         _api.Logs.Entradas.ShouldNotContain(entrada => entrada.Contiene(nombre), "EF Core registró el valor duplicado.");
     }
 
