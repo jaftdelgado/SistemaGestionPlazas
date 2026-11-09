@@ -37,3 +37,15 @@ VALUES ((SELECT id FROM usuarios.usuario WHERE correo = 'zs22013630@estudiantes.
 INSERT INTO usuarios.usuario_dgaa (usuario_id, area_academica_id)
 VALUES ((SELECT id FROM usuarios.usuario WHERE correo = 'zs22013663@estudiantes.uv.mx'),
         (SELECT id FROM academico.area_academica WHERE clave = 4));
+
+-- 5. Superusuario de pruebas: usuarios.usuario y usuarios.credencial_superusuario
+-- La contraseña es una cadena PHC de Argon2id (m=19456, t=2, p=1). Con
+-- fecha_actualizacion asignada la credencial es definitiva, no una temporal pendiente de cambio.
+
+INSERT INTO usuarios.usuario (correo, nombre, rol_id)
+VALUES ('superusuario@sgpla-dev.mx', 'Axel Luna Hernández', 1);
+
+INSERT INTO usuarios.credencial_superusuario (usuario_id, contrasena, fecha_actualizacion)
+VALUES ((SELECT id FROM usuarios.usuario WHERE correo = 'superusuario@sgpla-dev.mx'),
+        '$argon2id$v=19$m=19456,t=2,p=1$c3prRVJHR1B3Q0txWFF1cw$+8+VHXHkJ+LLSlouxD2NYpnmq4Cfz9ahlkSKvGH1n3s',
+        now());
