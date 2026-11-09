@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="dbup-sqlserver" />
-    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="dbup-postgresql" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
   <ItemGroup>
