@@ -216,7 +216,7 @@ erDiagram
         varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
+        bytea checksum_sha256
         varchar clave_almacenamiento UK
         timestamptz cargado_en
         int cargado_por_usuario_id FK
@@ -343,7 +343,7 @@ erDiagram
         varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
+        bytea checksum_sha256
         varchar clave_almacenamiento UK
         int numero_version
         boolean es_vigente
@@ -471,7 +471,7 @@ erDiagram
         varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
+        bytea checksum_sha256
         varchar clave_almacenamiento UK
         int numero_version
         boolean es_vigente
@@ -528,7 +528,7 @@ erDiagram
         varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
+        bytea checksum_sha256
         varchar clave_almacenamiento UK
         int numero_version
         boolean es_vigente
@@ -611,7 +611,7 @@ erDiagram
         varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
+        bytea checksum_sha256
         varchar clave_almacenamiento UK
         int numero_version
         boolean es_vigente

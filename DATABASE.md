@@ -126,6 +126,8 @@ Reglas generales:
 - Las claves y códigos ASCII se almacenan en `varchar`, recortados y en mayúsculas.
 - Los nombres y textos en español se almacenan en `varchar(n)` o `text`.
 - La intercalación `public.es_ci_ai` (ICU `es-u-ks-level1`, no determinista) ignora mayúsculas y acentos en comparaciones, unicidad y búsquedas; la crea el baseline. Una regla que exige distinguirlos fuerza `COLLATE "C"` en la expresión.
+- Los hashes SHA-256 se guardan en `bytea` con un `CHECK (octet_length(checksum_sha256) = 32)` por tabla, que conserva la longitud fija del tipo anterior. Las columnas de texto con `text` no tienen longitud máxima.
+- `uq_horario_programacion__sesion` se declara `UNIQUE NULLS NOT DISTINCT`: dos sesiones iguales con `edificio` o `aula` nulos siguen siendo duplicadas, como antes.
 - Todo nombre, clave y código obligatorio debe contener al menos un carácter útil después de recortar espacios.
 - Las claves institucionales, códigos y relaciones de propiedad son inmutables según las reglas de la sección 10.
 - Las llaves foráneas usan `ON DELETE NO ACTION` y `ON UPDATE NO ACTION`.
@@ -1279,7 +1281,7 @@ Cada fila es una versión documental; el binario permanece en almacenamiento ext
 | `nombre` | `varchar(260)` | `NOT NULL` |
 | `mime` | `varchar(255)` | `NOT NULL` |
 | `tamano` | `bigint` | `NOT NULL` |
-| `checksum_sha256` | `binary(32)` | `NOT NULL` |
+| `checksum_sha256` | `bytea` | `NOT NULL` |
 | `clave_almacenamiento` | `varchar(500)` | `NOT NULL` |
 | `numero_version` | `int` | `NOT NULL` |
 | `es_vigente` | `boolean` | `NOT NULL` |
@@ -1409,7 +1411,7 @@ Cada fila es una versión documental; el binario vive fuera de la base de datos.
 | `nombre` | `varchar(260)` | `NOT NULL` |
 | `mime` | `varchar(255)` | `NOT NULL` |
 | `tamano` | `bigint` | `NOT NULL` |
-| `checksum_sha256` | `binary(32)` | `NOT NULL` |
+| `checksum_sha256` | `bytea` | `NOT NULL` |
 | `clave_almacenamiento` | `varchar(500)` | `NOT NULL` |
 | `numero_version` | `int` | `NOT NULL` |
 | `es_vigente` | `boolean` | `NOT NULL` |
@@ -1746,7 +1748,7 @@ Es el archivo único del oficio de respaldo. El contenido binario vive en almace
 | nombre | varchar(260) | NOT NULL | Nombre no vacío |
 | mime | varchar(255) | NOT NULL | Debe ser application/pdf; el contenido empieza con `%PDF-` |
 | tamano | bigint | NOT NULL | Mayor que cero; el máximo lo fija la configuración (10 MB por omisión) |
-| checksum_sha256 | binary(32) | NOT NULL | Integridad del binario |
+| checksum_sha256 | bytea | NOT NULL | Integridad del binario |
 | clave_almacenamiento | varchar(500) | NOT NULL | Única |
 | cargado_en | timestamptz(0) | NOT NULL | UTC |
 | cargado_por_usuario_id | int | NOT NULL | FK al usuario que cargó |
