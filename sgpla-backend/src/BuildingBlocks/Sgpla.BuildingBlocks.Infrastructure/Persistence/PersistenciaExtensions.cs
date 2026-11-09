@@ -23,10 +23,10 @@ public static class PersistenciaExtensions
         }
 
         services.AddDbContext<SgplaDbContext>(options => options
-            .UseSqlServer(cadenaConexion)
+            .UseNpgsql(cadenaConexion)
             .UseSnakeCaseNamingConvention()
             // SaveChangesFailed incluye en su mensaje la excepción completa, y la de una violación de unicidad
-            // (2601/2627) trae el valor duplicado. La excepción no se pierde:
+            // (23505) trae el valor duplicado en el detalle. La excepción no se pierde:
             // la traduce el manejador global de unicidad o la registra UseExceptionHandler.
             .ConfigureWarnings(advertencias => advertencias.Ignore(CoreEventId.SaveChangesFailed)));
 

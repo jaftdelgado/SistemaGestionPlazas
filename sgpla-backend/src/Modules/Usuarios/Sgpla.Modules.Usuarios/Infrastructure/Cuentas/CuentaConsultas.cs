@@ -67,7 +67,7 @@ internal sealed class ListarCuentasHandler(SgplaDbContext contexto, IAmbitosInst
         {
             cuentas = cuentas.Where(u =>
                 u.Correo.Contains(busqueda)
-                || EF.Functions.Collate(u.Nombre, "Modern_Spanish_100_CI_AI").Contains(busqueda));
+                || EF.Functions.Collate(u.Nombre, "es_ci_ai").Contains(busqueda));
         }
 
         var proyeccion = CuentaProyeccion.Proyectar(cuentas.OrderBy(u => u.Id));

@@ -36,7 +36,7 @@ builder.Services.AddCors(options => options.AddPolicy(PoliticaCors, policy => po
 builder.Services.AddPersistenciaSgpla(builder.Configuration);
 builder.Services.AddAlmacenamientoArchivos(builder.Configuration);
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<SgplaDbContext>("sqlserver");
+    .AddDbContextCheck<SgplaDbContext>("postgresql");
 
 builder.Services
     .AddInstitucionalModule(builder.Configuration)

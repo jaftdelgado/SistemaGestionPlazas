@@ -2,7 +2,7 @@ namespace Sgpla.BuildingBlocks.Application;
 
 /// <summary>
 /// Almacenamiento externo de binarios. La base guarda solo la clave, el tamaño y el SHA-256 que devuelve
-/// <see cref="GuardarAsync"/>; el contenido nunca va a SQL Server.
+/// <see cref="GuardarAsync"/>; el contenido nunca va a la base de datos.
 /// </summary>
 public interface IAlmacenamientoArchivos
 {

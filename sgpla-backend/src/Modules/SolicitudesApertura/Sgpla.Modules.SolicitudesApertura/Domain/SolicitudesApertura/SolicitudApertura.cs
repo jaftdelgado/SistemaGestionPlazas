@@ -49,7 +49,7 @@ internal sealed class SolicitudApertura : Entity
 
     public string? MotivoCancelacion { get; private set; }
 
-    public byte[] Version { get; private set; } = [];
+    public uint Version { get; private set; }
 
     public static SolicitudApertura Crear(
         DatosSolicitudApertura datos,

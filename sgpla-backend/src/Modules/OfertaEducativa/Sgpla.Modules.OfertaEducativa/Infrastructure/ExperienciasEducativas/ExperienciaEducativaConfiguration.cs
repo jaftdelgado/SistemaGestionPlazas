@@ -20,7 +20,7 @@ internal sealed class ExperienciaEducativaConfiguration : IEntityTypeConfigurati
         builder.Property(e => e.Curso)
             .HasColumnName("curso_ee").HasMaxLength(ExperienciaEducativa.LongitudMaximaCurso).IsUnicode(false);
 
-        // nvarchar(max): sin longitud.
+        // text: sin longitud.
         builder.Property(e => e.PerfilDocente);
 
         builder.HasQueryFilter(FiltrosConsulta.BajaLogica, e => e.FechaEliminacion == null);
