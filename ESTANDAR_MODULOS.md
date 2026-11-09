@@ -64,7 +64,7 @@ Viven en `src/BuildingBlocks` y se construyen junto con el primer módulo que la
 |---|---|
 | `Sgpla.SharedKernel` | `Entity` (clase base con `Id`), `Result`, `Result<T>`, `Error` (con `Campo` opcional), `ErrorType`, `ValidationError`, `IEliminable` (baja lógica: `FechaEliminacion`, `null` significa activa), `Rol` (roles fijos de `usuarios.rol`), `Normalizacion` (texto, recorte y dígitos ASCII) |
 | `Sgpla.BuildingBlocks.Application` | `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResponse>`, `IQueryHandler<TQuery, TResponse>`, `IUnitOfWork`, `Paginacion`, `Pagina<T>`, `PaginacionValidator<T>`, decoradores de validación, `ICurrentUser`, `Politicas` (nombres de las políticas de autorización), `IAlmacenamientoArchivos`, `ArchivoGuardado` y `ArchivoRecibido` (con `LeerEncabezadoAsync`, que lee los primeros bytes para comprobar una firma) |
-| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`, `ComoArchivoRecibido`), almacenamiento local de archivos (`AddAlmacenamientoArchivos`), manejadores globales de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQL 2601/2627 → 409) y de concurrencia optimista (`ConcurrenciaExceptionHandler`: `DbUpdateConcurrencyException` → 409), `FiltrosConsulta` (nombres de los filtros de consulta globales de EF Core; hoy solo `BajaLogica`, que oculta las filas con `fecha_eliminacion`) |
+| `Sgpla.BuildingBlocks.Infrastructure` | `SgplaDbContext`, implementación de `IUnitOfWork`, `AddPersistenciaModulo`, `AddHandlersModulo`, extensión `PaginarAsync`, helpers HTTP (`ToProblem`, `ToOk`, `ToNoContent`, `ComoArchivoRecibido`), almacenamiento local de archivos (`AddAlmacenamientoArchivos`), manejadores globales de violaciones de unicidad (`ViolacionUnicidadExceptionHandler`: SQLSTATE 23505 → 409) y de concurrencia optimista (`ConcurrenciaExceptionHandler`: `DbUpdateConcurrencyException` → 409), `FiltrosConsulta` (nombres de los filtros de consulta globales de EF Core; hoy solo `BajaLogica`, que oculta las filas con `fecha_eliminacion`) |
 
 Para el tiempo se usa `TimeProvider` de .NET, inyectado; no se llama a `DateTime.UtcNow` directamente. Para los logs se usa `ILogger<T>` de .NET; no se crea una abstracción propia (sección 11).
 
@@ -542,7 +542,7 @@ internal sealed class ModificarArticuloHandler(
 
 - Recibe sus dependencias por constructor primario, siempre como interfaces.
 - Llama a `SaveChangesAsync` una sola vez, al final. Todo lo que modifica la operación se guarda de forma atómica.
-- Si la operación afecta a varias filas con una misma fecha (baja en cascada), obtiene el instante una vez con `TimeProvider`, truncado a segundos por `datetime2(0)`, y lo reutiliza.
+- Si la operación afecta a varias filas con una misma fecha (baja en cascada), obtiene el instante una vez con `TimeProvider`, truncado a segundos por `timestamptz(0)`, y lo reutiliza.
 - No lanza excepciones por reglas de negocio: devuelve un `Error`.
 - Propaga el `CancellationToken` a toda llamada asíncrona.
 
@@ -562,7 +562,6 @@ internal sealed class ArticuloConfiguration : IEntityTypeConfiguration<Articulo>
         builder.ToTable("articulo", "plazas");
         builder.HasKey(a => a.Id);
 
-        // varchar en la base: sin IsUnicode(false) los parámetros serían nvarchar y forzarían una conversión.
         builder.Property(a => a.Numero).HasMaxLength(Articulo.LongitudMaximaNumero).IsUnicode(false);
         builder.Property(a => a.Descripcion).HasMaxLength(Articulo.LongitudMaximaDescripcion);
     }
@@ -603,7 +602,7 @@ internal sealed class ArticuloRepository(SgplaDbContext contexto) : IArticuloRep
 
 ### Handlers de consulta
 
-Un handler de consulta implementa `IQueryHandler` en Infrastructure y consulta `SgplaDbContext` directamente: `AsNoTracking`, proyección al `Response` en SQL y `Result` con el error `NotFound` del dominio. No hay puerto intermedio: la consulta no tiene reglas que aislar, EF Core ya es la abstracción sobre la base, y las pruebas de integración la cubren contra SQL Server real. Se registran por escaneo y, como cualquier handler, pasan por el decorador de validación.
+Un handler de consulta implementa `IQueryHandler` en Infrastructure y consulta `SgplaDbContext` directamente: `AsNoTracking`, proyección al `Response` en SQL y `Result` con el error `NotFound` del dominio. No hay puerto intermedio: la consulta no tiene reglas que aislar, EF Core ya es la abstracción sobre la base, y las pruebas de integración la cubren contra PostgreSQL real. Se registran por escaneo y, como cualquier handler, pasan por el decorador de validación.
 
 Los handlers de consulta de un recurso comparten el archivo `<Entidad>Consultas.cs`.
 
@@ -649,7 +648,7 @@ internal sealed class ObtenerArticuloHandler(SgplaDbContext contexto) : IQueryHa
 Un listado paginado termina en `.PaginarAsync(paginacion, cancellationToken)` en lugar de `ToListAsync`.
 
 Reglas:
-- **Comparaciones de texto en la base, no en memoria.** Las columnas tienen su intercalación (por ejemplo, `Modern_Spanish_100_CI_AI`), así que `g.Nombre == nombre` ya ignora mayúsculas y acentos si se ejecuta en SQL Server.
+- **Comparaciones de texto en la base, no en memoria.** Las columnas tienen su intercalación (`public.es_ci_ai`, no determinista), así que `g.Nombre == nombre` y `Contains` ya ignoran mayúsculas y acentos si se ejecutan en PostgreSQL. Una columna sin intercalación propia se compara con `EF.Functions.Collate(x, "es_ci_ai")`.
 - **La unicidad incluye las filas dadas de baja** (`DATABASE.md` §5). En entidades con baja lógica, las comprobaciones de unicidad usan `IgnoreQueryFilters`.
 - **Los listados siempre tienen un orden total**, con el `Id` como desempate, para que la paginación sea estable.
 - **La comprobación previa de unicidad no basta ante dos peticiones simultáneas.** La restricción de la base es la última defensa, y el manejador global traduce su violación a 409.
@@ -815,7 +814,7 @@ Un catálogo fijo tiene valores definidos por el negocio que ningún usuario agr
 
 | Pieza | Regla |
 |---|---|
-| Datos | Se cargan en `Baseline/seed.sql` con ids fijos (`SET IDENTITY_INSERT ... ON`) y quedan documentados en `DATABASE.md` |
+| Datos | Se cargan en `Baseline/seed.sql` con ids fijos (la identidad `GENERATED BY DEFAULT` los acepta) y un `setval` final que reajusta la secuencia, y quedan documentados en `DATABASE.md` |
 | Domain | Subclase sellada de `CatalogoFijo` (`Id` y `Nombre`) en `Domain/CatalogosFijos`, con constructor privado, la constante `LongitudMaximaNombre` y, si las tiene, sus columnas adicionales con `private set`. Sin fábrica, comportamiento ni `Errors` propio: el 404 es `CatalogoFijoErrors.NoEncontrado<T>`, con código `<Catalogo>.NoEncontrado` |
 | Infrastructure | Una clase de una línea que hereda de `CatalogoFijoConfiguration<T>` con esquema, tabla y longitud |
 | Si solo tiene nombre | Nada más: `AddCatalogoFijo<T>()` registra los handlers genéricos y `MapCatalogoFijo<T>(ruta, etiqueta)` mapea las rutas con `CatalogoFijoResponse` |
@@ -937,7 +936,7 @@ Se usan las abstracciones de .NET, sin envoltorios propios: `ILogger<T>` para lo
 - Solo con métodos `[LoggerMessage]`, en una clase `internal static partial class <Clase>Log` junto a quien registra. El analizador lo exige (CA1848 y CA2254 como error).
 - Los parámetros solo llevan identificadores y valores no personales: numéricos, `bool`, `Guid`, enums, fechas y `string` cuyo nombre termine en `Clave`, `Codigo` o `Estado`. Una prueba de arquitectura lo verifica.
 - Nunca se registran secretos (contraseñas, verificadores, tokens, cadenas de conexión), datos de personas (nombres, correos, número de personal, perfiles y formaciones de Aspirantes y Docentes), texto libre de evaluación (observaciones, motivos, comentarios) ni nombres de archivo de expedientes. Se registra el `id`, no el dato.
-- El mensaje de una violación de unicidad de SQL Server incluye el valor duplicado; por eso el manejador global de 2601/2627 registra solo el nombre de la restricción.
+- El mensaje de una violación de unicidad de PostgreSQL puede incluir el valor duplicado (`Detail`); por eso el manejador global de 23505 registra solo el nombre de la restricción.
 
 ```csharp
 internal static partial class SincronizarPlaneaLog
@@ -961,7 +960,7 @@ internal static partial class SincronizarPlaneaLog
 | Proyecto | Qué se prueba | Obligatorio |
 |---|---|---|
 | `Sgpla.UnitTests` | Fábricas, normalización e invariantes de cada entidad. Ramas de reglas de un handler de comando con puertos falsos, cuando tiene lógica propia. Los handlers de consulta no llevan pruebas unitarias: los cubren las de integración | Sí, para toda entidad con comportamiento (los catálogos fijos no tienen) |
-| `Sgpla.IntegrationTests` | Cada endpoint de punta a punta contra SQL Server en contenedor: éxito y cada error que documenta (400, 404, 409). La semilla de cada catálogo fijo | Sí, para todo endpoint |
+| `Sgpla.IntegrationTests` | Cada endpoint de punta a punta contra PostgreSQL en contenedor: éxito y cada error que documenta (400, 404, 409). La semilla de cada catálogo fijo | Sí, para todo endpoint |
 | `Sgpla.ArchitectureTests` | Las reglas de este documento | Automático; no se edita salvo para agregar módulos o reglas |
 
 ### Unitarias
@@ -1002,11 +1001,11 @@ Los puertos falsos se escriben a mano dentro de las pruebas (clases pequeñas en
 ```csharp
 namespace Sgpla.IntegrationTests.Catalogos;
 
-public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ArticuloEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private static readonly Uri Ruta = new("/api/v1/catalogos/articulos", UriKind.Relative);
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task Crear_ConNumeroEquivalenteEnMinusculas_Responde409()
@@ -1081,8 +1080,8 @@ Un módulo o recurso está terminado cuando:
 | Usar tipos internos de otro módulo | Acopla módulos y rompe el grafo | `Application/Contracts` del otro módulo |
 | Crear un repositorio genérico `IRepository<T>` | Expone operaciones que el caso de uso no necesita | Puertos específicos por recurso |
 | Declarar índices o restricciones en EF | El esquema pertenece a DbUp | Migración en `Scripts/` |
-| Comparar textos en memoria (`ToLower`, `ToUpper`) para la unicidad | Ignora la intercalación de la columna | Delegar la comparación a SQL Server |
+| Comparar textos en memoria (`ToLower`, `ToUpper`) para la unicidad | Ignora la intercalación de la columna | Delegar la comparación a PostgreSQL |
 | Leer `DateTime.UtcNow` | Hace el código difícil de probar | `TimeProvider` inyectado |
-| Registrar datos de una persona o el mensaje de una excepción SQL | Los logs no tienen el control de acceso de la base y el mensaje de 2627 incluye el valor duplicado | Registrar el `id` o el nombre de la restricción |
+| Registrar datos de una persona o el mensaje de una excepción SQL | Los logs no tienen el control de acceso de la base y el mensaje de 23505 puede incluir el valor duplicado | Registrar el `id` o el nombre de la restricción |
 | Registrar un `Result` fallido o capturar una excepción para registrarla y relanzarla | Duplica lo que ya ve el cliente o lo que ya registra el middleware | Nada: el error ya es visible |
 | Citar un documento markdown (`DATABASE.md §9`, `DECISIONES.md`, `Modulo_<X>.md`…) en un comentario, un `Justification` o un script SQL | Los documentos son de desarrollo: se consolidan, se renumeran o se borran, y la cita queda rota | Enunciar la regla en el propio comentario. La línea base (`baseline.sql` y `seed.sql`) se limpió una vez con esta regla, como excepción: DbUp registra los scripts por nombre y solo ejecuta la línea base sobre una base vacía |

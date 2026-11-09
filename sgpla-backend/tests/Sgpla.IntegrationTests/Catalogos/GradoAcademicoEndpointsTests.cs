@@ -6,11 +6,11 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests.Catalogos;
 
 /// <summary>Catálogo fijo: solo se lee lo que carga la semilla.</summary>
-public sealed class GradoAcademicoEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class GradoAcademicoEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/catalogos/grados-academicos";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

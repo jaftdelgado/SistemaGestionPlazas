@@ -5,11 +5,11 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
-public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ProgramacionAcademicaEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/oferta-educativa/programaciones-academicas";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -298,8 +298,8 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         var plan = await CrearPlanAsync(escenario.Dgaa, escenario.ProgramaId, 1);
         var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
         var programacion = await InsertarAsync(periodo, plan.Experiencias[0].Id, "NRC001");
-        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
-        var otraSincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(baseDatos.CadenaConexion, periodo);
+        var otraSincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(baseDatos.CadenaConexion, periodo);
         var inicio = new DateOnly(2026, 8, 10);
         var fin = new DateOnly(2026, 12, 4);
 
@@ -344,7 +344,7 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
         var conSesion = await InsertarAsync(periodo, plan.Experiencias[0].Id, "NRC001");
         var sinSesion = await InsertarAsync(periodo, plan.Experiencias[1].Id, "NRC002");
-        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(baseDatos.CadenaConexion, periodo);
         var sesion = await InsertarHorarioAsync(
             conSesion, sincronizacion, 2, 7, 9, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
 
@@ -364,7 +364,7 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         var plan = await CrearPlanAsync(escenario.Dgaa, escenario.ProgramaId, 1);
         var periodo = await EscenarioOferta.CrearPeriodoAsync(superusuario);
         var dadaDeBaja = await InsertarAsync(periodo, plan.Experiencias[0].Id, "NRC001", dadaDeBaja: true);
-        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(baseDatos.CadenaConexion, periodo);
         await InsertarHorarioAsync(dadaDeBaja, sincronizacion, 1, 8, 10, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
 
         using var deLaBaja = await superusuario.GetAsync(Uri($"/{dadaDeBaja}/horarios"), Cancelacion);
@@ -386,7 +386,7 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         var planAjeno = await CrearPlanAsync(ajeno.Dgaa, ajeno.ProgramaId, 1);
         var programacionPropia = await InsertarAsync(periodo, planPropio.Experiencias[0].Id, "NRC001");
         var programacionAjena = await InsertarAsync(periodo, planAjeno.Experiencias[0].Id, "NRC002");
-        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(sqlServer.CadenaConexion, periodo);
+        var sincronizacion = await DatosAcademicosSql.InsertarSincronizacionAsync(baseDatos.CadenaConexion, periodo);
         await InsertarHorarioAsync(programacionPropia, sincronizacion, 1, 8, 10, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
         await InsertarHorarioAsync(programacionAjena, sincronizacion, 1, 8, 10, new DateOnly(2026, 8, 10), new DateOnly(2026, 12, 4));
 
@@ -452,7 +452,7 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
 
     private Task<int> InsertarAsync(int periodoEscolarId, int experienciaEducativaId, string nrc, bool dadaDeBaja = false) =>
         DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(
-            sqlServer.CadenaConexion, periodoEscolarId, experienciaEducativaId, dadaDeBaja, nrc);
+            baseDatos.CadenaConexion, periodoEscolarId, experienciaEducativaId, dadaDeBaja, nrc);
 
     private Task<int> InsertarHorarioAsync(
         int programacionId,
@@ -465,7 +465,7 @@ public sealed class ProgramacionAcademicaEndpointsTests(SqlServerFixture sqlServ
         string? edificio = null,
         string? aula = null) =>
         DatosAcademicosSql.InsertarHorarioAsync(
-            sqlServer.CadenaConexion,
+            baseDatos.CadenaConexion,
             programacionId,
             sincronizacionId,
             dia,

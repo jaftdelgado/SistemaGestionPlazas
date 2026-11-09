@@ -6,11 +6,11 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
-public sealed class PeriodoEscolarEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class PeriodoEscolarEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/oferta-educativa/periodos-escolares";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -175,7 +175,7 @@ public sealed class PeriodoEscolarEndpointsTests(SqlServerFixture sqlServer) : I
         using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var (periodoId, _) = await CrearAsync(cliente);
         var entidadId = await CrearEntidadAsync(cliente, await CrearAreaAsync(cliente));
-        await DatosAcademicosSql.InsertarProgramacionAsync(sqlServer.CadenaConexion, periodoId, entidadId);
+        await DatosAcademicosSql.InsertarProgramacionAsync(baseDatos.CadenaConexion, periodoId, entidadId);
 
         using var respuesta = await cliente.PutAsJsonAsync(
             Uri($"/{periodoId}"), new { fechaInicio = "2026-08-17", fechaFin = "2027-02-05" }, Cancelacion);
@@ -250,7 +250,7 @@ public sealed class PeriodoEscolarEndpointsTests(SqlServerFixture sqlServer) : I
         var (periodoId, _) = await CrearAsync(cliente);
         var entidadId = await CrearEntidadAsync(cliente, await CrearAreaAsync(cliente));
         await DatosAcademicosSql.InsertarProgramacionAsync(
-            sqlServer.CadenaConexion, periodoId, entidadId, programacionDadaDeBaja);
+            baseDatos.CadenaConexion, periodoId, entidadId, programacionDadaDeBaja);
 
         using var respuesta = await cliente.DeleteAsync(Uri($"/{periodoId}"), Cancelacion);
         var problema = await Leer(respuesta);

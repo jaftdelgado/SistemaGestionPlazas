@@ -8,12 +8,12 @@ namespace Sgpla.IntegrationTests.Institucional;
 
 /// <summary>
 /// <see cref="IAmbitosInstitucionales"/> es un contrato público, así que se resuelve directamente del contenedor
-/// del host (sin pasar por HTTP) y se ejerce contra SQL Server real, con las áreas y entidades que crean las
+/// del host (sin pasar por HTTP) y se ejerce contra PostgreSQL real, con las áreas y entidades que crean las
 /// pruebas de sus propios endpoints.
 /// </summary>
-public sealed class AmbitosInstitucionalesTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class AmbitosInstitucionalesTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

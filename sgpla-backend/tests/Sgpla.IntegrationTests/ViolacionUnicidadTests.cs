@@ -2,11 +2,11 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Sgpla.BuildingBlocks.Infrastructure.Http;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.IntegrationTests.Infraestructura;
@@ -14,14 +14,14 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests;
 
 /// <summary>
-/// La última defensa ante dos altas simultáneas: una violación de unicidad de SQL Server se responde como 409 y
+/// La última defensa ante dos altas simultáneas: una violación de unicidad de PostgreSQL (23505) se responde como 409 y
 /// solo se registra el nombre de la restricción, nunca el valor duplicado.
 /// La carrera real no es reproducible por HTTP, así que la prueba provoca la violación directamente en la base
 /// y se la entrega al manejador registrado en el host.
 /// </summary>
-public sealed class ViolacionUnicidadTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ViolacionUnicidadTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task ViolacionDeUnicidad_Responde409ConCodigoYRegistraSoloLaRestriccion()
@@ -66,11 +66,14 @@ public sealed class ViolacionUnicidadTests(SqlServerFixture sqlServer) : IAsyncD
         await using var alcance = _api.Services.CreateAsyncScope();
         var contexto = alcance.ServiceProvider.GetRequiredService<SgplaDbContext>();
 
-        var excepcion = await Should.ThrowAsync<SqlException>(() => contexto.Database.ExecuteSqlAsync(
+        var excepcion = await Should.ThrowAsync<PostgresException>(() => contexto.Database.ExecuteSqlAsync(
             $"INSERT INTO academico.grado_academico (nombre) VALUES ({nombre}), ({nombre})",
             TestContext.Current.CancellationToken));
 
-        excepcion.Message.ShouldContain(nombre);
+        excepcion.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
+        excepcion.ConstraintName.ShouldBe("uq_grado_academico__nombre");
+        excepcion.MessageText.ShouldNotContain(nombre);
+        (excepcion.Detail ?? string.Empty).ShouldNotContain(nombre);
         _api.Logs.Entradas.ShouldNotContain(entrada => entrada.Contiene(nombre), "EF Core registró el valor duplicado.");
     }
 
@@ -87,17 +90,17 @@ public sealed class ViolacionUnicidadTests(SqlServerFixture sqlServer) : IAsyncD
 
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
-    private async Task<SqlException> ProvocarViolacionAsync(string nombre)
+    private async Task<PostgresException> ProvocarViolacionAsync(string nombre)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             "INSERT INTO academico.grado_academico (nombre) VALUES (@nombre), (@nombre)", conexion);
         comando.Parameters.AddWithValue("@nombre", nombre);
 
-        var excepcion = await Should.ThrowAsync<SqlException>(() => comando.ExecuteNonQueryAsync(TestContext.Current.CancellationToken));
-        excepcion.Number.ShouldBe(2627);
-        excepcion.Message.ShouldContain(nombre);
+        var excepcion = await Should.ThrowAsync<PostgresException>(() => comando.ExecuteNonQueryAsync(TestContext.Current.CancellationToken));
+        excepcion.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
+        excepcion.ConstraintName.ShouldBe("uq_grado_academico__nombre");
 
         return excepcion;
     }

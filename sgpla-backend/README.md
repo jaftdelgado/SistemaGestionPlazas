@@ -1,6 +1,6 @@
 # sgpla-backend
 
-API REST de SGPLa: .NET 10, ASP.NET Core Minimal APIs, EF Core 10 (solo como ORM), SQL Server 2022 y DbUp para las migraciones.
+API REST de SGPLa: .NET 10, ASP.NET Core Minimal APIs, EF Core 10 (solo como ORM), PostgreSQL 18 y DbUp para las migraciones.
 
 El diseño completo está en `../PLAN_INICIAL.md` y el modelo de datos en `../DATABASE.md`.
 
@@ -20,7 +20,7 @@ src/
 tests/
   Sgpla.ArchitectureTests/     reglas de capas y grafo de dependencias entre módulos
   Sgpla.UnitTests/             reglas de dominio (sin pruebas todavía)
-  Sgpla.IntegrationTests/      SQL Server con Testcontainers + WebApplicationFactory
+  Sgpla.IntegrationTests/      PostgreSQL con Testcontainers + WebApplicationFactory
 ```
 
 Hay 10 módulos: Institucional, Catalogos, Usuarios, OfertaEducativa, Docentes, Integracion, SolicitudesApertura, Publicacion, Aspirantes y ConsejoTecnico. Las dependencias permitidas entre ellos se declaran en `tests/Sgpla.ArchitectureTests/Modulos.cs`. Las pruebas de arquitectura también verifican las capas, la ubicación de los tipos según su sufijo, la visibilidad, que un módulo solo use el contrato público (`Application.Contracts`) de otro y que los logs no reciban datos personales.
@@ -61,8 +61,8 @@ Se levantan tres servicios:
 
 | Servicio | Qué hace |
 |---|---|
-| `sqlserver` | SQL Server 2022, con los datos en el volumen `sgpla_sqlserver-data`. |
-| `migraciones` | Aplica los scripts de DbUp cuando SQL Server está listo y termina. Si no hay scripts nuevos, no hace nada. |
+| `postgres` | PostgreSQL 18, con los datos en el volumen `sgpla_postgres-data`. |
+| `migraciones` | Aplica los scripts de DbUp cuando PostgreSQL está listo y termina. Si no hay scripts nuevos, no hace nada. |
 | `api` | Arranca solo si las migraciones terminaron bien. |
 
 ### Solicitudes de apertura y archivos
@@ -73,7 +73,7 @@ Se levantan tres servicios:
 | `SGPLA_PERIODO_SIGUIENTE` | Clave del periodo siguiente configurado para las solicitudes de apertura; `202651` por omisión. |
 | `archivos-data` | Volumen del servicio `api` donde se conservan los oficios PDF. |
 
-La especificación del módulo ajustó el baseline para quitar la vinculación con programación y agregar `rowversion`; una base local anterior a este cambio se recrea con `docker compose down -v`.
+El baseline pasó de SQL Server a PostgreSQL y la concurrencia de las solicitudes de apertura usa `xmin`; una base local anterior a este cambio se recrea con `docker compose down -v`.
 
 Con la API en marcha:
 - **Documentación interactiva:** `http://localhost:8180/scalar/v1`
@@ -82,6 +82,7 @@ Con la API en marcha:
 Comandos útiles:
 - `docker compose logs -f api` para ver los logs de la API.
 - `docker compose down` para detener todo; `docker compose down -v` borra también la base.
+- `docker compose exec postgres psql -U sgpla -d sgpla-bd` abre una consola SQL en la base del compose (por ejemplo, `-c "\dn"` lista los esquemas).
 
 Las imágenes se construyen con `src/Sgpla.Api/Dockerfile` y `src/Sgpla.Database/Dockerfile`; en ambos casos el contexto es `sgpla-backend/`.
 
@@ -110,12 +111,12 @@ Imprime el id y una contraseña temporal una sola vez; cámbiala al iniciar sesi
 Todos los comandos se ejecutan desde `sgpla-backend/`, salvo el de `docker compose`.
 
 ```bash
-# 1. Solo SQL Server (desde la raíz del monorepo)
-docker compose up -d sqlserver
+# 1. Solo PostgreSQL (desde la raíz del monorepo)
+docker compose up -d postgres
 
 # 2. Migraciones (crea la base sgpla-bd si no existe)
 dotnet run --project src/Sgpla.Database -- --ensure-database \
-  --connection "Server=localhost,1433;Database=sgpla-bd;User Id=sa;Password=Sgpla_Dev_2026!;TrustServerCertificate=True"
+  --connection "Host=localhost;Port=5432;Database=sgpla-bd;Username=sgpla;Password=Sgpla_Dev_2026!"
 
 # 3. API
 dotnet run --project src/Sgpla.Api
@@ -141,7 +142,7 @@ Las pruebas usan Microsoft.Testing.Platform, habilitado en `global.json`. Con el
 
 ## Migraciones
 
-La base se construye en dos pasos, ambos registrados por DbUp en `dbo.schema_versions`:
+La base se construye en dos pasos, ambos registrados por DbUp en `public.schema_versions`:
 
 1. **Baseline** (`src/Sgpla.Database/Baseline/`): `baseline.sql` crea los esquemas y todas las tablas de `DATABASE.md`, y `seed.sql` carga los datos iniciales de los catálogos. Ambos se ejecutan en una sola transacción, solo sobre una base vacía, y quedan registrados como `baseline` y `baseline-seed`. Si la base ya tiene tablas pero no esos registros, la migración falla sin tocarla.
 2. **Migraciones** (`src/Sgpla.Database/Scripts/####__descripcion.sql`): cada cambio posterior, incluidos los datos de catálogos, es un script nuevo que empieza en `0001`. Se aplican en orden de nombre.

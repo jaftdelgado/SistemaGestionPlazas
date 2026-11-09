@@ -4,9 +4,9 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.BuildingBlocks.Infrastructure.Http;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
@@ -21,9 +21,9 @@ namespace Sgpla.IntegrationTests;
 /// no pisa el cambio. Las pruebas de integración no ven los tipos internos de los módulos, así que el choque se
 /// provoca con un <see cref="IUnitOfWork"/> de prueba que actualiza la fila por SQL justo antes de guardar.
 /// </summary>
-public sealed class ConcurrenciaTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ConcurrenciaTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task DbUpdateConcurrencyException_Responde409ConCodigo()
@@ -61,7 +61,7 @@ public sealed class ConcurrenciaTests(SqlServerFixture sqlServer) : IAsyncDispos
         var (solicitudId, _) = await escenario.CrearSolicitudAsync();
         using var host = _api.WithWebHostBuilder(builder => builder.ConfigureTestServices(servicios =>
             servicios.AddScoped<IUnitOfWork>(proveedor => new UnitOfWorkConCambioConcurrente(
-                proveedor.GetRequiredService<SgplaDbContext>(), sqlServer.CadenaConexion, solicitudId))));
+                proveedor.GetRequiredService<SgplaDbContext>(), baseDatos.CadenaConexion, solicitudId))));
         using var cliente = host.CreateClient();
         cliente.DefaultRequestHeaders.Authorization = escenario.Oferta.Dgaa.DefaultRequestHeaders.Authorization;
 
@@ -85,13 +85,13 @@ public sealed class ConcurrenciaTests(SqlServerFixture sqlServer) : IAsyncDispos
     private ConcurrenciaExceptionHandler ObtenerManejador() =>
         _api.Services.GetServices<IExceptionHandler>().OfType<ConcurrenciaExceptionHandler>().Single();
 
-    /// <summary>Simula a otro usuario: renueva el <c>rowversion</c> de la solicitud justo antes de guardar.</summary>
+    /// <summary>Simula a otro usuario: renueva el <c>xmin</c> de la solicitud justo antes de guardar.</summary>
     private sealed class UnitOfWorkConCambioConcurrente(SgplaDbContext contexto, string cadenaConexion, int solicitudId)
         : IUnitOfWork
     {
         public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
-            await using (var conexion = new SqlConnection(cadenaConexion))
+            await using (var conexion = new NpgsqlConnection(cadenaConexion))
             {
                 await conexion.OpenAsync(cancellationToken);
                 await using var comando = conexion.CreateCommand();

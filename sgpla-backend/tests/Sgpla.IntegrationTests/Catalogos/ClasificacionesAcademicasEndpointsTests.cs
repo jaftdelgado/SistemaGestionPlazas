@@ -9,9 +9,9 @@ namespace Sgpla.IntegrationTests.Catalogos;
 /// Sistemas educativos, niveles y áreas de formación: catálogos fijos de solo
 /// lectura con los valores de la semilla.
 /// </summary>
-public sealed class ClasificacionesAcademicasEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ClasificacionesAcademicasEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

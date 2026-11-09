@@ -7,7 +7,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
-public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed partial class PlanEstudiosEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/oferta-educativa/planes-estudio";
 
@@ -18,7 +18,7 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         "HT_EE", "HP_EE", "CREDITOS_EE", "CODE_AREA_F", "DESC_AREA_F", "PERFIL_DOC",
     ];
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -350,9 +350,9 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         var experiencias = await ExperienciasDelPlanAsync(escenario.Dgaa, planId);
         var conProgramacionActiva = experiencias.Single(e => e.Materia == "FBGR" && e.Curso == "80001").Id;
         var conProgramacionDadaDeBaja = experiencias.Single(e => e.Materia == "FBGR" && e.Curso == "80002").Id;
-        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(sqlServer.CadenaConexion, periodoId, conProgramacionActiva);
+        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(baseDatos.CadenaConexion, periodoId, conProgramacionActiva);
         await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(
-            sqlServer.CadenaConexion, periodoId, conProgramacionDadaDeBaja, dadaDeBaja: true);
+            baseDatos.CadenaConexion, periodoId, conProgramacionDadaDeBaja, dadaDeBaja: true);
 
         using var respuesta = await escenario.Dgaa.GetAsync(Uri($"/{planId}/experiencias-educativas"), Cancelacion);
         var lista = (await EscenarioOferta.Leer(respuesta)).EnumerateArray().ToList();
@@ -528,7 +528,7 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         var planId = await CrearPlanSimpleAsync(escenario);
         var periodoId = await EscenarioOferta.CrearPeriodoAsync(superusuario);
         var experienciaId = (await ExperienciasDelPlanAsync(escenario.Dgaa, planId)).Single().Id;
-        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(sqlServer.CadenaConexion, periodoId, experienciaId);
+        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(baseDatos.CadenaConexion, periodoId, experienciaId);
 
         using var respuesta = await escenario.Dgaa.DeleteAsync(Uri($"/{planId}"), Cancelacion);
         var problema = await EscenarioOferta.Leer(respuesta);
@@ -549,7 +549,7 @@ public sealed partial class PlanEstudiosEndpointsTests(SqlServerFixture sqlServe
         var periodoId = await EscenarioOferta.CrearPeriodoAsync(superusuario);
         var experienciaId = (await ExperienciasDelPlanAsync(escenario.Dgaa, planId)).Single().Id;
         await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(
-            sqlServer.CadenaConexion, periodoId, experienciaId, dadaDeBaja: true);
+            baseDatos.CadenaConexion, periodoId, experienciaId, dadaDeBaja: true);
 
         using var respuesta = await escenario.Dgaa.DeleteAsync(Uri($"/{planId}"), Cancelacion);
 

@@ -122,82 +122,82 @@ erDiagram
     ACADEMICO_REGION {
         int id PK
         int clave UK
-        nvarchar nombre
+        varchar nombre
     }
 
     ACADEMICO_CAMPUS {
         int id PK
         varchar clave UK
-        nvarchar nombre
+        varchar nombre
         int region_id FK
     }
 
     ACADEMICO_AREA_ACADEMICA {
         int id PK
         int clave UK
-        nvarchar nombre
+        varchar nombre
         char telefono
         varchar extension
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_MUNICIPIO {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     ACADEMICO_ENTIDAD_ACADEMICA {
         int id PK
         varchar clave UK
-        nvarchar nombre
-        nvarchar calle
-        nvarchar numero_exterior
-        nvarchar colonia
+        varchar nombre
+        varchar calle
+        varchar numero_exterior
+        varchar colonia
         char codigo_postal
         char telefono
         varchar extension
         int campus_id FK
         int area_academica_id FK
         int municipio_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_SISTEMA_EDUCATIVO {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     ACADEMICO_NIVEL_FORMACION {
         int id PK
         varchar clave UK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     ACADEMICO_PROGRAMA_EDUCATIVO {
         int id PK
-        nvarchar nombre
+        varchar nombre
         int entidad_academica_id FK
         int sistema_educativo_id FK
         int nivel_formacion_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_PLAN_ESTUDIOS {
         int id PK
         varchar codigo
         int programa_educativo_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_AREA_FORMACION {
         int id PK
         varchar clave UK
-        nvarchar nombre
+        varchar nombre
     }
 
     ACADEMICO_EXPERIENCIA_EDUCATIVA {
         int id PK
-        nvarchar nombre
+        varchar nombre
         varchar materia_ee
         varchar curso_ee
         int horas_teoricas
@@ -205,20 +205,20 @@ erDiagram
         int creditos
         int cupo_minimo
         int cupo_maximo
-        nvarchar perfil_docente
+        varchar perfil_docente
         int area_formacion_id FK
         int plan_estudios_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_ARCHIVO_SOLICITUD_APERTURA {
         int id PK
-        nvarchar nombre
+        varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
-        nvarchar clave_almacenamiento UK
-        datetime2 cargado_en
+        bytea checksum_sha256
+        varchar clave_almacenamiento UK
+        timestamptz cargado_en
         int cargado_por_usuario_id FK
     }
 
@@ -228,20 +228,19 @@ erDiagram
         int periodo_escolar_id FK
         varchar seccion
         int cantidad_estudiantes
-        nvarchar justificacion
+        varchar justificacion
         int oficio_respaldo_id FK, UK
         varchar estado
-        datetime2 creada_en
+        timestamptz creada_en
         int creada_por_usuario_id FK
-        datetime2 actualizada_en "nullable"
+        timestamptz actualizada_en "nullable"
         int actualizada_por_usuario_id FK "nullable"
-        datetime2 resuelta_en "nullable"
+        timestamptz resuelta_en "nullable"
         int resuelta_por_usuario_id FK "nullable"
-        nvarchar comentarios_resolucion "nullable"
-        datetime2 cancelada_en "nullable"
+        varchar comentarios_resolucion "nullable"
+        timestamptz cancelada_en "nullable"
         int cancelada_por_usuario_id FK "nullable"
-        nvarchar motivo_cancelacion "nullable"
-        rowversion version
+        varchar motivo_cancelacion "nullable"
     }
 
     ACADEMICO_PERIODO_ESCOLAR {
@@ -249,7 +248,7 @@ erDiagram
         char clave UK
         date fecha_inicio
         date fecha_fin
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_PROGRAMACION_ACADEMICA {
@@ -257,47 +256,47 @@ erDiagram
         varchar nrc
         int periodo_escolar_id FK
         int experiencia_educativa_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
     }
 
     INTEGRACION_SINCRONIZACION_PLANEA {
         int id PK
         int periodo_escolar_id FK
         varchar estado
-        datetime2 iniciada_en
-        datetime2 finalizada_en
+        timestamptz iniciada_en
+        timestamptz finalizada_en
         int registros_recibidos
         int registros_ignorados
         int sesiones_generadas
         int duplicados_descartados
         int advertencias
-        nvarchar mensaje_error
+        varchar mensaje_error
     }
 
     ACADEMICO_HORARIO_PROGRAMACION {
         int id PK
         int programacion_academica_id FK
         int sincronizacion_planea_id FK
-        tinyint dia_semana
+        smallint dia_semana
         time hora_inicio
         time hora_fin
         date fecha_inicio
         date fecha_fin
-        nvarchar edificio
-        nvarchar aula
+        varchar edificio
+        varchar aula
     }
 
     USUARIOS_ROL {
-        tinyint id PK
-        nvarchar nombre UK
+        smallint id PK
+        varchar nombre UK
     }
 
     USUARIOS_USUARIO {
         int id PK
         varchar correo
-        nvarchar nombre
-        tinyint rol_id FK
-        datetime2 fecha_eliminacion
+        varchar nombre
+        smallint rol_id FK
+        timestamptz fecha_eliminacion
     }
 
     USUARIOS_USUARIO_DGAA {
@@ -313,23 +312,23 @@ erDiagram
     USUARIOS_CREDENCIAL_SUPERUSUARIO {
         int usuario_id PK, FK
         varchar contrasena
-        datetime2 fecha_actualizacion
-        datetime2 fecha_eliminacion
+        timestamptz fecha_actualizacion
+        timestamptz fecha_eliminacion
     }
 
     ACADEMICO_DOCENTE {
         int id PK
-        nvarchar nombre
+        varchar nombre
         varchar num_personal UK
-        nvarchar puesto
-        nvarchar descripcion_perfil
+        varchar puesto
+        varchar descripcion_perfil
     }
 
     ACADEMICO_FORMACION_DOCENTE {
         int id PK
         int docente_id FK
         int grado_academico_id FK
-        nvarchar descripcion
+        varchar descripcion
     }
 
     ACADEMICO_DOCUMENTO_DOCENTE {
@@ -341,14 +340,14 @@ erDiagram
     ACADEMICO_VERSION_DOCUMENTO_DOCENTE {
         int id PK
         int documento_docente_id FK
-        nvarchar nombre
+        varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
-        nvarchar clave_almacenamiento UK
+        bytea checksum_sha256
+        varchar clave_almacenamiento UK
         int numero_version
-        bit es_vigente
-        datetime2 cargado_en
+        boolean es_vigente
+        timestamptz cargado_en
         int cargado_por_usuario_id FK
     }
 
@@ -365,47 +364,47 @@ erDiagram
 
     ACADEMICO_GRADO_ACADEMICO {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     PLAZAS_TRATAMIENTO_ACADEMICO {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
         int grado_academico_id FK
     }
 
     PLAZAS_ARTICULO {
         int id PK
         varchar numero UK
-        nvarchar descripcion
+        varchar descripcion
     }
 
     PLAZAS_MODALIDAD_RECEPCION {
         int id PK
-        nvarchar nombre UK
-        bit requiere_lugar
+        varchar nombre UK
+        boolean requiere_lugar
     }
 
     PLAZAS_TIPO_PLAZA {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     PLAZAS_TIPO_CONTRATACION {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     ACADEMICO_TIPO_DOCUMENTO_EXPEDIENTE {
         int id PK
-        nvarchar nombre UK
+        varchar nombre UK
     }
 
     PLAZAS_INTEGRANTE_CONSEJO_TECNICO {
         int id PK
         int entidad_academica_id FK
-        nvarchar nombre
-        nvarchar cargo
+        varchar nombre
+        varchar cargo
         int tratamiento_academico_id FK
         date fecha_inicio
         date fecha_fin
@@ -417,10 +416,10 @@ erDiagram
         varchar clave_plaza
         int tipo_plaza_id FK
         int tipo_contratacion_id FK
-        nvarchar perfil_solicitado
-        nvarchar justificacion
+        varchar perfil_solicitado
+        varchar justificacion
         varchar estado
-        datetime2 cerrada_en
+        timestamptz cerrada_en
     }
 
     PLAZAS_AVISO {
@@ -431,20 +430,20 @@ erDiagram
         int articulo_id FK
         varchar tipo_comunicado
         int modalidad_recepcion_id FK
-        nvarchar requisitos
-        nvarchar lugar_recepcion
+        varchar requisitos
+        varchar lugar_recepcion
         varchar correo_contacto
-        nvarchar nombre_titular
-        datetime2 creado_en
+        varchar nombre_titular
+        timestamptz creado_en
         date fecha_publicacion
         date fecha_consejo_tecnico
         date fecha_vacantes
         varchar url_publicacion
         varchar estado
-        datetime2 cancelado_en
+        timestamptz cancelado_en
         int cancelado_por_usuario_id FK
-        nvarchar motivo_cancelacion
-        datetime2 archivado_en
+        varchar motivo_cancelacion
+        timestamptz archivado_en
         int archivado_por_usuario_id FK
     }
 
@@ -460,8 +459,8 @@ erDiagram
         int id PK
         int aviso_id FK
         int oferta_id FK
-        datetime2 incorporado_en
-        datetime2 cerrado_en
+        timestamptz incorporado_en
+        timestamptz cerrado_en
         varchar causa_cierre
     }
 
@@ -469,14 +468,14 @@ erDiagram
         int id PK
         int aviso_id FK
         varchar tipo
-        nvarchar nombre
+        varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
-        nvarchar clave_almacenamiento UK
+        bytea checksum_sha256
+        varchar clave_almacenamiento UK
         int numero_version
-        bit es_vigente
-        datetime2 cargado_en
+        boolean es_vigente
+        timestamptz cargado_en
         int cargado_por_usuario_id FK
     }
 
@@ -486,11 +485,11 @@ erDiagram
         int numero_revision
         int documento_original_id FK
         int enviado_por_usuario_id FK
-        datetime2 enviado_en
+        timestamptz enviado_en
         int resuelto_por_usuario_id FK
-        datetime2 resuelto_en
+        timestamptz resuelto_en
         varchar resultado
-        nvarchar comentarios
+        varchar comentarios
     }
 
     PLAZAS_ASPIRANTE {
@@ -501,12 +500,12 @@ erDiagram
         int id PK
         int aspirante_id FK
         int numero_version
-        nvarchar nombre
+        varchar nombre
         varchar correo
-        nvarchar puesto_actual
-        nvarchar descripcion_perfil
-        bit es_vigente
-        datetime2 creado_en
+        varchar puesto_actual
+        varchar descripcion_perfil
+        boolean es_vigente
+        timestamptz creado_en
         int creado_por_usuario_id FK
     }
 
@@ -514,7 +513,7 @@ erDiagram
         int id PK
         int perfil_aspirante_id FK
         int grado_academico_id FK
-        nvarchar descripcion
+        varchar descripcion
     }
 
     PLAZAS_DOCUMENTO_ASPIRANTE {
@@ -526,14 +525,14 @@ erDiagram
     PLAZAS_VERSION_DOCUMENTO_ASPIRANTE {
         int id PK
         int documento_aspirante_id FK
-        nvarchar nombre
+        varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
-        nvarchar clave_almacenamiento UK
+        bytea checksum_sha256
+        varchar clave_almacenamiento UK
         int numero_version
-        bit es_vigente
-        datetime2 cargado_en
+        boolean es_vigente
+        timestamptz cargado_en
         int cargado_por_usuario_id FK
     }
 
@@ -542,16 +541,16 @@ erDiagram
         int aviso_oferta_id FK
         int aspirante_id FK
         int perfil_aspirante_id FK
-        datetime2 registrada_en
+        timestamptz registrada_en
         varchar estado
-        nvarchar observaciones
-        datetime2 admitida_en
+        varchar observaciones
+        timestamptz admitida_en
         int admitida_por_usuario_id FK
-        datetime2 no_admitida_en
+        timestamptz no_admitida_en
         int no_admitida_por_usuario_id FK
-        nvarchar motivo_no_admision
-        datetime2 retirada_en
-        nvarchar motivo_retiro
+        varchar motivo_no_admision
+        timestamptz retirada_en
+        varchar motivo_retiro
     }
 
     PLAZAS_SOLICITUD_DOCUMENTO {
@@ -565,14 +564,14 @@ erDiagram
         int entidad_academica_id FK
         varchar folio
         date fecha
-        nvarchar lugar
+        varchar lugar
         time hora_inicio
         time hora_fin
-        nvarchar asuntos_generales
+        varchar asuntos_generales
         varchar estado
-        datetime2 archivado_en
+        timestamptz archivado_en
         int archivado_por_usuario_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
         int eliminado_por_usuario_id FK
     }
 
@@ -581,10 +580,10 @@ erDiagram
         int acta_consejo_tecnico_id FK
         int aviso_oferta_id FK
         varchar resultado
-        nvarchar observaciones
+        varchar observaciones
         int solicitud_designada_id FK
         int docente_asignado_id FK
-        datetime2 fecha_eliminacion
+        timestamptz fecha_eliminacion
         int eliminado_por_usuario_id FK
     }
 
@@ -598,25 +597,25 @@ erDiagram
         int id PK
         int acta_consejo_tecnico_id FK
         int integrante_consejo_tecnico_id FK
-        nvarchar nombre
-        nvarchar tratamiento
-        nvarchar cargo
-        bit asistio
-        bit firmo
+        varchar nombre
+        varchar tratamiento
+        varchar cargo
+        boolean asistio
+        boolean firmo
     }
 
     PLAZAS_DOCUMENTO_ACTA {
         int id PK
         int acta_consejo_tecnico_id FK
         varchar tipo
-        nvarchar nombre
+        varchar nombre
         varchar mime
         bigint tamano
-        binary checksum_sha256
-        nvarchar clave_almacenamiento UK
+        bytea checksum_sha256
+        varchar clave_almacenamiento UK
         int numero_version
-        bit es_vigente
-        datetime2 cargado_en
+        boolean es_vigente
+        timestamptz cargado_en
         int cargado_por_usuario_id FK
     }
 
@@ -626,17 +625,17 @@ erDiagram
         int numero_revision
         int documento_original_id FK
         int enviado_por_usuario_id FK
-        datetime2 enviado_en
+        timestamptz enviado_en
         int resuelto_por_usuario_id FK
-        datetime2 resuelto_en
+        timestamptz resuelto_en
         varchar resultado
-        nvarchar comentarios
+        varchar comentarios
     }
 ```
 
 ## Correspondencia de prefijos
 
-| Prefijo Mermaid | Esquema SQL Server |
+| Prefijo Mermaid | Esquema PostgreSQL |
 |---|---|
 | `ACADEMICO_` | `academico` |
 | `INTEGRACION_` | `integracion` |

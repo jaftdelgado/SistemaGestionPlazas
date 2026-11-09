@@ -6,11 +6,11 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests.Institucional;
 
 /// <summary>Campus de solo lectura: los valores los carga la semilla.</summary>
-public sealed class CampusEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class CampusEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/institucional/campus";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

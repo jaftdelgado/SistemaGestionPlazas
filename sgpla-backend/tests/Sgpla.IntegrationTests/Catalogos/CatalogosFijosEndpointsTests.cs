@@ -9,9 +9,9 @@ namespace Sgpla.IntegrationTests.Catalogos;
 /// Catálogos fijos que aún no tienen valores en la semilla: solo se leen, y hoy el listado está vacío.
 /// Cuando la semilla los cargue, cada uno pasa a tener su prueba de listado exacto, como grados académicos.
 /// </summary>
-public sealed class CatalogosFijosEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class CatalogosFijosEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

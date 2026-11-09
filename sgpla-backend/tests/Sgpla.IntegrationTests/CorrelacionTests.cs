@@ -10,9 +10,9 @@ namespace Sgpla.IntegrationTests;
 /// El traceId de una respuesta de error permite encontrar los logs de esa misma petición.
 /// El error lo produce <c>ToProblem</c>, el helper que usan todos los endpoints, así que la prueba cubre a todos los módulos.
 /// </summary>
-public sealed partial class CorrelacionTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed partial class CorrelacionTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task RespuestaDeError_ConRecursoInexistente_TraceIdApareceEnLosLogsDeLaPeticion()

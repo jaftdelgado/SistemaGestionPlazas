@@ -9,9 +9,9 @@ using Sgpla.SharedKernel;
 namespace Sgpla.IntegrationTests.Usuarios;
 
 /// <summary>Registro de las políticas que declara <see cref="Politicas"/>: cada una exige su rol.</summary>
-public sealed class PoliticasTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class PoliticasTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Theory]
     [InlineData(Politicas.Superusuario, Rol.Superusuario)]

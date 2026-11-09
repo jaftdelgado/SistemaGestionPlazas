@@ -1,19 +1,18 @@
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Sgpla.BuildingBlocks.Infrastructure.Http;
 
 /// <summary>
-/// Traduce a 409 una violación de unicidad de SQL Server (2601/2627). Es la última defensa cuando dos peticiones
-/// simultáneas pasan la comprobación previa del handler. Solo registra el nombre de la restricción, porque el
-/// mensaje de SQL Server incluye el valor duplicado.
+/// Traduce a 409 una violación de unicidad de PostgreSQL (SQLSTATE 23505). Es la última defensa cuando dos peticiones
+/// simultáneas pasan la comprobación previa del handler. Solo registra el nombre de la restricción: el detalle y el
+/// mensaje de PostgreSQL incluyen el valor duplicado, y la cadena de conexión no debe activar Include Error Detail.
 /// </summary>
-public sealed partial class ViolacionUnicidadExceptionHandler(
+public sealed class ViolacionUnicidadExceptionHandler(
     IProblemDetailsService problemDetails,
     ILogger<ViolacionUnicidadExceptionHandler> logger) : IExceptionHandler
 {
@@ -23,13 +22,12 @@ public sealed partial class ViolacionUnicidadExceptionHandler(
     {
         ArgumentNullException.ThrowIfNull(httpContext);
 
-        if (exception is not DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } sql })
+        if (exception is not DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } pg })
         {
             return false;
         }
 
-        var restriccion = NombreRestriccion().Match(sql.Message);
-        logger.ViolacionUnicidad(restriccion.Success ? restriccion.Groups["nombre"].Value : "desconocida");
+        logger.ViolacionUnicidad(pg.ConstraintName ?? "desconocida");
 
         httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
         return await problemDetails.TryWriteAsync(new ProblemDetailsContext
@@ -45,10 +43,6 @@ public sealed partial class ViolacionUnicidadExceptionHandler(
             },
         });
     }
-
-    // 2627: "Violation of UNIQUE KEY constraint 'uq_...'"; 2601: "... with unique index 'ux_...'".
-    [GeneratedRegex("(?:constraint|index) '(?<nombre>[^']+)'")]
-    private static partial Regex NombreRestriccion();
 }
 
 internal static partial class ViolacionUnicidadLog

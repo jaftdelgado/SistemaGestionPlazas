@@ -1,4 +1,4 @@
-# Plan: Esqueleto de SGPLa (API REST .NET + SQL Server)
+# Plan: Esqueleto de SGPLa (API REST .NET + PostgreSQL)
 
 ## Contexto
 
@@ -10,7 +10,7 @@ Decisiones tomadas con el usuario:
 - **Migraciones**: DbUp con scripts `.sql` escritos a mano. EF Core se usa solo como ORM; no hay EF Migrations.
 - **CI**: GitHub Actions.
 - **Endpoints**: Minimal APIs con `MapGroup` por módulo.
-- **Runtime**: .NET 10 (LTS vigente), SQL Server 2022.
+- **Runtime**: .NET 10 (LTS vigente), PostgreSQL 18.
 
 ## Fase 1 (esta ejecución): API REST en estado inicial, sin lógica
 
@@ -23,7 +23,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `sgpla-backend/global.json`: SDK `10.0.401` con `rollForward: latestPatch` y `allowPrerelease: false`: solo acepta parches de la banda 10.0.4xx y nunca una preview, para que local, CI y Docker compilen con el mismo SDK.
   - `Directory.Build.props`, `Directory.Packages.props` y `Sgpla.slnx`.
 - **`src/Sgpla.Api`:**
-  - `Program.cs` mínimo con OpenAPI y Scalar, ProblemDetails, health check `/health` (incluye SQL Server), CORS por configuración y el registro de módulos.
+  - `Program.cs` mínimo con OpenAPI y Scalar, ProblemDetails, health check `/health` (incluye PostgreSQL), CORS por configuración y el registro de módulos.
   - `appsettings*.json` con la cadena de conexión local.
   - Sin autenticación todavía.
 - **`src/Sgpla.Database`:** runner de DbUp (`DatabaseMigrator` + CLI) con un baseline, `Baseline/baseline.sql` (los cuatro esquemas y las 54 tablas de `DATABASE.md`) y `Baseline/seed.sql` (datos iniciales de los catálogos). `Scripts/` queda vacía para las migraciones.
@@ -40,7 +40,7 @@ Alcance acotado a pedido del usuario. Se crea solo `sgpla-backend/` y nada de l�
   - `Sgpla.UnitTests`: vacío.
 - **En la raíz:** `.gitignore`, `.editorconfig`, `.gitattributes`, `docker-compose.yml`, `.github/workflows/backend-ci.yml`, `README.md` y `sgpla-web/README.md`.
 
-**Qué se pospone:** el slice `Region`, JWT, LDAP, Argon2, PLANEA, el almacenamiento de archivos y las migraciones de datos de catálogos. También la revisión de las etiquetas flotantes de imágenes Docker (`mssql/server:2022-latest`, `dotnet/aspnet:10.0` y `dotnet/runtime:10.0`), que se hará al preparar el primer despliegue real. Lo descrito en las secciones de abajo sigue siendo el diseño objetivo.
+**Qué se pospone:** el slice `Region`, JWT, LDAP, Argon2, PLANEA, el almacenamiento de archivos y las migraciones de datos de catálogos. También la revisión de las etiquetas flotantes de imágenes Docker (`dotnet/aspnet:10.0` y `dotnet/runtime:10.0`), que se hará al preparar el primer despliegue real. Lo descrito en las secciones de abajo sigue siendo el diseño objetivo.
 
 **Supuestos por defecto** (el usuario puede cambiarlos):
 - Identificadores de dominio en español sin acentos; términos técnicos en inglés.
@@ -106,7 +106,7 @@ sgpla/
   .gitignore                     común (.NET: bin/ obj/ *.user; Node: node_modules/ dist/; .env*)
   .editorconfig                  común (C# y TS/JS)
   .gitattributes                 finales de línea normalizados (LF en .sh/.yml, CRLF indiferente)
-  docker-compose.yml             infraestructura local compartida: SQL Server 2022
+  docker-compose.yml             infraestructura local compartida: PostgreSQL 18
   .github/workflows/
     backend-ci.yml               se dispara solo con cambios en sgpla-backend/** o en el propio workflow
   sgpla-backend/                 solución .NET (detalle abajo)
@@ -139,7 +139,7 @@ sgpla-backend/
   tests/
     Sgpla.ArchitectureTests/     NetArchTest: capas por namespace + grafo de módulos
     Sgpla.UnitTests/             reglas de dominio puras
-    Sgpla.IntegrationTests/      Testcontainers.MsSql + WebApplicationFactory + Respawn + WireMock.Net
+    Sgpla.IntegrationTests/      Testcontainers.PostgreSql + WebApplicationFactory + Respawn + WireMock.Net
 ```
 
 ### Convenciones por módulo
@@ -156,10 +156,10 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 - Hay un solo `SgplaDbContext`, necesario por las transacciones que cruzan módulos (p. ej. el aval de un Acta en ConsejoTecnico toca oferta y aviso_oferta de Publicacion, además de docente y asignacion_docente de Docentes). Aplica las configuraciones de los ensamblados de módulo que se registran al arrancar.
 - Nombres: `EFCore.NamingConventions` (`UseSnakeCaseNamingConvention`) más esquema explícito por tabla. Los estados se guardan como texto (`HasConversion<string>()`).
 - Filtro global de baja lógica (`fecha_eliminacion IS NULL`) con *named query filters* de EF 10, para poder desactivarlo al restaurar.
-- Proveedor: `Microsoft.EntityFrameworkCore.SqlServer`. No hay EF Migrations; el esquema pertenece a DbUp.
+- Proveedor: `Npgsql.EntityFrameworkCore.PostgreSQL`. No hay EF Migrations; el esquema pertenece a DbUp.
 
 ### Migraciones (DbUp)
-- `src/Sgpla.Database/Baseline/baseline.sql` construye la base completa y `src/Sgpla.Database/Scripts/####__descripcion.sql` contiene las migraciones posteriores; ambos son recursos embebidos. La bitácora va en `dbo.schema_versions`.
+- `src/Sgpla.Database/Baseline/baseline.sql` construye la base completa y `src/Sgpla.Database/Scripts/####__descripcion.sql` contiene las migraciones posteriores; ambos son recursos embebidos. La bitácora va en `public.schema_versions`.
 - `DatabaseMigrator.Migrate(connectionString)` es reutilizable: la CLI (`dotnet run --project src/Sgpla.Database -- --connection "..."`) y el fixture de integración lo usan. `EnsureDatabase` solo se aplica en Development/tests.
 - La API **no** migra al arrancar.
 - `baseline.sql` no es una migración: crea los esquemas `academico`, `usuarios`, `integracion` y `plazas` y las 54 tablas de `DATABASE.md` con sus PK, FK, UNIQUE, CHECK e índices, sin datos. `DatabaseMigrator` solo lo ejecuta sobre una base vacía y lo registra como `baseline`; si la base ya tiene tablas sin ese registro, falla sin tocarla.
@@ -183,8 +183,8 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 ## Pruebas y CI
 
 - **Sgpla.IntegrationTests**:
-  - `SqlServerFixture` levanta `mcr.microsoft.com/mssql/server:2022-latest` con Testcontainers una sola vez por colección, ejecuta `DatabaseMigrator` y crea `SgplaApiFactory : WebApplicationFactory<Program>` con la cadena de conexión del contenedor.
-  - Respawn limpia los datos entre tests y respeta las semillas de `usuarios.rol` y `dbo.schema_versions`.
+  - `PostgreSqlFixture` levanta `postgres:18.6-alpine` con Testcontainers una sola vez por colección, ejecuta `DatabaseMigrator` y crea `SgplaApiFactory : WebApplicationFactory<Program>` con la cadena de conexión del contenedor.
+  - Respawn limpia los datos entre tests y respeta las semillas de `usuarios.rol` y `public.schema_versions`.
   - Las pruebas usan tokens reales emitidos por la API, no un `TestAuthHandler` (`DECISIONES.md`, USU-D11). `ILdapAutenticador` se sustituye por un fake y PLANEA se simula con WireMock.Net.
   - Tests iniciales: CRUD de Region (crear, duplicado → 409, editar nombre, clave inmutable, baja, restauración) y semilla de roles presente.
 - **Sgpla.ArchitectureTests**: Domain no depende de Application/Infrastructure/Endpoints/EF Core; Application no depende de Infrastructure/Endpoints; los módulos respetan el grafo anterior.
@@ -196,7 +196,7 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
   2. `dotnet restore` y `dotnet build -c Release --no-restore`.
   3. `dotnet format --verify-no-changes`.
   4. `dotnet test` de UnitTests y ArchitectureTests.
-  5. `dotnet test` de IntegrationTests (SQL Server en contenedor), con el reporte TRX/cobertura subido como artifact.
+  5. `dotnet test` de IntegrationTests (PostgreSQL en contenedor), con el reporte TRX/cobertura subido como artifact.
 
 ## Archivos críticos a crear
 
@@ -214,13 +214,13 @@ El detalle normativo está en `ESTANDAR_MODULOS.md`, que prevalece sobre este re
 - `src/Modules/Usuarios/.../Infrastructure/Ldap/LdapAutenticador.cs`, `.../Security/Argon2PasswordHasher.cs`
 - `src/Modules/Integracion/.../Infrastructure/Planea/PlaneaClient.cs`
 - Los otros módulos se crean con el `.csproj`, las carpetas de capa, `<Modulo>Module.cs` y un `MapGroup` vacío.
-- `tests/Sgpla.IntegrationTests/{SqlServerFixture.cs, SgplaApiFactory.cs, Institucional/RegionEndpointsTests.cs}`
+- `tests/Sgpla.IntegrationTests/{PostgreSqlFixture.cs, SgplaApiFactory.cs, Institucional/RegionEndpointsTests.cs}`
 
 ## Verificación
 Todos los comandos `dotnet` se ejecutan desde `sgpla-backend/`.
 1. `dotnet build Sgpla.slnx` sin warnings.
 2. `dotnet test tests/Sgpla.ArchitectureTests` y `tests/Sgpla.UnitTests` en verde.
-3. Con Docker Desktop activo: `dotnet test tests/Sgpla.IntegrationTests`. Levanta SQL Server, aplica los scripts y pasa el CRUD de Region.
+3. Con Docker Desktop activo: `dotnet test tests/Sgpla.IntegrationTests`. Levanta PostgreSQL, aplica los scripts y pasa el CRUD de Region.
 4. Manual:
    - `docker compose up -d`, desde la raíz.
    - `dotnet run --project src/Sgpla.Database -- --connection "<local>"`.

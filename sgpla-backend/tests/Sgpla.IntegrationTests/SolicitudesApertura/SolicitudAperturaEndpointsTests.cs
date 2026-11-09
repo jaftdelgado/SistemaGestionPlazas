@@ -5,20 +5,20 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Sgpla.BuildingBlocks.Application;
 using Sgpla.IntegrationTests.Infraestructura;
 using Sgpla.IntegrationTests.OfertaEducativa;
 
 namespace Sgpla.IntegrationTests.SolicitudesApertura;
 
-public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class SolicitudAperturaEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/solicitudes-apertura/solicitudes";
     private const string PatronInstanteUtc = @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -55,7 +55,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         creada.GetProperty("experienciaEducativa").GetProperty("entidadAcademicaNombre").GetString()
             .ShouldBe(escenario.Oferta.EntidadNombre);
         creada.GetProperty("periodoEscolar").GetProperty("id").GetInt32().ShouldBe(escenario.PeriodoSiguienteId);
-        creada.GetProperty("periodoEscolar").GetProperty("clave").GetString().ShouldBe(SqlServerFixture.ClavePeriodoSiguiente);
+        creada.GetProperty("periodoEscolar").GetProperty("clave").GetString().ShouldBe(PostgreSqlFixture.ClavePeriodoSiguiente);
         creada.GetProperty("oficio").GetProperty("nombre").GetString().ShouldBe("oficio.pdf");
         creada.GetProperty("oficio").GetProperty("tamano").GetInt64().ShouldBe(pdf.LongLength);
         creada.GetProperty("actualizadaEn").ValueKind.ShouldBe(JsonValueKind.Null);
@@ -231,7 +231,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
         const string seccion = "A1";
         await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, "PENDIENTE", seccion);
+            baseDatos.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, "PENDIENTE", seccion);
         using var formulario = escenario.CrearFormulario(seccion: seccion.ToLowerInvariant());
 
         using var respuesta = await escenario.Entidad.PostAsync(Uri(), formulario, Cancelacion);
@@ -247,7 +247,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
         const string seccion = "A1";
         await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, "CANCELADA", seccion);
+            baseDatos.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, "CANCELADA", seccion);
 
         await escenario.CrearSolicitudAsync(seccion: seccion);
     }
@@ -299,15 +299,15 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
         var experiencia2Id = await ObtenerExperienciaAsync(escenario1.Oferta.Dgaa, planId);
         var siguienteId = escenario1.PeriodoSiguienteId;
         var s1 = await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario1.ExperienciaId, siguienteId, "PENDIENTE", "B1");
+            baseDatos.CadenaConexion, escenario1.ExperienciaId, siguienteId, "PENDIENTE", "B1");
         var s2 = await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario1.ExperienciaId, siguienteId, "CANCELADA", "B2");
+            baseDatos.CadenaConexion, escenario1.ExperienciaId, siguienteId, "CANCELADA", "B2");
         var s3 = await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario1.ExperienciaId, periodoPropioId, "PENDIENTE", "B3");
+            baseDatos.CadenaConexion, escenario1.ExperienciaId, periodoPropioId, "PENDIENTE", "B3");
         var s4 = await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, experiencia2Id, siguienteId, "PENDIENTE", "B4");
+            baseDatos.CadenaConexion, experiencia2Id, siguienteId, "PENDIENTE", "B4");
         var s5 = await DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario2.ExperienciaId, siguienteId, "PENDIENTE", "B5");
+            baseDatos.CadenaConexion, escenario2.ExperienciaId, siguienteId, "PENDIENTE", "B5");
         var entidad1 = escenario1.Oferta.EntidadId;
         var entidad2 = escenario2.Oferta.EntidadId;
 
@@ -795,7 +795,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
 
     private Task<int> InsertarAsync(EscenarioSolicitud escenario, string estado, string seccion, DateTime creadaEn) =>
         DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, estado, seccion, creadaEn);
+            baseDatos.CadenaConexion, escenario.ExperienciaId, escenario.PeriodoSiguienteId, estado, seccion, creadaEn);
 
     private static async Task<List<int>> ListarIdsAsync(HttpClient cliente, string query)
     {
@@ -817,7 +817,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
 
     private async Task<byte[]> ObtenerChecksumAsync(int solicitudId)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
         await using var comando = conexion.CreateCommand();
         comando.CommandText = """
@@ -876,7 +876,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
     /// <summary>Una solicitud en estado terminal de la EE y el periodo del escenario, con una sección propia.</summary>
     private Task<int> InsertarTerminalAsync(EscenarioSolicitud escenario, string estado) =>
         DatosSolicitudesSql.InsertarAsync(
-            sqlServer.CadenaConexion,
+            baseDatos.CadenaConexion,
             escenario.ExperienciaId,
             escenario.PeriodoSiguienteId,
             estado,
@@ -908,7 +908,7 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
 
     private async Task<(int Id, string Clave)> LeerOficioAsync(int solicitudId)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
         await using var comando = conexion.CreateCommand();
         comando.CommandText = """
@@ -925,12 +925,12 @@ public sealed class SolicitudAperturaEndpointsTests(SqlServerFixture sqlServer) 
 
     private async Task<bool> ExisteArchivoAsync(int archivoId)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
         await using var comando = conexion.CreateCommand();
         comando.CommandText = "SELECT COUNT(*) FROM academico.archivo_solicitud_apertura WHERE id = @id";
         comando.Parameters.AddWithValue("@id", archivoId);
-        return (int)(await comando.ExecuteScalarAsync(Cancelacion))! > 0;
+        return (long)(await comando.ExecuteScalarAsync(Cancelacion))! > 0;
     }
 
     private static async Task VerificaConflictoAsync(HttpResponseMessage respuesta, string codigo)

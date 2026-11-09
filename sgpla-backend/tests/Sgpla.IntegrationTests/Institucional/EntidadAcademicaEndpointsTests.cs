@@ -6,7 +6,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.Institucional;
 
-public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class EntidadAcademicaEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/institucional/entidades-academicas";
     private const string RutaAreas = "/api/v1/institucional/areas-academicas";
@@ -16,7 +16,7 @@ public sealed class EntidadAcademicaEndpointsTests(SqlServerFixture sqlServer) :
     private const int CampusId = 1;
     private const int MunicipioId = 87;
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

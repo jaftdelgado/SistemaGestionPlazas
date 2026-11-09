@@ -11,7 +11,6 @@ internal sealed class ArticuloConfiguration : IEntityTypeConfiguration<Articulo>
         builder.ToTable("articulo", "plazas");
         builder.HasKey(a => a.Id);
 
-        // varchar en la base: sin IsUnicode(false) los parámetros serían nvarchar y forzarían una conversión.
         builder.Property(a => a.Numero).HasMaxLength(Articulo.LongitudMaximaNumero).IsUnicode(false);
         builder.Property(a => a.Descripcion).HasMaxLength(Articulo.LongitudMaximaDescripcion);
     }

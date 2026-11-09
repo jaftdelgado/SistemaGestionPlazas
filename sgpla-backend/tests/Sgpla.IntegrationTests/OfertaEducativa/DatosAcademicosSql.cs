@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
@@ -21,13 +21,13 @@ internal static class DatosAcademicosSql
     public static async Task<int> InsertarPlanAsync(
         string cadenaConexion, int programaEducativoId, bool dadoDeBaja = false)
     {
-        await using var conexion = new SqlConnection(cadenaConexion);
+        await using var conexion = new NpgsqlConnection(cadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
             INSERT INTO academico.plan_estudios (codigo, programa_educativo_id, fecha_eliminacion)
-            OUTPUT INSERTED.id
-            VALUES (@codigo, @programaId, CASE WHEN @dadoDeBaja = 1 THEN SYSUTCDATETIME() ELSE NULL END);
+            VALUES (@codigo, @programaId, CASE WHEN @dadoDeBaja THEN now() ELSE NULL END)
+            RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@codigo", CodigoUnico());
@@ -44,28 +44,26 @@ internal static class DatosAcademicosSql
     public static async Task<int> InsertarProgramacionAsync(
         string cadenaConexion, int periodoEscolarId, int entidadAcademicaId, bool dadaDeBaja = false)
     {
-        await using var conexion = new SqlConnection(cadenaConexion);
+        await using var conexion = new NpgsqlConnection(cadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
-            DECLARE @programaId int, @planId int, @experienciaId int;
-
-            INSERT INTO academico.programa_educativo (nombre, entidad_academica_id, sistema_educativo_id, nivel_formacion_id)
-            VALUES (@nombrePrograma, @entidadId, @sistemaId, @nivelId);
-            SET @programaId = SCOPE_IDENTITY();
-
-            INSERT INTO academico.plan_estudios (codigo, programa_educativo_id)
-            VALUES (@codigoPlan, @programaId);
-            SET @planId = SCOPE_IDENTITY();
-
-            INSERT INTO academico.experiencia_educativa
-                (nombre, materia_ee, curso_ee, horas_teoricas, horas_practicas, creditos, area_formacion_id, plan_estudios_id)
-            VALUES (N'Experiencia educativa de prueba', @materia, '00001', 2, 2, 4, @areaFormacionId, @planId);
-            SET @experienciaId = SCOPE_IDENTITY();
-
+            WITH programa AS (
+                INSERT INTO academico.programa_educativo (nombre, entidad_academica_id, sistema_educativo_id, nivel_formacion_id)
+                VALUES (@nombrePrograma, @entidadId, @sistemaId, @nivelId)
+                RETURNING id),
+            plan AS (
+                INSERT INTO academico.plan_estudios (codigo, programa_educativo_id)
+                SELECT @codigoPlan, id FROM programa
+                RETURNING id),
+            experiencia AS (
+                INSERT INTO academico.experiencia_educativa
+                    (nombre, materia_ee, curso_ee, horas_teoricas, horas_practicas, creditos, area_formacion_id, plan_estudios_id)
+                SELECT 'Experiencia educativa de prueba', @materia, '00001', 2, 2, 4, @areaFormacionId, id FROM plan
+                RETURNING id)
             INSERT INTO academico.programacion_academica (nrc, periodo_escolar_id, experiencia_educativa_id, fecha_eliminacion)
-            OUTPUT INSERTED.id
-            VALUES (@nrc, @periodoId, @experienciaId, CASE WHEN @dadaDeBaja = 1 THEN SYSUTCDATETIME() ELSE NULL END);
+            SELECT @nrc, @periodoId, id, CASE WHEN @dadaDeBaja THEN now() ELSE NULL END FROM experiencia
+            RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@nombrePrograma", DatosUnicos.Nombre("Programa de prueba"));
@@ -89,13 +87,13 @@ internal static class DatosAcademicosSql
     public static async Task<int> InsertarProgramacionDeExperienciaAsync(
         string cadenaConexion, int periodoEscolarId, int experienciaEducativaId, bool dadaDeBaja = false, string? nrc = null)
     {
-        await using var conexion = new SqlConnection(cadenaConexion);
+        await using var conexion = new NpgsqlConnection(cadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
             INSERT INTO academico.programacion_academica (nrc, periodo_escolar_id, experiencia_educativa_id, fecha_eliminacion)
-            OUTPUT INSERTED.id
-            VALUES (@nrc, @periodoId, @experienciaId, CASE WHEN @dadaDeBaja = 1 THEN SYSUTCDATETIME() ELSE NULL END);
+            VALUES (@nrc, @periodoId, @experienciaId, CASE WHEN @dadaDeBaja THEN now() ELSE NULL END)
+            RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@nrc", nrc ?? Nrc());
@@ -109,13 +107,13 @@ internal static class DatosAcademicosSql
     /// <summary>Inserta una sincronización EXITOSA del periodo, con fechas válidas; devuelve su id.</summary>
     public static async Task<int> InsertarSincronizacionAsync(string cadenaConexion, int periodoEscolarId)
     {
-        await using var conexion = new SqlConnection(cadenaConexion);
+        await using var conexion = new NpgsqlConnection(cadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
             INSERT INTO integracion.sincronizacion_planea (periodo_escolar_id, estado, iniciada_en, finalizada_en)
-            OUTPUT INSERTED.id
-            VALUES (@periodoId, 'EXITOSA', SYSUTCDATETIME(), SYSUTCDATETIME());
+            VALUES (@periodoId, 'EXITOSA', now(), now())
+            RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@periodoId", periodoEscolarId);
@@ -136,20 +134,20 @@ internal static class DatosAcademicosSql
         string? edificio = null,
         string? aula = null)
     {
-        await using var conexion = new SqlConnection(cadenaConexion);
+        await using var conexion = new NpgsqlConnection(cadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
             INSERT INTO academico.horario_programacion
                 (programacion_academica_id, sincronizacion_planea_id, dia_semana, hora_inicio, hora_fin,
                  fecha_inicio, fecha_fin, edificio, aula)
-            OUTPUT INSERTED.id
-            VALUES (@programacionId, @sincronizacionId, @dia, @horaInicio, @horaFin, @fechaInicio, @fechaFin, @edificio, @aula);
+            VALUES (@programacionId, @sincronizacionId, @dia, @horaInicio, @horaFin, @fechaInicio, @fechaFin, @edificio, @aula)
+            RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@programacionId", programacionAcademicaId);
         comando.Parameters.AddWithValue("@sincronizacionId", sincronizacionPlaneaId);
-        comando.Parameters.AddWithValue("@dia", diaSemana);
+        comando.Parameters.AddWithValue("@dia", (short)diaSemana);
         comando.Parameters.AddWithValue("@horaInicio", horaInicio);
         comando.Parameters.AddWithValue("@horaFin", horaFin);
         comando.Parameters.AddWithValue("@fechaInicio", fechaInicio);

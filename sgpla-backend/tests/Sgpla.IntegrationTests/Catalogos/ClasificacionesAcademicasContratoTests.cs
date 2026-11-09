@@ -8,9 +8,9 @@ namespace Sgpla.IntegrationTests.Catalogos;
 /// <see cref="IClasificacionesAcademicas"/> es un contrato público, así que se resuelve directamente del contenedor
 /// del host (sin pasar por HTTP) y se ejerce contra los valores de la semilla.
 /// </summary>
-public sealed class ClasificacionesAcademicasContratoTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ClasificacionesAcademicasContratoTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

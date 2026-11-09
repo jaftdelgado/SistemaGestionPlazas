@@ -4,9 +4,9 @@ using Sgpla.IntegrationTests.OfertaEducativa;
 
 namespace Sgpla.IntegrationTests.SolicitudesApertura;
 
-public sealed class PeriodoSolicitudEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class PeriodoSolicitudEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task ObtenerPeriodos_DevuelveParejaConfiguradaParaLosTresRoles()
@@ -32,11 +32,11 @@ public sealed class PeriodoSolicitudEndpointsTests(SqlServerFixture sqlServer) :
         var actual = contenido.GetProperty("actual");
         var siguiente = contenido.GetProperty("siguiente");
 
-        actual.GetProperty("clave").GetString().ShouldBe(SqlServerFixture.ClavePeriodoActual);
+        actual.GetProperty("clave").GetString().ShouldBe(PostgreSqlFixture.ClavePeriodoActual);
         actual.GetProperty("id").GetInt32().ShouldBe(actualId);
         actual.GetProperty("fechaInicio").GetString().ShouldBe("2026-02-02");
         actual.GetProperty("fechaFin").GetString().ShouldBe("2026-07-10");
-        siguiente.GetProperty("clave").GetString().ShouldBe(SqlServerFixture.ClavePeriodoSiguiente);
+        siguiente.GetProperty("clave").GetString().ShouldBe(PostgreSqlFixture.ClavePeriodoSiguiente);
         siguiente.GetProperty("id").GetInt32().ShouldBe(siguienteId);
         siguiente.GetProperty("fechaInicio").GetString().ShouldBe("2026-08-10");
         siguiente.GetProperty("fechaFin").GetString().ShouldBe("2027-01-22");

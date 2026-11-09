@@ -41,7 +41,7 @@ Produce un prompt que otro agente, sin el historial de la conversación, pueda e
 | Una decisión no está escrita | Pregúntala al responsable antes de redactar | Resolverla dentro del prompt como si estuviera decidida |
 | El agente debe copiar un texto literal | Ponlo en un bloque de código y di "debe quedar exactamente así" | Describirlo con palabras |
 | Pides pruebas de integración | Indica qué datos crea cada prueba y que toda aserción sobre un listado se acote a ellos | Dejar el aislamiento implícito |
-| Pides datos que solo un rol sin acceso de prueba puede crear | Indica cómo insertarlos (por ejemplo, helpers SQL de las pruebas o `sqlcmd` en el contenedor) | Suponer que el agente lo resolverá |
+| Pides datos que solo un rol sin acceso de prueba puede crear | Indica cómo insertarlos (por ejemplo, helpers SQL de las pruebas o `psql` en el contenedor) | Suponer que el agente lo resolverá |
 | La especificación resultó incompleta | Incluye su corrección como commit de docs en el mismo PR | Dejar el documento desactualizado |
 
 ## Prompt de corrección

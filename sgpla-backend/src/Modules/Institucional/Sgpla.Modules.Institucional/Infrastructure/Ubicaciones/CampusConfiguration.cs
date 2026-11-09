@@ -11,7 +11,6 @@ internal sealed class CampusConfiguration : IEntityTypeConfiguration<Campus>
         builder.ToTable("campus", "academico");
         builder.HasKey(c => c.Id);
 
-        // varchar en la base: sin IsUnicode(false) los parámetros serían nvarchar y forzarían una conversión.
         builder.Property(c => c.Clave).HasMaxLength(Campus.LongitudMaximaClave).IsUnicode(false);
         builder.Property(c => c.Nombre).HasMaxLength(Campus.LongitudMaximaNombre);
     }

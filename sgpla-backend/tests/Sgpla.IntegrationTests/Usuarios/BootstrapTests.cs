@@ -9,9 +9,9 @@ namespace Sgpla.IntegrationTests.Usuarios;
 /// La creación del primer Superusuario la cubre <c>CrearSuperusuarioInicialHandlerTests</c> (unitaria): la base
 /// compartida de estas pruebas siempre tiene Superusuarios, así que aquí solo se cubre la ejecución repetida.
 /// </summary>
-public sealed class BootstrapTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class BootstrapTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task EjecutarBootstrapAsync_ConUnSuperusuarioActivo_Devuelve0YNoCreaNada()

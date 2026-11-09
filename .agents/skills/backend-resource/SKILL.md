@@ -33,7 +33,7 @@ Implementa código que cumple `ESTANDAR_MODULOS.md` a la primera, siguiendo el p
 | Lo que otro módulo necesita | `Application/Contracts` del módulo que lo expone | Nunca tipos internos de otro módulo |
 | Reglas de negocio fallidas | `Result` con `Error` | Nunca excepciones |
 | Hora actual | `TimeProvider` inyectado | Nunca `DateTime.UtcNow` |
-| Unicidad de textos | La compara SQL Server con la intercalación de la columna | Nunca `ToLower` o `ToUpper` en memoria para decidir unicidad |
+| Unicidad de textos | La compara PostgreSQL con la intercalación de la columna (`es_ci_ai`) | Nunca `ToLower` o `ToUpper` en memoria para decidir unicidad |
 
 ## Trampas conocidas
 

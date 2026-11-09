@@ -74,7 +74,7 @@ internal sealed class ListarEntidadesAcademicasHandler(
             var busquedaClave = busqueda.ToUpperInvariant();
             entidades = entidades.Where(e =>
                 e.Clave.Contains(busquedaClave)
-                || EF.Functions.Collate(e.Nombre, "Modern_Spanish_100_CI_AI").Contains(busqueda));
+                || EF.Functions.Collate(e.Nombre, "es_ci_ai").Contains(busqueda));
         }
 
         var calle = NormalizarTexto(filtros.Calle);

@@ -2,7 +2,7 @@ using System.Text;
 using DbUp;
 using DbUp.Engine;
 using DbUp.Engine.Output;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 
 namespace Sgpla.Database;
 
@@ -13,13 +13,13 @@ namespace Sgpla.Database;
 ///   iniciales, en una sola transacción y solo si la base está vacía.</item>
 ///   <item><c>Scripts/####__descripcion.sql</c> aplica, en orden, los cambios posteriores al baseline.</item>
 /// </list>
-/// Todo se registra en <c>dbo.schema_versions</c>; el baseline y el seed con los nombres
+/// Todo se registra en <c>public.schema_versions</c>; el baseline y el seed con los nombres
 /// <see cref="NombreBaseline"/> y <see cref="NombreSeed"/>.
 /// Lo usan la CLI de este proyecto y el fixture de las pruebas de integración.
 /// </summary>
 public static class DatabaseMigrator
 {
-    public const string EsquemaBitacora = "dbo";
+    public const string EsquemaBitacora = "public";
     public const string TablaBitacora = "schema_versions";
     public const string NombreBaseline = "baseline";
     public const string NombreSeed = "baseline-seed";
@@ -28,7 +28,7 @@ public static class DatabaseMigrator
     private const string RecursoSeed = "Sgpla.Database.Baseline.seed.sql";
     private const string PrefijoRecursosMigraciones = "Sgpla.Database.Scripts.";
 
-    /// <param name="cadenaConexion">Cadena de conexión a SQL Server.</param>
+    /// <param name="cadenaConexion">Cadena de conexión a PostgreSQL.</param>
     /// <param name="crearBaseSiNoExiste">Solo para desarrollo y pruebas: crea la base de datos si no existe.</param>
     /// <param name="log">Destino de la bitácora de ejecución; por defecto, la consola.</param>
     public static DatabaseUpgradeResult Migrar(string cadenaConexion, bool crearBaseSiNoExiste = false, IUpgradeLog? log = null)
@@ -37,7 +37,7 @@ public static class DatabaseMigrator
 
         if (crearBaseSiNoExiste)
         {
-            EnsureDatabase.For.SqlDatabase(cadenaConexion, log);
+            EnsureDatabase.For.PostgresqlDatabase(cadenaConexion, log);
         }
 
         var baseline = new SqlScript(NombreBaseline, LeerRecurso(RecursoBaseline));
@@ -47,7 +47,7 @@ public static class DatabaseMigrator
         {
             estado = ConsultarEstadoBaseline(cadenaConexion);
         }
-        catch (SqlException ex)
+        catch (NpgsqlException ex)
         {
             return new DatabaseUpgradeResult([], false, ex, baseline);
         }
@@ -102,38 +102,44 @@ public static class DatabaseMigrator
 
     private static DbUp.Builder.UpgradeEngineBuilder CrearMotor(string cadenaConexion, IUpgradeLog log) =>
         DeployChanges.To
-            .SqlDatabase(cadenaConexion)
-            .JournalToSqlTable(EsquemaBitacora, TablaBitacora)
+            .PostgresqlDatabase(cadenaConexion)
+            .JournalToPostgresqlTable(EsquemaBitacora, TablaBitacora)
             .LogTo(log);
 
     private static EstadoBaseline ConsultarEstadoBaseline(string cadenaConexion)
     {
-        // La bitácora puede no existir todavía. T-SQL no garantiza cortocircuito en AND, por eso
-        // la consulta a la bitácora va en un IF anidado; la resolución diferida de nombres permite
-        // compilar el lote aunque la tabla no exista.
-        const string consulta =
-            $"""
-            IF OBJECT_ID(N'{EsquemaBitacora}.{TablaBitacora}', N'U') IS NOT NULL
-            BEGIN
-                IF EXISTS (SELECT 1 FROM {EsquemaBitacora}.{TablaBitacora} WHERE ScriptName = N'{NombreBaseline}')
-                BEGIN
-                    SELECT 1; -- EstadoBaseline.Aplicado
-                    RETURN;
-                END
-            END
-
-            IF EXISTS (
-                SELECT 1 FROM sys.tables
-                WHERE NOT (schema_id = SCHEMA_ID(N'{EsquemaBitacora}') AND name = N'{TablaBitacora}'))
-                SELECT 2; -- EstadoBaseline.BaseConDatosSinBaseline
-            ELSE
-                SELECT 0; -- EstadoBaseline.BaseVacia
-            """;
-
-        using var conexion = new SqlConnection(cadenaConexion);
+        using var conexion = new NpgsqlConnection(cadenaConexion);
         conexion.Open();
-        using var comando = new SqlCommand(consulta, conexion);
-        return (EstadoBaseline)(int)comando.ExecuteScalar()!;
+
+        // La bitácora puede no existir todavía: PostgreSQL resuelve los nombres al analizar la sentencia,
+        // así que se comprueba su existencia antes de consultarla.
+        const string consultaBitacora = $"SELECT to_regclass('{EsquemaBitacora}.{TablaBitacora}') IS NOT NULL";
+        if ((bool)Escalar(conexion, consultaBitacora))
+        {
+            const string consultaBaseline =
+                $"SELECT EXISTS (SELECT 1 FROM {EsquemaBitacora}.{TablaBitacora} WHERE scriptname = '{NombreBaseline}')";
+            if ((bool)Escalar(conexion, consultaBaseline))
+            {
+                return EstadoBaseline.Aplicado;
+            }
+        }
+
+        const string consultaTablas =
+            $"""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_tables
+                WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+                  AND NOT (schemaname = '{EsquemaBitacora}' AND tablename = '{TablaBitacora}'))
+            """;
+        return (bool)Escalar(conexion, consultaTablas)
+            ? EstadoBaseline.BaseConDatosSinBaseline
+            : EstadoBaseline.BaseVacia;
+    }
+
+    private static object Escalar(NpgsqlConnection conexion, string consulta)
+    {
+        using var comando = new NpgsqlCommand(consulta, conexion);
+        return comando.ExecuteScalar()!;
     }
 
     private static string LeerRecurso(string nombre)

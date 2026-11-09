@@ -14,6 +14,7 @@ Convenciones:
 - [Usuarios (USU)](#usuarios-usu)
 - [OfertaEducativa (OFE)](#ofertaeducativa-ofe)
 - [SolicitudesApertura (SOL)](#solicitudesapertura-sol)
+- [Migración a PostgreSQL (MIG)](#migración-a-postgresql-mig)
 - [Anexo A. Contrato de importación del Excel del plan (OFE-D6)](#anexo-a-contrato-de-importación-del-excel-del-plan-ofe-d6)
 
 ## Institucional (INS)
@@ -73,7 +74,7 @@ Convenciones:
 | # | Decisión | Desviación respecto a | PR |
 |---|---|---|---|
 | SOL-D1 | **No hay vinculación con la programación académica.** Se quitan de `solicitud_apertura` las columnas `programacion_academica_id`, `vinculada_en` y `vinculada_por_usuario_id`, con sus FK, CHECK e índices, **editando `baseline.sql`** como excepción documentada (igual que INS-D1 y OFE-D5). No existe el comando vincular ni el contrato `IReferenciasProgramacionAcademica` | `DATABASE.md` §2, §16.2, §16.4, §16.5 y §16.6. `DATABASE_DIAGRAM.md`. `PLAN_INICIAL.md` (tabla de módulos). `AGENTS.md` regla 13 y `ESTANDAR_MODULOS.md` §15 (el baseline no se edita) | #16 |
-| SOL-D2 | **Concurrencia optimista con `rowversion`.** `solicitud_apertura` agrega la columna `version rowversion NOT NULL`, **editando `baseline.sql`** con la misma excepción de SOL-D1, mapeada con `IsRowVersion()`. Si dos operaciones chocan (una edición mientras otro acepta), la segunda responde 409 `Persistencia.ModificacionConcurrente`, que traduce el manejador global `ConcurrenciaExceptionHandler` de `DbUpdateConcurrencyException` | `DATABASE.md` §16.2 (columna nueva). `AGENTS.md` regla 13 y `ESTANDAR_MODULOS.md` §15. `ESTANDAR_MODULOS.md` §2 (pieza compartida nueva) | #16, #17 |
+| SOL-D2 | **Concurrencia optimista con `rowversion`.** `solicitud_apertura` agrega la columna `version rowversion NOT NULL`, **editando `baseline.sql`** con la misma excepción de SOL-D1, mapeada con `IsRowVersion()`. Si dos operaciones chocan (una edición mientras otro acepta), la segunda responde 409 `Persistencia.ModificacionConcurrente`, que traduce el manejador global `ConcurrenciaExceptionHandler` de `DbUpdateConcurrencyException`. **Modificada por MIG-D3:** el motor pasó a PostgreSQL, la columna `version` ya no existe y la concurrencia usa `xmin` | `DATABASE.md` §16.2 (columna nueva). `AGENTS.md` regla 13 y `ESTANDAR_MODULOS.md` §15. `ESTANDAR_MODULOS.md` §2 (pieza compartida nueva) | #16, #17 |
 | SOL-D3 | **Almacenamiento de archivos compartido.** `IAlmacenamientoArchivos` se declara en `BuildingBlocks.Application` (lo usan los handlers de comando) y se implementa en `BuildingBlocks.Infrastructure` sobre el sistema de archivos local, con `AlmacenamientoOptions` (ruta base y tamaño máximo) validadas al arrancar. En `docker compose` los archivos viven en un volumen propio. El proveedor definitivo sigue pendiente y se cambia sin tocar los módulos | `PLAN_INICIAL.md` (la interfaz en `BuildingBlocks.Infrastructure`). `ESTANDAR_MODULOS.md` §2 (piezas compartidas nuevas) | #16 |
 | SOL-D4 | **Carga con compensación.** Primero se guarda el binario con una clave nueva y después se confirma la base. Si `SaveChangesAsync` falla, se elimina el binario recién guardado y la excepción sigue su curso. Al reemplazar un oficio, el binario anterior se elimina **después** de confirmar. Un binario que no se puede eliminar queda huérfano y solo se registra en el log (SOL-D19) | Resuelve para este módulo el "proceso seguro para confirmar o compensar cargas" de `DATABASE.md` §17 | #16 |
 | SOL-D5 | **Tamaño máximo configurable**, 10 MiB (10 485 760 bytes) por omisión: `Almacenamiento:TamanoMaximoBytes`, entre 1 y 26 214 400 (25 MiB) para que el límite de 30 MB del cuerpo en Kestrel nunca corte antes el multipart. Un oficio mayor responde 400 en el campo `oficio`. El esquema sigue sin máximo | Aclara `DATABASE.md` §16.3 ("sin máximo fijo") | #16 |
@@ -93,6 +94,19 @@ Convenciones:
 | SOL-D19 | **Auditoría:** solo se registra el binario que no se pudo eliminar (huérfano), con su clave. Las transiciones no se registran: quedan en la fila con su actor y su fecha, y el cliente ya ve el resultado | — (`ESTANDAR_MODULOS.md` §11) | #16 |
 | SOL-D20 | **Rutas:** el recurso vive en `/api/v1/solicitudes-apertura/solicitudes` y la pareja de periodos en `/api/v1/solicitudes-apertura/periodos`, con el patrón `/api/v1/<modulo>/<recurso-en-plural>` del estándar | — (`ESTANDAR_MODULOS.md` §4) | #16 |
 | SOL-D21 | **Estados en mayúsculas.** El estado es el enum `EstadoSolicitudApertura` y se guarda como `PENDIENTE`, `ACEPTADA`, `RECHAZADA` o `CANCELADA` (lo exige `ck_solicitud_apertura__estado`) con un convertidor explícito, no con `HasConversion<string>()`, que guardaría `Pendiente` | `ESTANDAR_MODULOS.md` §8 ("Los estados se guardan como texto con `HasConversion<string>()`") | #16 |
+
+## Migración a PostgreSQL (MIG)
+
+El backend pasó de SQL Server 2022 a PostgreSQL 18. El modelo de datos no cambia: las mismas 54 tablas, columnas, relaciones, restricciones e índices, con los mismos nombres. La única excepción es la columna `version` de `solicitud_apertura` (MIG-D3).
+
+| # | Decisión | Desviación respecto a | PR |
+|---|---|---|---|
+| MIG-D1 | **`baseline.sql`, `seed.sql` y `development.sql` se reescriben en su lugar** en SQL de PostgreSQL, como excepción documentada (igual que SOL-D1 y SOL-D2). `Scripts/` sigue vacío. El baseline crea los esquemas, la intercalación `public.es_ci_ai` (ICU `es-u-ks-level1`, no determinista) y las tablas; el seed reajusta con `setval` la secuencia de cada tabla que recibe ids explícitos | `AGENTS.md` regla 13 y `ESTANDAR_MODULOS.md` §15 (el baseline no se edita) | — |
+| MIG-D2 | **Toda columna `datetime2(0)` pasa a `timestamptz(0)`.** Npgsql lee esos valores como `DateTimeKind.Utc`, así que se elimina `ConversionesUtc` y sus usos. No se activa `Npgsql.EnableLegacyTimestampBehavior` | `DATABASE.md` (tipos de las columnas de fecha) | — |
+| MIG-D3 | **La concurrencia optimista de `solicitud_apertura` usa la columna de sistema `xmin`.** Se quita `version rowversion` del baseline; `SolicitudApertura.Version` pasa de `byte[]` a `uint` y sigue con `IsRowVersion()`, que Npgsql mapea a `xmin` | SOL-D2. `DATABASE.md` §16.2 (la columna `version` ya no existe) | — |
+| MIG-D4 | **PostgreSQL 18 con la etiqueta exacta de la imagen fijada:** `postgres:18.6-alpine`, la misma en `docker-compose.yml` y en Testcontainers | `PLAN_INICIAL.md` (SQL Server 2022) | — |
+| MIG-D5 | **La bitácora de DbUp queda en `public.schema_versions`**, con las mismas filas `baseline` y `baseline-seed` | `PLAN_INICIAL.md` (`dbo.schema_versions`) | — |
+| MIG-D6 | **Sin datos que migrar:** no existe ninguna base con datos reales, así que la base se recrea desde cero con `docker compose down -v` | — | — |
 
 ## Anexo A. Contrato de importación del Excel del plan (OFE-D6)
 

@@ -1,23 +1,23 @@
-# Entorno local de SGPLa: SQL Server + migraciones (DbUp) + API REST + frontend (Vite).
+# Entorno local de SGPLa: PostgreSQL + migraciones (DbUp) + API REST + frontend (Vite).
 #   docker compose up -d --build
 # Las variables se leen de .env (ver .env.example); todas tienen un valor por defecto para desarrollo.
 name: sgpla
 
-x-cadena-conexion: &cadena-conexion "Server=sqlserver,1433;Database=sgpla-bd;User Id=sa;Password=${SGPLA_SA_PASSWORD:-Sgpla_Dev_2026!};TrustServerCertificate=True;Encrypt=True"
+x-cadena-conexion: &cadena-conexion "Host=postgres;Port=5432;Database=sgpla-bd;Username=sgpla;Password=${SGPLA_DB_PASSWORD:-Sgpla_Dev_2026!}"
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  postgres:
+    image: postgres:18.6-alpine
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_PID: "Developer"
-      MSSQL_SA_PASSWORD: "${SGPLA_SA_PASSWORD:-Sgpla_Dev_2026!}"
+      POSTGRES_DB: "sgpla-bd"
+      POSTGRES_USER: "sgpla"
+      POSTGRES_PASSWORD: "${SGPLA_DB_PASSWORD:-Sgpla_Dev_2026!}"
     ports:
-      - "${SGPLA_SQL_PORT:-1433}:1433"
+      - "${SGPLA_DB_PORT:-5432}:5432"
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U sgpla -d sgpla-bd"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -32,7 +32,7 @@ services:
     environment:
       SGPLA_DB_CONNECTION: *cadena-conexion
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
     restart: "no"
 
@@ -80,7 +80,7 @@ services:
       - web-node-modules:/app/node_modules
 
 volumes:
-  sqlserver-data:
+  postgres-data:
   archivos-data:
   pnpm-store:
   web-node-modules:
