@@ -5,11 +5,11 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.Institucional;
 
-public sealed class AreaAcademicaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class AreaAcademicaEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/institucional/areas-academicas";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Sgpla.IntegrationTests.Infraestructura;
@@ -10,9 +10,9 @@ using Sgpla.Modules.OfertaEducativa.Application.Contracts;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
-public sealed class ExperienciasEducativasContratoTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ExperienciasEducativasContratoTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task ObtenerAsync_DevuelveCadenaCuposVigenciaYOmiteInexistentes()
@@ -42,7 +42,7 @@ public sealed class ExperienciasEducativasContratoTests(SqlServerFixture sqlServ
     {
         using var escenario = await EscenarioSolicitud.CrearAsync(_api);
         await EjecutarSqlAsync(
-            "UPDATE academico.plan_estudios SET fecha_eliminacion = '2026-10-01T15:04:05' WHERE id = @id",
+            "UPDATE academico.plan_estudios SET fecha_eliminacion = '2026-10-01T15:04:05Z' WHERE id = @id",
             escenario.PlanId);
         await using var alcance = _api.Services.CreateAsyncScope();
         var contrato = alcance.ServiceProvider.GetRequiredService<IExperienciasEducativas>();
@@ -128,9 +128,9 @@ public sealed class ExperienciasEducativasContratoTests(SqlServerFixture sqlServ
 
     private async Task EjecutarSqlAsync(string sentencia, int id)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(sentencia, conexion);
+        await using var comando = new NpgsqlCommand(sentencia, conexion);
         comando.Parameters.AddWithValue("@id", id);
         await comando.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
     }

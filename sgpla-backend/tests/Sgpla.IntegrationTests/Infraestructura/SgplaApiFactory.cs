@@ -18,7 +18,7 @@ using Sgpla.SharedKernel;
 namespace Sgpla.IntegrationTests.Infraestructura;
 
 /// <summary>Host de la API en memoria apuntando a la base de datos del contenedor.</summary>
-public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplicationFactory<Program>
+public sealed class SgplaApiFactory(PostgreSqlFixture baseDatos) : WebApplicationFactory<Program>
 {
     private readonly string _rutaAlmacenamiento = Path.Combine(
         Path.GetTempPath(), "sgpla-archivos", Guid.NewGuid().ToString("N"));
@@ -38,13 +38,13 @@ public sealed class SgplaApiFactory(SqlServerFixture sqlServer) : WebApplication
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:Sgpla", sqlServer.CadenaConexion);
+        builder.UseSetting("ConnectionStrings:Sgpla", baseDatos.CadenaConexion);
 
         // Jwt:Clave y Ldap:Servidor son obligatorios y nunca van en appsettings*.json.
         builder.UseSetting("Jwt:Clave", ClaveJwtDePrueba);
         builder.UseSetting("Ldap:Servidor", "ldap-de-pruebas.invalido");
-        builder.UseSetting("SolicitudesApertura:PeriodoActual", SqlServerFixture.ClavePeriodoActual);
-        builder.UseSetting("SolicitudesApertura:PeriodoSiguiente", SqlServerFixture.ClavePeriodoSiguiente);
+        builder.UseSetting("SolicitudesApertura:PeriodoActual", PostgreSqlFixture.ClavePeriodoActual);
+        builder.UseSetting("SolicitudesApertura:PeriodoSiguiente", PostgreSqlFixture.ClavePeriodoSiguiente);
         builder.UseSetting("Almacenamiento:RutaBase", _rutaAlmacenamiento);
 
         // Para BootstrapTests: la base compartida siempre tiene Superusuarios, así que el bootstrap nunca los crea.

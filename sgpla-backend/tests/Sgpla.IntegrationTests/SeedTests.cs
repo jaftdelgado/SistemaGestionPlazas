@@ -1,9 +1,9 @@
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests;
 
-public sealed class SeedTests(SqlServerFixture sqlServer)
+public sealed class SeedTests(PostgreSqlFixture baseDatos)
 {
     [Theory]
     [InlineData("usuarios.rol", 3)]
@@ -27,11 +27,11 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     // plazas.articulo, que por la misma razón tampoco se afirma en cero).
     public async Task Seed_CargaLosCatalogosEsperados(string tabla, int filasEsperadas)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand($"SELECT COUNT(*) FROM {tabla}", conexion);
+        await using var comando = new NpgsqlCommand($"SELECT COUNT(*) FROM {tabla}", conexion);
 
-        var filas = (int)(await comando.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
+        var filas = (int)(long)(await comando.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
 
         filas.ShouldBe(filasEsperadas);
     }
@@ -39,15 +39,15 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [Fact]
     public async Task Seed_CargaLosTresRolesFijos()
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand("SELECT id, nombre FROM usuarios.rol ORDER BY id", conexion);
+        await using var comando = new NpgsqlCommand("SELECT id, nombre FROM usuarios.rol ORDER BY id", conexion);
 
-        var roles = new List<(byte Id, string Nombre)>();
+        var roles = new List<(short Id, string Nombre)>();
         await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
         while (await lector.ReadAsync(TestContext.Current.CancellationToken))
         {
-            roles.Add((lector.GetByte(0), lector.GetString(1)));
+            roles.Add((lector.GetInt16(0), lector.GetString(1)));
         }
 
         roles.ShouldBe([(1, "Superusuario"), (2, "DGAA"), (3, "Entidad Académica")]);
@@ -56,9 +56,9 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [Fact]
     public async Task Seed_CargaLosGradosAcademicosFijos()
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand("SELECT id, nombre FROM academico.grado_academico ORDER BY id", conexion);
+        await using var comando = new NpgsqlCommand("SELECT id, nombre FROM academico.grado_academico ORDER BY id", conexion);
 
         var grados = new List<(int Id, string Nombre)>();
         await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
@@ -73,9 +73,9 @@ public sealed class SeedTests(SqlServerFixture sqlServer)
     [Fact]
     public async Task Seed_CargaLosTratamientosAcademicosFijos()
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             "SELECT id, nombre, grado_academico_id FROM plazas.tratamiento_academico ORDER BY id", conexion);
 
         var tratamientos = new List<(int Id, string Nombre, int GradoAcademicoId)>();

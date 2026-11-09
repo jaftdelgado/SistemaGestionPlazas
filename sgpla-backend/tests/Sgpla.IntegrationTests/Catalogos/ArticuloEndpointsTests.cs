@@ -5,12 +5,12 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.Catalogos;
 
-public sealed class ArticuloEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ArticuloEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/catalogos/articulos";
     private const string Descripcion = "Fundamento de prueba.";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

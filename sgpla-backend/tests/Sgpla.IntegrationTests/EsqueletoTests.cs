@@ -1,16 +1,16 @@
 using System.Net;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Sgpla.BuildingBlocks.Infrastructure.Persistence;
 using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests;
 
-public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class EsqueletoTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     [Fact]
     public async Task Health_ConBaseDeDatosDisponible_Responde200()
@@ -25,10 +25,10 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     [Fact]
     public async Task Migraciones_CreanLosCuatroEsquemas()
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(
-            "SELECT name FROM sys.schemas WHERE name IN (N'academico', N'plazas', N'usuarios', N'integracion')",
+        await using var comando = new NpgsqlCommand(
+            "SELECT schema_name FROM information_schema.schemata WHERE schema_name IN ('academico', 'plazas', 'usuarios', 'integracion')",
             conexion);
 
         var esquemas = new List<string>();
@@ -44,15 +44,15 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     [Fact]
     public async Task Migraciones_CreanLasTablasDeLaBaseInicial()
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
-            SELECT s.name, COUNT(*)
-            FROM sys.tables AS t
-            JOIN sys.schemas AS s ON s.schema_id = t.schema_id
-            WHERE s.name IN (N'academico', N'plazas', N'usuarios', N'integracion')
-            GROUP BY s.name
+            SELECT table_schema, COUNT(*)
+            FROM information_schema.tables
+            WHERE table_type = 'BASE TABLE'
+              AND table_schema IN ('academico', 'plazas', 'usuarios', 'integracion')
+            GROUP BY table_schema
             """,
             conexion);
 
@@ -60,7 +60,7 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
         await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
         while (await lector.ReadAsync(TestContext.Current.CancellationToken))
         {
-            tablasPorEsquema[lector.GetString(0)] = lector.GetInt32(1);
+            tablasPorEsquema[lector.GetString(0)] = (int)lector.GetInt64(1);
         }
 
         tablasPorEsquema.ShouldBe(new Dictionary<string, int>
@@ -76,17 +76,15 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     public async Task Migraciones_NoCreanArchivoDelPlanNiBajaEnClasificaciones()
     {
         // El plan no tiene archivo y las tres clasificaciones no tienen baja lógica.
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
-            SELECT t.name + N'.' + c.name
-            FROM sys.columns AS c
-            JOIN sys.tables AS t ON t.object_id = c.object_id
-            JOIN sys.schemas AS s ON s.schema_id = t.schema_id
-            WHERE s.name = N'academico'
-              AND ((t.name = N'plan_estudios' AND c.name = N'archivo_plan_estudios_id')
-                OR (t.name IN (N'sistema_educativo', N'nivel_formacion', N'area_formacion') AND c.name = N'fecha_eliminacion'))
+            SELECT table_name || '.' || column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'academico'
+              AND ((table_name = 'plan_estudios' AND column_name = 'archivo_plan_estudios_id')
+                OR (table_name IN ('sistema_educativo', 'nivel_formacion', 'area_formacion') AND column_name = 'fecha_eliminacion'))
             """,
             conexion);
 
@@ -101,27 +99,29 @@ public sealed class EsqueletoTests(SqlServerFixture sqlServer) : IAsyncDisposabl
     }
 
     [Fact]
-    public async Task Migraciones_SolicitudAperturaSinVinculacionYConVersion()
+    public async Task Migraciones_SolicitudAperturaSinVinculacionNiColumnaVersion()
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(TestContext.Current.CancellationToken);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
-            SELECT c.name, TYPE_NAME(c.user_type_id)
-            FROM sys.columns AS c
-            WHERE c.object_id = OBJECT_ID(N'academico.solicitud_apertura')
-              AND c.name IN (N'programacion_academica_id', N'vinculada_en', N'vinculada_por_usuario_id', N'version')
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'academico'
+              AND table_name = 'solicitud_apertura'
+              AND column_name IN ('programacion_academica_id', 'vinculada_en', 'vinculada_por_usuario_id', 'version')
             """,
             conexion);
 
-        var columnas = new Dictionary<string, string>(StringComparer.Ordinal);
+        // La concurrencia optimista usa la columna de sistema xmin, así que la tabla no define una columna version.
+        var columnas = new List<string>();
         await using var lector = await comando.ExecuteReaderAsync(TestContext.Current.CancellationToken);
         while (await lector.ReadAsync(TestContext.Current.CancellationToken))
         {
-            columnas.Add(lector.GetString(0), lector.GetString(1));
+            columnas.Add(lector.GetString(0));
         }
 
-        columnas.ShouldBe(new Dictionary<string, string>(StringComparer.Ordinal) { ["version"] = "timestamp" });
+        columnas.ShouldBeEmpty();
     }
 
     [Fact]

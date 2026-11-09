@@ -5,12 +5,12 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
-public sealed class ExperienciaEducativaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ExperienciaEducativaEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/oferta-educativa/experiencias-educativas";
     private const string RutaPlanes = "/api/v1/oferta-educativa/planes-estudio";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -197,7 +197,7 @@ public sealed class ExperienciaEducativaEndpointsTests(SqlServerFixture sqlServe
         var sinProgramar = await CrearExperienciaAsync(escenario.Dgaa, planId, "ENSO", "38003");
         var programada = await CrearExperienciaAsync(escenario.Dgaa, planId, "FBGR", "80001");
         var periodoId = await EscenarioOferta.CrearPeriodoAsync(superusuario);
-        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(sqlServer.CadenaConexion, periodoId, programada, dadaDeBaja: true);
+        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(baseDatos.CadenaConexion, periodoId, programada, dadaDeBaja: true);
 
         using var uno = await escenario.Dgaa.GetAsync(Uri($"/{sinProgramar}"), Cancelacion);
         using var otra = await escenario.Dgaa.GetAsync(Uri($"/{programada}"), Cancelacion);
@@ -644,7 +644,7 @@ public sealed class ExperienciaEducativaEndpointsTests(SqlServerFixture sqlServe
         var planId = await CrearPlanAsync(escenario);
         var id = await CrearExperienciaAsync(escenario.Dgaa, planId, "ENSO", "38003");
         var periodoId = await EscenarioOferta.CrearPeriodoAsync(superusuario);
-        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(sqlServer.CadenaConexion, periodoId, id, dadaDeBaja);
+        await DatosAcademicosSql.InsertarProgramacionDeExperienciaAsync(baseDatos.CadenaConexion, periodoId, id, dadaDeBaja);
 
         return id;
     }

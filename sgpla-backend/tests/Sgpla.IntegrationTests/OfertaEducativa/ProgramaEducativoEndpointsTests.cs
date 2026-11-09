@@ -5,7 +5,7 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.OfertaEducativa;
 
-public sealed class ProgramaEducativoEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class ProgramaEducativoEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/oferta-educativa/programas-educativos";
 
@@ -15,7 +15,7 @@ public sealed class ProgramaEducativoEndpointsTests(SqlServerFixture sqlServer) 
     private const int NivelId = 3;
     private const int OtroNivelId = 4;
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -249,7 +249,7 @@ public sealed class ProgramaEducativoEndpointsTests(SqlServerFixture sqlServer) 
         var (dgaa, entidad) = await DgaaConEntidadAsync();
         using var _ = dgaa;
         var id = await CrearProgramaAsync(dgaa, entidad);
-        await DatosAcademicosSql.InsertarPlanAsync(sqlServer.CadenaConexion, id, planDadoDeBaja);
+        await DatosAcademicosSql.InsertarPlanAsync(baseDatos.CadenaConexion, id, planDadoDeBaja);
 
         using var cambiaSistema = await dgaa.PutAsJsonAsync(
             Uri($"/{id}"), Modificacion("Programa", OtroSistemaId, NivelId), Cancelacion);
@@ -268,7 +268,7 @@ public sealed class ProgramaEducativoEndpointsTests(SqlServerFixture sqlServer) 
         var (dgaa, entidad) = await DgaaConEntidadAsync();
         using var _ = dgaa;
         var id = await CrearProgramaAsync(dgaa, entidad);
-        await DatosAcademicosSql.InsertarPlanAsync(sqlServer.CadenaConexion, id);
+        await DatosAcademicosSql.InsertarPlanAsync(baseDatos.CadenaConexion, id);
 
         using var respuesta = await dgaa.PutAsJsonAsync(
             Uri($"/{id}"), Modificacion("Otro nombre", SistemaId, NivelId), Cancelacion);
@@ -371,7 +371,7 @@ public sealed class ProgramaEducativoEndpointsTests(SqlServerFixture sqlServer) 
         var (dgaa, entidad) = await DgaaConEntidadAsync();
         using var _ = dgaa;
         var id = await CrearProgramaAsync(dgaa, entidad);
-        await DatosAcademicosSql.InsertarPlanAsync(sqlServer.CadenaConexion, id);
+        await DatosAcademicosSql.InsertarPlanAsync(baseDatos.CadenaConexion, id);
 
         using var respuesta = await dgaa.DeleteAsync(Uri($"/{id}"), Cancelacion);
         var problema = await Leer(respuesta);
@@ -386,7 +386,7 @@ public sealed class ProgramaEducativoEndpointsTests(SqlServerFixture sqlServer) 
         var (dgaa, entidad) = await DgaaConEntidadAsync();
         using var _ = dgaa;
         var id = await CrearProgramaAsync(dgaa, entidad);
-        await DatosAcademicosSql.InsertarPlanAsync(sqlServer.CadenaConexion, id, dadoDeBaja: true);
+        await DatosAcademicosSql.InsertarPlanAsync(baseDatos.CadenaConexion, id, dadoDeBaja: true);
 
         using var respuesta = await dgaa.DeleteAsync(Uri($"/{id}"), Cancelacion);
 

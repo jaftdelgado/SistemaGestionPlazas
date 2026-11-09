@@ -6,13 +6,13 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests.Usuarios;
 
-public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class CuentaEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/usuarios/cuentas";
     private const string RutaIniciarSesion = "/api/v1/usuarios/iniciar-sesion";
     private const string RutaSesion = "/api/v1/usuarios/sesion";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -514,8 +514,8 @@ public sealed class CuentaEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     [Fact]
     public async Task Listar_ConBusquedaIgnoraMayusculasYAcentos()
     {
-        // "Modern_Spanish_100_CI_AI" (la colación de la columna, igual que en Institucional) no pliega la ñ a n,
-        // solo tildes: por eso el nombre de prueba no lleva ñ (verificado contra SQL Server 2022 real).
+        // La intercalación es_ci_ai (igual que en Institucional) no pliega la ñ a n, solo tildes y mayúsculas:
+        // por eso el nombre de prueba no lleva ñ.
         using var cliente = await _api.CrearClienteSuperusuarioAsync();
         var correo = DatosUnicos.Correo("gmail.com");
         var nombre = DatosUnicos.Nombre("María Pérez");

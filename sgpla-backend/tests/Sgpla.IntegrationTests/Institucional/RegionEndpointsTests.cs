@@ -6,11 +6,11 @@ using Sgpla.IntegrationTests.Infraestructura;
 namespace Sgpla.IntegrationTests.Institucional;
 
 /// <summary>Regiones de solo lectura: los valores los carga la semilla.</summary>
-public sealed class RegionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class RegionEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/institucional/regiones";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

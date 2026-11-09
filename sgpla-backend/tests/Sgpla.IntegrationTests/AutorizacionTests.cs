@@ -6,13 +6,13 @@ using Sgpla.IntegrationTests.Infraestructura;
 
 namespace Sgpla.IntegrationTests;
 
-public sealed class AutorizacionTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class AutorizacionTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string RutaAreas = "/api/v1/institucional/areas-academicas";
     private const string RutaEntidades = "/api/v1/institucional/entidades-academicas";
     private const string RutaArticulos = "/api/v1/catalogos/articulos";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 

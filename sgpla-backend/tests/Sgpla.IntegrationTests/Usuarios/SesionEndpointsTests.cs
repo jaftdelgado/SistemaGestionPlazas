@@ -2,17 +2,17 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Sgpla.IntegrationTests.Infraestructura;
 using Sgpla.SharedKernel;
 
 namespace Sgpla.IntegrationTests.Usuarios;
 
-public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDisposable
+public sealed class SesionEndpointsTests(PostgreSqlFixture baseDatos) : IAsyncDisposable
 {
     private const string Ruta = "/api/v1/usuarios";
 
-    private readonly SgplaApiFactory _api = new(sqlServer);
+    private readonly SgplaApiFactory _api = new(baseDatos);
 
     private static CancellationToken Cancelacion => TestContext.Current.CancellationToken;
 
@@ -455,17 +455,17 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
 
     private async Task RegistrarDgaaConCorreoAsync(string correo, int areaAcademicaId)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
-            INSERT INTO usuarios.usuario (correo, nombre, rol_id) OUTPUT INSERTED.id VALUES (@correo, N'DGAA de prueba', 2);
+            INSERT INTO usuarios.usuario (correo, nombre, rol_id) VALUES (@correo, 'DGAA de prueba', 2) RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@correo", correo);
         var usuarioId = (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
 
-        await using var comandoPerfil = new SqlCommand(
+        await using var comandoPerfil = new NpgsqlCommand(
             "INSERT INTO usuarios.usuario_dgaa (usuario_id, area_academica_id) VALUES (@usuarioId, @areaId);", conexion);
         comandoPerfil.Parameters.AddWithValue("@usuarioId", usuarioId);
         comandoPerfil.Parameters.AddWithValue("@areaId", areaAcademicaId);
@@ -476,17 +476,17 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
     {
         var correo = DatosUnicos.Correo("uv.mx");
 
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
+        await using var comando = new NpgsqlCommand(
             """
-            INSERT INTO usuarios.usuario (correo, nombre, rol_id) OUTPUT INSERTED.id VALUES (@correo, N'Entidad de prueba', 3);
+            INSERT INTO usuarios.usuario (correo, nombre, rol_id) VALUES (@correo, 'Entidad de prueba', 3) RETURNING id;
             """,
             conexion);
         comando.Parameters.AddWithValue("@correo", correo);
         var usuarioId = (int)(await comando.ExecuteScalarAsync(Cancelacion))!;
 
-        await using var comandoPerfil = new SqlCommand(
+        await using var comandoPerfil = new NpgsqlCommand(
             "INSERT INTO usuarios.usuario_entidad_academica (usuario_id, entidad_academica_id) VALUES (@usuarioId, @entidadId);",
             conexion);
         comandoPerfil.Parameters.AddWithValue("@usuarioId", usuarioId);
@@ -498,20 +498,20 @@ public sealed class SesionEndpointsTests(SqlServerFixture sqlServer) : IAsyncDis
 
     private async Task DarDeBajaUsuarioAsync(string correo)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
-            "UPDATE usuarios.usuario SET fecha_eliminacion = SYSUTCDATETIME() WHERE correo = @correo;", conexion);
+        await using var comando = new NpgsqlCommand(
+            "UPDATE usuarios.usuario SET fecha_eliminacion = now() WHERE correo = @correo;", conexion);
         comando.Parameters.AddWithValue("@correo", correo);
         await comando.ExecuteNonQueryAsync(Cancelacion);
     }
 
     private async Task DarDeBajaAreaAsync(int areaId)
     {
-        await using var conexion = new SqlConnection(sqlServer.CadenaConexion);
+        await using var conexion = new NpgsqlConnection(baseDatos.CadenaConexion);
         await conexion.OpenAsync(Cancelacion);
-        await using var comando = new SqlCommand(
-            "UPDATE academico.area_academica SET fecha_eliminacion = SYSUTCDATETIME() WHERE id = @id;", conexion);
+        await using var comando = new NpgsqlCommand(
+            "UPDATE academico.area_academica SET fecha_eliminacion = now() WHERE id = @id;", conexion);
         comando.Parameters.AddWithValue("@id", areaId);
         await comando.ExecuteNonQueryAsync(Cancelacion);
     }
