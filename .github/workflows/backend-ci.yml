@@ -55,7 +55,7 @@ jobs:
           --project tests/Sgpla.UnitTests
           --report-xunit-trx --results-directory ${{ github.workspace }}/TestResults
 
-      - name: Pruebas de integración (SQL Server en contenedor)
+      - name: Pruebas de integración (PostgreSQL en contenedor)
         run: >
           dotnet test -c Release --no-build
           --project tests/Sgpla.IntegrationTests

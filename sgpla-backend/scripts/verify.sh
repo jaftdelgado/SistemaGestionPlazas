@@ -32,7 +32,7 @@ case "$(uname -s)" in
     ;;
   Linux)
     RAIZ_HOST="$RAIZ"
-    # Testcontainers publica SQL Server en el host; en Linux host.docker.internal no existe por omisión.
+    # Testcontainers publica PostgreSQL en el host; en Linux host.docker.internal no existe por omisión.
     host_extra=(--add-host=host.docker.internal:host-gateway)
     ;;
   *)
